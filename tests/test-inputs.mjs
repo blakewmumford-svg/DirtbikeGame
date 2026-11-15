@@ -37,7 +37,7 @@ try{
   const sizes=[];
   for(const size of [{width:390,height:844},{width:844,height:390}]){
    await page.setViewportSize(size);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));await page.evaluate(()=>__screamTest.set());const boxes=await page.locator('#touch-controls button:visible').evaluateAll(buttons=>buttons.map(b=>{const r=b.getBoundingClientRect();return{x:r.x,y:r.y,right:r.right,bottom:r.bottom}}));
-   assert.ok(boxes.length>=13);assert.ok(boxes.every(b=>b.x>=0&&b.y>=0&&b.right<=size.width&&b.bottom<=size.height));
+   assert.ok(boxes.length>=10);assert.ok(boxes.every(b=>b.x>=0&&b.y>=0&&b.right<=size.width&&b.bottom<=size.height));
    const tools=await page.locator('.touch-tools button').evaluateAll(buttons=>buttons.map(b=>{const r=b.getBoundingClientRect();return{x:r.x,y:r.y,right:r.right,bottom:r.bottom}}));assert.ok(tools.every(b=>Math.abs(b.bottom-size.height)<1&&b.y>size.height-45));assert.ok(tools[2].right<tools[3].x);
    await page.screenshot({path:fileURLToPath(new URL(`../reports/mobile-${size.width}.png`,import.meta.url))});sizes.push(size);
   }
@@ -54,17 +54,17 @@ try{
   await touch('touchStart',[gas]);await page.getByRole('button',{name:'Pause',exact:true}).dispatchEvent('click',{detail:0});assert.equal((await inputs()).throttle,0);await touch('touchEnd',[]);
   await page.evaluate(()=>__screamTest.set());await touch('touchStart',[gas]);await page.locator('#open-main-menu').evaluate(b=>b.click());assert.equal((await inputs()).throttle,0);assert.equal(await page.locator('#touch-controls').isVisible(),false);await touch('touchEnd',[]);await page.evaluate(()=>__screamTest.set());return{independent:true,cleared:true};
  });
- await check('Mobile wheelie, tabletop and trick controls are usable without keyboard keys',async()=>{
+ await check('Mobile wheelie and random trick controls are usable without keyboard keys',async()=>{
   await page.getByRole('button',{name:'Wheelie',exact:true}).tap();assert.equal((await inputs()).wheelie,true);
-  await page.evaluate(()=>__screamTest.set({air:true}));const tilt=await point('Tilt →',1);await touch('touchStart',[tilt]);assert.equal((await inputs()).roll,-1);await touch('touchEnd',[]);
-  await page.evaluate(()=>__screamTest.pose());await page.getByRole('button',{name:'Random trick',exact:true}).tap();await page.evaluate(()=>__screamTest.pose());assert.ok(['No-hander','Superman','Can-can'].includes(await page.evaluate(()=>__screamTest.stuntPose.name)));return{wheelie:true,tabletop:true,trick:true};
+  await page.evaluate(()=>__screamTest.set({air:true}));assert.equal(await page.getByRole('button',{name:'Tilt →',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'Garage',exact:true}).count(),0);
+  await page.evaluate(()=>__screamTest.pose());await page.getByRole('button',{name:'Random trick',exact:true}).tap();await page.evaluate(()=>__screamTest.pose());assert.ok(['No-hander','Superman','Can-can'].includes(await page.evaluate(()=>__screamTest.stuntPose.name)));return{wheelie:true,trick:true};
  });
- await check('Connected controller works on mobile, has air tricks/tabletops, and disconnect releases input',async()=>{
+ await check('Connected controller works on mobile, has air tricks, and disconnect releases input',async()=>{
   await page.evaluate(()=>{
    window.testPad={index:0,connected:true,mapping:'standard',id:'Test controller',axes:[0,0,0,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};
    Object.defineProperty(navigator,'getGamepads',{configurable:true,value:()=>window.testPad?[window.testPad]:[]});__screamTest.readController();window.testPad.buttons[7]={pressed:true,value:.8};window.testPad.axes[0]=-.7;__screamTest.readController();
   });const pad=await inputs();assert.ok(pad.throttle>.5&&pad.throttle<1&&pad.steer>.5);
-  await page.evaluate(()=>{__screamTest.set({air:true});window.testPad.axes[2]=.8;window.testPad.buttons[4]={pressed:true,value:1};__screamTest.readController();__screamTest.pose()});assert.ok((await inputs()).roll<-.5);assert.equal(await page.evaluate(()=>__screamTest.stuntPose.name),'Superman');
+  await page.evaluate(()=>{__screamTest.set({air:true});window.testPad.axes[2]=.8;window.testPad.buttons[4]={pressed:true,value:1};__screamTest.readController();__screamTest.pose()});assert.equal((await inputs()).roll,0);assert.equal(await page.evaluate(()=>__screamTest.stuntPose.name),'Superman');
   await page.evaluate(()=>{window.testPad=null;__screamTest.readController()});assert.equal((await inputs()).throttle,0);assert.equal((await inputs()).steer,0);return{analog:pad,disconnected:true};
  });
  await check('Touch show/hide preference persists and sound controls remain accessible in Info',async()=>{

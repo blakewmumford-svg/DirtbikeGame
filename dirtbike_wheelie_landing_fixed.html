@@ -197,7 +197,10 @@ body.touch-mode:not(.menu-open) #help{display:none}
 body.touch-mode:not(.menu-open) #speedometer{width:72px;top:54px;bottom:auto;right:8px;opacity:.85}
 body.touch-mode:not(.menu-open) #sound-controls{position:static;margin:10px 0;max-width:100%;box-sizing:border-box;font-size:10px}
 body.touch-mode #tuner{z-index:8}
-body.touch-mode #tuner.collapsed{display:none}
+body.touch-mode #tuner.collapsed,body.touch-device #tuner.collapsed{display:none}
+body.touch-device #tuner .tuner-header button,body.touch-device #help{display:none}
+body.touch-mode #tuner .tuner-header button,body.touch-mode #hud [data-keyboard-hint]{display:none}
+body.touch-mode #hud-toggle::after{content:''}
 @media(max-width:360px){#touch-controls .touch-pad{width:140px}#touch-controls button{font-size:11px}}
 @media(max-height:500px){#touch-controls{height:150px}#touch-controls .touch-pad{width:156px;gap:5px}#touch-controls button{min-height:46px}#touch-controls .touch-tools{bottom:0}#touch-controls .touch-pad{bottom:40px}#touch-controls .touch-tricks{bottom:145px}body.touch-mode:not(.menu-open) #speedometer{top:52px;bottom:auto;width:65px}}
 
@@ -213,8 +216,8 @@ body.touch-mode #tuner.collapsed{display:none}
 <text x="100" y="125" text-anchor="middle" fill="#fff" font-size="32" font-weight="850" id="dial-speed">0</text>
 <text x="100" y="143" text-anchor="middle" fill="#9db8c3" font-size="12">km/h</text>
 <text x="100" y="166" text-anchor="middle" fill="#e9a5a0" font-size="10">REV / REDLINE</text>
-</svg></div><button id="reset">Reset bike (R)</button><div id="room-hud" role="status" aria-live="polite"></div><div id="lobby-model-tip">🏍️ <b id="lobby-paint-name">ORANGE GAS BIKE</b><div>YOUR RIDER • READY TO RIDE</div></div><button id="open-main-menu" type="button" title="Return to the main lobby (M)">☰ Menu (M)</button><div id="help">W / ↑ accelerate (AIR: backflip) · S / ↓ brake (AIR: frontflip) · A D steer (AIR: flat spins) · ← → AIR ONLY: sideways tabletop · Tap Space to wheelie · W balances · Shift boost / AIR no-hander · Ctrl AIR superman · Alt AIR can-can · C camera · G tune · H hitboxes · T contacts · P pause · O step · J repair here · R reset spawn · 🎮 RT / R2 backflip in air · LT / L2 frontflip in air · LS steer / air spin · Tap A to wheelie · RB boost</div><aside id="tuner" aria-label="Real-time bike tuning">
- <div class="tuner-header"><strong>⚙️ Live Tuning Garage <span id="dirty-dot" title="Changes since named preset (your ride is autosaved)">●</span></strong><button id="toggle-tuner" type="button">Hide (G)</button></div>
+</svg></div><button id="reset">Reset bike (R)</button><div id="room-hud" role="status" aria-live="polite"></div><div id="lobby-model-tip">🏍️ <b id="lobby-paint-name">ORANGE GAS BIKE</b><div>YOUR RIDER • READY TO RIDE</div></div><button id="open-main-menu" type="button" title="Return to the main lobby (M)">☰ Menu (M)</button><div id="help">W / ↑ accelerate (AIR: backflip) · S / ↓ brake (AIR: frontflip) · A D steer (AIR: flat spins) · Tap Space to wheelie · W balances · Shift boost / AIR no-hander · Ctrl AIR superman · Alt AIR can-can · C camera · Enter debug · H hitboxes · T contacts · P pause · O step · J repair here · R reset spawn · 🎮 RT / R2 backflip in air · LT / L2 frontflip in air · LS steer / air spin · Tap A to wheelie · RB boost</div><aside id="tuner" aria-label="Real-time bike tuning">
+ <div class="tuner-header"><strong>⚙️ Live Tuning Garage <span id="dirty-dot" title="Changes since named preset (your ride is autosaved)">●</span></strong><button id="toggle-tuner" type="button">Hide (Enter)</button></div>
  <div class="tuner-body">
   <nav class="tabs" aria-label="Tuning categories"><button type="button" class="active" data-tab="Ride">Ride</button><button type="button" data-tab="Lean">Turn lean</button><button type="button" data-tab="Air">Air tricks</button><button type="button" data-tab="Shocks">Shocks</button><button type="button" data-tab="Camera">Camera</button><button type="button" data-tab="Crash">Crashes</button><button type="button" data-tab="Debug">Debug</button><button type="button" data-tab="Controller">Controller</button></nav>
   <div id="tuning-fields"></div>
@@ -795,6 +798,8 @@ const TUNING_SCHEMA = [
  {tab:'Controller',key:'controllerLookSpeed',label:'Right-stick camera speed',min:.3,max:4,step:.05,value:1.7,unit:'rad/s'},
  {tab:'Controller',key:'invertLookY',label:'Invert camera vertical look',min:0,max:1,step:1,value:0,unit:'',type:'toggle'}
 ];
+let roomRole='solo',sharedTuning=null,soloTuning=null,lastRoomTuningSent='';
+function canEditTuning(){return !['joining','guest'].includes(roomRole)}
 const STORAGE_KEY='dirtbike_v3a_tuning_v1';
 const DEBUG_TABS=['Ride','Shocks','Lean','Air','Camera','Crash','Controller','Debug'];
 const BRIDGE_SAVE='dirtbike-v3j-profile-save',BRIDGE_ACK='dirtbike-v3j-profile-ack';
@@ -852,7 +857,9 @@ function markDirty(isDirty){dirty=isDirty;document.getElementById('dirty-dot').s
 const autoStatus=document.getElementById('autosave-status');
 function showAutoSave(ok,text){autoStatus.classList.toggle('error',!ok);autoStatus.textContent=text}
 function persistCurrent(){
- savedData.lastTuning={...tuning};
+ if(!canEditTuning()&&sharedTuning)Object.assign(tuning,sharedTuning);
+ savedData.lastTuning={...(!canEditTuning()&&soloTuning?soloTuning:tuning)};
+ if(roomRole==='host')publishRoomTuning();
  savedData.activeTab=activeTab;
  // Debug state is captured after the controls are initialized. Early calls can omit it safely.
  if(typeof showHitboxes!=='undefined')savedData.debug={hitboxes:showHitboxes,contacts:showContactDebug};
@@ -871,7 +878,7 @@ function renderFields(){
  if(activeTab==='Controller'){
   const status=document.createElement('div');status.id='gamepad-status';status.className='pad-status';status.textContent='Connect a gamepad and press a button.';
   const mapping=document.createElement('p');mapping.className='pad-map';
-  mapping.innerHTML='<b>Standard Xbox / PlayStation layout</b><br>Left stick: steer on ground / flat spin in air · RT/R2: throttle on ground, backflip in air · LT/L2: brake on ground, frontflip in air<br>Tap A / Cross: wheelie · RB/R1: ground boost / air no-hander · LB/L1: air superman · B/Circle: air can-can · Right stick: air tabletop · Y/Triangle: camera<br>X / Square: repair/reset · B / Circle: tire probes<br>Start / Options: tuning garage · Back / Share: hitboxes<br>LB/L1: ground pause · L3: pause anywhere · D-pad right: step while paused<br>D-pad up/down: camera zoom · Right stick: orbit camera · R3: recenter';
+  mapping.innerHTML='<b>Standard Xbox / PlayStation layout</b><br>Left stick: steer on ground / flat spin in air · RT/R2: throttle on ground, backflip in air · LT/L2: brake on ground, frontflip in air<br>Tap A / Cross: wheelie · RB/R1: ground boost / air no-hander · LB/L1: air superman · B/Circle: air can-can · Y/Triangle: camera<br>X / Square: repair/reset · B / Circle: tire probes<br>Start / Options: tuning garage · Back / Share: hitboxes<br>LB/L1: ground pause · L3: pause anywhere · D-pad right: step while paused<br>D-pad up/down: camera zoom · Right stick: orbit camera · R3: recenter';
   const meter=document.createElement('div');meter.id='pad-telemetry';meter.className='pad-meter';meter.textContent='No live controller inputs.';
   tuningFields.append(status,mapping,meter);
  }
@@ -883,8 +890,9 @@ function renderFields(){
   const input=document.createElement(s.type==='select'?'select':'input');
   if(s.type==='select')for(const o of s.options)input.add(new Option(o.label,String(o.value)));
   else {input.type=s.type==='toggle'?'checkbox':'range';input.min=s.min;input.max=s.max;input.step=s.step;}
-  input.value=tuning[s.key];if(s.type==='toggle')input.checked=!!tuning[s.key];input.setAttribute('aria-label',s.label);
+  input.disabled=!canEditTuning();input.value=tuning[s.key];if(s.type==='toggle')input.checked=!!tuning[s.key];input.setAttribute('aria-label',s.label);
   input.addEventListener(s.type==='toggle'||s.type==='select'?'change':'input',()=>{
+   if(!canEditTuning()){renderFields();return}
    tuning[s.key]=s.type==='toggle'?(input.checked?1:0):Number(input.value);out.textContent=numberText(s,tuning[s.key]);
    markDirty(true);persistCurrent();
   });
@@ -911,7 +919,7 @@ function renderFields(){
   for(const [label,fn] of [['Test airborne flips',launchAirTest],['Test air spins',launchSpinTest],['Test 180° backward landing',launch180LandingTest],['Test ramp wall',launchRampWallTest],['Test rock collision',launchRockTest],['🌙 Test circular edge fall',launchMoonFallTest],['Repair here (J)',repairHere]]){
    const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;button.addEventListener('click',fn);testButtons.append(button);
   }
-  tuningFields.append(legend,b,stepButton,verifyButton,publishBox,disasterControls(),testButtons,telemetry);return;
+  tuningFields.append(legend,b,stepButton,verifyButton,publishBox,disasterControls(),testButtons,telemetry);lockRoomTuning();return;
  }
  if(activeTab==='Crash'){
   const p=document.createElement('p');p.className='legend';p.textContent='Severe rock/ramp side hits and upside-down body crashes eject a 16-joint rider, while clean wheel-first landings stay safe. This lightweight joint/constraint ragdoll is tuned for a browser; it is not BeamNG soft-body physics. Hard crashes and moon hits rotate through your recorded screams with matching bubbles. Crash voices use only your uploaded recordings. Use the Sound button and volume slider to adjust audio. J repairs and puts your rider back on the bike; R resets to spawn.';
@@ -929,7 +937,7 @@ function renderFields(){
   tuningFields.append(explanation,meter);
  }
 }
-function applyValues(values,changed=false){Object.assign(tuning,sanitizeValues(values));renderFields();markDirty(changed);persistCurrent()}
+function applyValues(values,changed=false){if(!canEditTuning()){message('Room tuning is controlled by the host.');return}Object.assign(tuning,sanitizeValues(values));renderFields();markDirty(changed);persistCurrent()}
 function refreshPresetSelect(name=savedData.selected){
  presetSelect.replaceChildren(new Option('Select a saved setup',''));
  for(const n of Object.keys(savedData.presets).sort((a,b)=>a.localeCompare(b)))presetSelect.add(new Option(n,n));
@@ -994,7 +1002,8 @@ async function importPreset(e){
 document.querySelectorAll('#tuner [data-tab]').forEach(b=>b.addEventListener('click',()=>{
  activeTab=b.dataset.tab;document.querySelectorAll('#tuner [data-tab]').forEach(t=>t.classList.toggle('active',t===b));renderFields();persistCurrent();
 }));
-function toggleTuner(){const hidden=tuner.classList.toggle('collapsed');document.getElementById('toggle-tuner').textContent=hidden?'Show (G)':'Hide (G)'}
+function openDebugSettings(){const open=activeTab==='Debug'&&!tuner.classList.contains('collapsed');activeTab='Debug';document.querySelectorAll('#tuner [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab==='Debug'));renderFields();if(open||tuner.classList.contains('collapsed'))toggleTuner();}
+function toggleTuner(){const hidden=tuner.classList.toggle('collapsed');document.getElementById('toggle-tuner').textContent=hidden?'Show (Enter)':'Hide (Enter)'}
 document.getElementById('toggle-tuner').addEventListener('click',toggleTuner);
 document.getElementById('save-preset').addEventListener('click',savePreset);
 document.getElementById('load-preset').addEventListener('click',loadPreset);
@@ -1021,20 +1030,21 @@ function throttleInput(){return Math.max(keys.KeyW||keys.ArrowUp?1:0,controller.
 function brakeInput(){return Math.max(keys.KeyS||keys.ArrowDown?1:0,controller.brake,touchInput.brake)}
 function boostInput(){return !!(keys.ShiftLeft||keys.ShiftRight||controller.boost||touchInput.boost)}
 function steerInput(){const digital=(keys.KeyA?1:0)-(keys.KeyD?1:0)+touchInput.left-touchInput.right;return digital?THREE.MathUtils.clamp(digital,-1,1):(-controller.steer||0)}
-function rollControlInput(){return THREE.MathUtils.clamp((keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0)+touchInput.rollLeft-touchInput.rollRight+(!grounded?-controller.lookX:0),-1,1)}
+function rollControlInput(){return 0}
 function clearTouchInput(){touchPointers.clear();for(const key of Object.keys(touchInput))touchInput[key]=0;document.querySelectorAll('#touch-controls [aria-pressed]').forEach(b=>b.setAttribute('aria-pressed','false'))}
 function syncTouchInput(){for(const key of Object.keys(touchInput))touchInput[key]=Array.from(touchPointers.values()).includes(key)?1:0;document.querySelectorAll('#touch-controls [data-hold]').forEach(b=>b.setAttribute('aria-pressed',String(!!touchInput[b.dataset.hold])))}
 function triggerTrick(name){if(menuStage==='riding'&&!grounded&&!ragdoll.active&&!paused){stuntPose.queued=name;stuntPose.hold=1.2}}
 function updateTouchVisibility(){
  const coarse=matchMedia('(any-pointer: coarse)').matches||navigator.maxTouchPoints>0;
  const visible=touchPreference==='on'||touchPreference==='auto'&&coarse;
- document.body.classList.toggle('touch-mode',visible);if(!visible)clearTouchInput();
+ document.body.classList.toggle('touch-device',coarse);document.body.classList.toggle('touch-mode',visible);if(!visible)clearTouchInput();
  const select=document.getElementById('touch-preference');if(select)select.value=touchPreference;
  mountMusicControls(menuStage);
+ if(coarse||visible){document.getElementById('hud-toggle').textContent='☰ Info';document.getElementById('open-main-menu').textContent='☰ Menu';document.getElementById('reset').textContent='Reset bike';}
 }
 function setupTouchControls(){
  const root=document.createElement('div');root.id='touch-controls';root.setAttribute('role','group');root.setAttribute('aria-label','Touch riding controls');
- const left=document.createElement('div'),right=document.createElement('div'),tools=document.createElement('div');left.className=right.className='touch-pad';left.setAttribute('aria-label','Steering and tabletop');right.setAttribute('aria-label','Throttle and brake');tools.className='touch-tools';
+ const left=document.createElement('div'),right=document.createElement('div'),tools=document.createElement('div');left.className=right.className='touch-pad';left.setAttribute('aria-label','Steering');right.setAttribute('aria-label','Throttle and brake');tools.className='touch-tools';
  function button(parent,label,action,hold=false){
   const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label);
   if(hold){b.dataset.hold=action;b.setAttribute('aria-pressed','false')}
@@ -1044,9 +1054,9 @@ function setupTouchControls(){
   b.addEventListener('click',e=>{if(e.detail===0&&!hold)perform()});
   parent.append(b);return b;
  }
- button(left,'← Steer','left',true);button(left,'Steer →','right',true);button(left,'Tilt ←','rollLeft',true);button(left,'Tilt →','rollRight',true);
+ button(left,'← Steer','left',true);button(left,'Steer →','right',true);
  button(right,'Gas / backflip','throttle',true).classList.add('touch-gas');button(right,'Brake / frontflip','brake',true);button(right,'Wheelie','wheelie');button(right,'Boost','boost',true);
- button(tools,'Camera','camera');button(tools,'Pause','pause');button(tools,'Repair','repair');button(tools,'Garage','garage');const randomTrick=button(tools,'Random trick','random');randomTrick.dataset.randomTrick='true';randomTrick.disabled=true;
+ button(tools,'Camera','camera');button(tools,'Pause','pause');button(tools,'Repair','repair');const randomTrick=button(tools,'Random trick','random');randomTrick.dataset.randomTrick='true';randomTrick.disabled=true;
  root.append(left,right,tools);document.body.append(root);
  const label=document.createElement('label');label.textContent='Touch controls: ';const preference=document.createElement('select');preference.id='touch-preference';preference.setAttribute('aria-label','Touch controls visibility');for(const value of ['auto','on','off'])preference.add(new Option(value==='auto'?'Automatic':value==='on'?'Show':'Hide',value));preference.value=touchPreference;preference.onchange=()=>{touchPreference=preference.value;try{localStorage.setItem('dirtbike_touch_v1',touchPreference)}catch{}updateTouchVisibility()};label.append(preference);document.getElementById('hud').append(label);
  updateTouchVisibility();if(document.body.classList.contains('touch-mode')&&!tuner.classList.contains('collapsed'))toggleTuner();
@@ -1069,6 +1079,7 @@ function gamepadAxis(axis,deadzone){
  return m<=deadzone?0:Math.sign(v)*(m-deadzone)/(1-deadzone);
 }
 function adjustCameraZoom(direction){
+ if(!canEditTuning())return;
  const s=schemaByKey.get('cameraDistance'),before=tuning.cameraDistance;
  tuning.cameraDistance=THREE.MathUtils.clamp(before+direction,s.min,s.max);
  if(tuning.cameraDistance!==before){markDirty(true);persistCurrent();if(activeTab==='Camera')renderFields()}
@@ -1127,7 +1138,7 @@ addEventListener('gamepaddisconnected',()=>{clearController();gamepadHud.textCon
 // V3S: HUD panel is hidden by default; click the top-left button or press I.
 const rideHud=document.getElementById('hud');
 const hudToggle=document.getElementById('hud-toggle');
-function setRideHud(open){rideHud.hidden=!open;hudToggle.setAttribute('aria-expanded',String(open));hudToggle.textContent=open?'✕ Close (I)':'☰ Info (I)'}
+function setRideHud(open){rideHud.hidden=!open;hudToggle.setAttribute('aria-expanded',String(open));hudToggle.textContent=open?(document.body.classList.contains('touch-mode')?'✕ Close':'✕ Close (I)'):(document.body.classList.contains('touch-mode')?'☰ Info':'☰ Info (I)')}
 hudToggle.addEventListener('click',()=>setRideHud(rideHud.hidden));
 function dialPoint(deg,r){const a=(deg-90)*Math.PI/180;return [100+r*Math.cos(a),100+r*Math.sin(a)]}
 function dialArc(a,b,r){const p=dialPoint(a,r),q=dialPoint(b,r);return `M ${p[0]} ${p[1]} A ${r} ${r} 0 ${b-a>180?1:0} 1 ${q[0]} ${q[1]}`}
@@ -1172,7 +1183,8 @@ addEventListener('keydown',e=>{
  if(e.code==='KeyC')camMode=(camMode+1)%3;
  if(e.code==='KeyR')reset();
  if(e.code==='KeyJ')repairHere();
- if(e.code==='KeyG')toggleTuner();
+ if(e.code==='Enter'||e.code==='NumpadEnter'){e.preventDefault();openDebugSettings();}
+
  if(e.code==='KeyH')toggleHitboxes();
  if(e.code==='KeyT')toggleContacts();
  if(e.code==='KeyP')togglePause();
@@ -1661,7 +1673,7 @@ function repairHere(){
  message(inverted?'J: flipped upright and fully repaired here — no teleport.':'J: fully repaired in place — location and momentum unchanged.');
 }
 // Reproducible debug launch points; they don't alter saved physics tuning.
-function launchAirTest(){reset();pos.set(0,22,12);speed=20;vertical=10;grounded=false;airTravelHeading=yaw;airYawStart=yaw;lastCollision='Debug: jump launch';paused=false;stepping=false;message('Airborne test: W/RT backflip; S/LT frontflip; A/D or left stick for flat spins; ←/→ for sideways tabletops. Release arrows to straighten.');}
+function launchAirTest(){reset();pos.set(0,22,12);speed=20;vertical=10;grounded=false;airTravelHeading=yaw;airYawStart=yaw;lastCollision='Debug: jump launch';paused=false;stepping=false;message('Airborne test: W/RT backflip; S/LT frontflip; A/D or left stick for flat spins.');}
 function launchSpinTest(){launchAirTest();lastCollision='Debug: 360° spin launch';message('Spin test: hold A or left stick LEFT to spin left; D or stick RIGHT to spin right. Your flight path stays straight.');}
 function launch180LandingTest(){
  reset();pos.set(0,7,25);yaw=Math.PI;speed=18;lateralSpeed=0;vertical=-3;grounded=false;
@@ -1842,12 +1854,8 @@ function simulateSubstep(dt){
  speed=THREE.MathUtils.clamp(speed,-velocityLimit,velocityLimit);
  if(Math.abs(speed)<.03)speed=0;if(Math.abs(lateralSpeed)<.01)lateralSpeed=0;
  const steer=ragdoll.active?0:steerInput();
- // Arrow keys control a tabletop roll only in the air; A/D keep yaw steering/spins.
- const rollInput=!ragdoll.active&&!grounded?rollControlInput():0;
- if(!grounded&&!ragdoll.active){
-  airRollVelocity+=((rollInput*1.4-airRoll)*32-airRollVelocity*10)*dt;
-  airRoll=THREE.MathUtils.clamp(airRoll+airRollVelocity*dt,-1.48,1.48);
- }else{airRoll*=Math.exp(-dt*16);airRollVelocity=0;}
+ // Sideways tabletop controls removed; ground cornering lean remains.
+ airRoll=airRollVelocity=0;
  // On dirt: steer as before. In the air: apply independent yaw angular momentum for full 360° flat spins.
  // Flight velocity continues along takeoff heading; bike orientation alone does not steer midair.
  if(grounded){
@@ -2013,7 +2021,7 @@ function draw(dt,simDt){
  camera.up.set(0,1,0);
  if(spaceFall.active){updatePlayerIndicators();drawSpaceFall(dt);return}
  // Right stick orbits the external camera (R3 recenters); first-person view stays attached.
- if(controller.connected&&grounded&&!(camMode===1&&!ragdoll.active)){
+ if(controller.connected&&!(camMode===1&&!ragdoll.active)){
   cameraOrbitYaw+=controller.lookX*dt*tuning.controllerLookSpeed;
   cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch+(tuning.invertLookY?1:-1)*controller.lookY*dt*tuning.controllerLookSpeed,-.85,.85);
  }
@@ -2056,7 +2064,7 @@ function draw(dt,simDt){
  const leanDegrees=THREE.MathUtils.radToDeg(turnLeanAngle),leanSide=leanDegrees>.15?'LEFT':leanDegrees<-.15?'RIGHT':'UPRIGHT';
  document.getElementById('lean-angle').textContent='Turn lean: '+Math.abs(leanDegrees).toFixed(1)+'° '+leanSide.toLowerCase()+' · target '+Math.abs(THREE.MathUtils.radToDeg(turnLeanTarget)).toFixed(1)+'°';
  const spinAngle=THREE.MathUtils.radToDeg(grounded?0:yaw-airYawStart),spinDirection=airYawVelocity>.1?'left':airYawVelocity<-.1?'right':'idle';
- document.getElementById('air-spin-hud').textContent='Tabletop ←/→: '+Math.round(THREE.MathUtils.radToDeg(airRoll))+'° · Air spin: '+(grounded?'grounded':spinDirection+' '+Math.abs(spinAngle).toFixed(0)+'°')+' · '+Math.abs(airYawVelocity).toFixed(1)+' rad/s';
+ document.getElementById('air-spin-hud').textContent='Air spin: '+(grounded?'grounded':spinDirection+' '+Math.abs(spinAngle).toFixed(0)+'°')+' · '+Math.abs(airYawVelocity).toFixed(1)+' rad/s';
  const momentumHud=document.getElementById('momentum-hud');
  if(momentumHud)momentumHud.textContent='Roll: '+(speed<-1?'BACKWARD':speed>1?'forward':'neutral')+' · slip '+Math.abs(lateralSpeed*3.6).toFixed(0)+' km/h · world travel preserved';
  const airLive=document.getElementById('air-spin-live');if(airLive)airLive.textContent='LIVE SPIN: '+spinDirection.toUpperCase()+' · '+spinAngle.toFixed(1)+'° ('+airSpinTurns.toFixed(2)+' rev) · '+airYawVelocity.toFixed(2)+' rad/s';
@@ -2242,6 +2250,10 @@ function roomLocalMeta(){return {name:riderName(),paint:selectedPaint,stage:menu
 function roomMeta(p,host=false){return {name:roomSafeName(p.name),paint:roomSafePaint(p.paint),stage:p.stage==='riding'?'riding':'menu',host}}
 function connectedRiders(){return multiplayer.role==='host'?multiplayer.clients.size+1:multiplayer.role==='guest'&&multiplayer.joined?multiplayer.peers.size+1:1}
 function renderRoom(){
+ const nextRole=multiplayer.role;
+ if(['joining','guest'].includes(nextRole)&&!soloTuning)soloTuning={...tuning};
+ if(nextRole==='solo'&&soloTuning){Object.assign(tuning,soloTuning);soloTuning=null;sharedTuning=null;}
+ if(roomRole!==nextRole){roomRole=nextRole;renderFields();}lockRoomTuning();
  const online=multiplayer.connected&&multiplayer.ready&&multiplayer.joined;
  document.body.classList.toggle('room-active',multiplayer.role!=='solo');
  roomDom.code.textContent=multiplayer.role!=='solo'?multiplayer.room:'— — —';
@@ -2291,8 +2303,23 @@ function sendRoom(target,msg){
 }
 function broadcastRoom(msg,exceptId){if(multiplayer.role==='host')sendRoom(null,exceptId?{...msg,_except:exceptId}:msg)}
 function roomPlayers(){return [{id:playerId,...roomLocalMeta()},...Array.from(multiplayer.peers,([id,p])=>({id,...p,host:false}))]}
-function hostAnnouncement(target){if(multiplayer.role==='host'&&multiplayer.ready)sendRoom(target,{t:'host',room:multiplayer.room,version:'v3z',map:activeMap,players:roomPlayers()})}
+function lockRoomTuning(){
+ for(const id of ['default-preset','import-preset','load-preset','preset-select']){const el=document.getElementById(id);if(el)el.disabled=!canEditTuning()}
+ for(const el of document.querySelectorAll('#tuning-fields input[type=range],#tuning-fields input[type=checkbox],#tuning-fields select'))el.disabled=!canEditTuning();
+ let note=document.getElementById('room-tuning-note');if(!note){note=document.createElement('p');note.id='room-tuning-note';note.className='legend';document.getElementById('tuning-fields').before(note)}
+ note.textContent=canEditTuning()?(roomRole==='host'?'Your tuning changes apply to everyone in this room.':'Solo tuning saves on this device.'):'Room tuning is controlled by the host (read only).';
+}
+function receiveRoomTuning(settings){
+ if(!settings||typeof settings!=='object'||TUNING_SCHEMA.some(f=>typeof settings[f.key]!=='number'||!Number.isFinite(settings[f.key])||settings[f.key]<f.min||settings[f.key]>f.max))return;
+ const next=Object.fromEntries(TUNING_SCHEMA.map(f=>[f.key,settings[f.key]]));if(JSON.stringify(next)===JSON.stringify(sharedTuning))return;
+ sharedTuning=next;Object.assign(tuning,next);renderFields();lockRoomTuning();
+}
+function publishRoomTuning(){
+ if(multiplayer.role!=='host'||!multiplayer.ready)return;const value=JSON.stringify(tuning);if(value===lastRoomTuningSent)return;lastRoomTuningSent=value;broadcastRoom({t:'tuning',settings:{...tuning}});
+}
+function hostAnnouncement(target){if(multiplayer.role==='host'&&multiplayer.ready)sendRoom(target,{t:'host',room:multiplayer.room,version:'v3z',map:activeMap,settings:{...tuning},players:roomPlayers()})}
 function applyRoomSnapshot(msg){
+ if(multiplayer.role==='guest')receiveRoomTuning(msg.settings);
  const players=new Map();
  for(const p of Array.isArray(msg.players)?msg.players.slice(0,ROOM_MAX_PLAYERS):[]){if(p&&typeof p.id==='string'&&/^[a-f0-9]{24}$/.test(p.id)&&p.id!==playerId)players.set(p.id,roomMeta(p,p.id===multiplayer.hostConnection))}
  if(!players.has(multiplayer.hostConnection))return;
@@ -2348,7 +2375,7 @@ function onRealtimeMessage(msg){
    if(isNew){const used=new Set(Array.from(multiplayer.clients.values(),x=>x.slot));const slot=[1,2,3].find(x=>!used.has(x));multiplayer.clients.set(source,{slot,lastSeen:performance.now()});logRoom('Friend joined',source.slice(0,8))}
    else multiplayer.clients.get(source).lastSeen=performance.now();
    const meta=roomMeta(msg),previous=multiplayer.peers.get(source);multiplayer.peers.set(source,meta);
-   sendRoom(source,{t:'welcome',room:multiplayer.room,map:activeMap,slot:multiplayer.clients.get(source).slot,players:roomPlayers()});
+   sendRoom(source,{t:'welcome',room:multiplayer.room,map:activeMap,settings:{...tuning},slot:multiplayer.clients.get(source).slot,players:roomPlayers()});
    if(isNew||JSON.stringify(previous)!==JSON.stringify(meta)){hostAnnouncement();setRoomStatus('Room '+multiplayer.room+' · '+connectedRiders()+'/'+ROOM_MAX_PLAYERS+' riders connected.');renderRoom()}
    return;
   }
@@ -2371,6 +2398,7 @@ function onRealtimeMessage(msg){
   if(msg.t==='reject'){closeRoom('Cannot join room '+multiplayer.room+': '+String(msg.reason||'Unavailable').slice(0,100));return}
   if(msg.t==='bye'){closeRoom('Host left the room. Back to solo mode. Ask for a new invite when the host returns.');return}
   if(multiplayer.role!=='guest')return;
+  if(msg.t==='tuning'){receiveRoomTuning(msg.settings);return}
   if(msg.t==='gone'&&typeof msg.id==='string'){multiplayer.peers.delete(msg.id);removeRemote(msg.id);renderRoom()}
   else if(msg.t==='map'){const map=roomSafeMap(msg.map);if(map!==activeMap){applyMapTheme(map);if(menuStage==='riding')reset()}setRoomStatus('Shared map: '+THEMES[map].label+' (host chooses map).')}
  }

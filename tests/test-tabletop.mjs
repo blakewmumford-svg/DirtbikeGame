@@ -29,22 +29,11 @@ async function state(){return page.evaluate(()=>__screamTest.state)}
 let code=0;
 try{
  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>!!window.__screamTest);
- await check('Left/right arrows tabletop the bike in air without yawing or steering its flight',async()=>{
-  const out=[];
-  for(const [key,sign] of [['ArrowLeft',1],['ArrowRight',-1]]){
-   await page.evaluate(()=>__screamTest.set({air:true,y:50}));await page.keyboard.down(key);await step(90);await page.keyboard.up(key);
-   const held=await state();assert.ok(held.roll*sign>1.2);assert.ok(Math.abs(held.yaw)<1e-8&&Math.abs(held.velocity.x)<1e-8);
-   await step(90);const released=await state();assert.ok(Math.abs(released.roll)<.08);out.push({key,held:held.roll,released:released.roll});
-  }return out;
+ await check('Left/right arrows no longer tilt or yaw the bike in air',async()=>{
+  for(const key of ['ArrowLeft','ArrowRight']){await page.evaluate(()=>__screamTest.set({air:true,y:50}));await page.keyboard.down(key);await step(90);await page.keyboard.up(key);const s=await state();assert.equal(s.roll,0);assert.equal(s.yaw,0)}return{removed:true};
  });
- await check('Arrow tabletop controls are inactive on dirt; A still steers',async()=>{
-  await page.evaluate(()=>__screamTest.set());await page.keyboard.down('ArrowLeft');await step(20);await page.keyboard.up('ArrowLeft');const ground=await state();assert.equal(ground.yaw,0);assert.equal(ground.roll,0);
-  await page.keyboard.down('a');await step(20);await page.keyboard.up('a');assert.ok((await state()).yaw>0);return ground;
- });
- await check('Landing sideways hits the body; repair and reset restore the upright bike',async()=>{
-  await page.evaluate(()=>__screamTest.set({air:true,y:.1,roll:1.4}));await page.keyboard.down('ArrowLeft');await step(2);await page.keyboard.up('ArrowLeft');const sideways=await state();assert.equal(sideways.grounded,false);assert.match(sideways.collision,/Sideways|body/i);
-  await page.evaluate(()=>__screamTest.repairHere());assert.equal((await state()).roll,0);
-  await page.evaluate(()=>{__screamTest.set({air:true,y:30,roll:1});__screamTest.reset()});assert.equal((await state()).roll,0);return sideways;
+ await check('A/D still steer normally',async()=>{
+  await page.evaluate(()=>__screamTest.set());await page.keyboard.down('a');await step(20);await page.keyboard.up('a');assert.ok((await state()).yaw>0);return{steering:true};
  });
  assert.deepEqual(errors,[]);
 }catch(e){code=1;console.error(e);results.push({error:String(e),stack:e.stack})}
