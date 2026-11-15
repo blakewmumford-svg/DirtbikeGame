@@ -187,7 +187,7 @@ body.menu-open #sound-controls{position:static;margin:16px auto;width:max-conten
 <text x="100" y="125" text-anchor="middle" fill="#fff" font-size="32" font-weight="850" id="dial-speed">0</text>
 <text x="100" y="143" text-anchor="middle" fill="#9db8c3" font-size="12">km/h</text>
 <text x="100" y="166" text-anchor="middle" fill="#e9a5a0" font-size="10">REV / REDLINE</text>
-</svg></div><button id="reset">Reset bike (R)</button><div id="room-hud" role="status" aria-live="polite"></div><div id="lobby-model-tip">🏍️ <b id="lobby-paint-name">ORANGE GAS BIKE</b><div>YOUR RIDER • READY TO RIDE</div></div><button id="open-main-menu" type="button" title="Return to the main lobby (M)">☰ Menu (M)</button><div id="help">W / ↑ accelerate (AIR: backflip) · S / ↓ brake (AIR: frontflip) · A D steer (AIR: 360° spins) · Tap Space to wheelie · W balances · Shift boost · C camera · G tune · H hitboxes · T contacts · P pause · O step · J repair here · R reset spawn · 🎮 RT / R2 backflip in air · LT / L2 frontflip in air · LS steer / air spin · Tap A to wheelie · RB boost</div><aside id="tuner" aria-label="Real-time bike tuning">
+</svg></div><button id="reset">Reset bike (R)</button><div id="room-hud" role="status" aria-live="polite"></div><div id="lobby-model-tip">🏍️ <b id="lobby-paint-name">ORANGE GAS BIKE</b><div>YOUR RIDER • READY TO RIDE</div></div><button id="open-main-menu" type="button" title="Return to the main lobby (M)">☰ Menu (M)</button><div id="help">W / ↑ accelerate (AIR: backflip) · S / ↓ brake (AIR: frontflip) · A D steer (AIR: flat spins) · ← → AIR ONLY: sideways tabletop · Tap Space to wheelie · W balances · Shift boost · C camera · G tune · H hitboxes · T contacts · P pause · O step · J repair here · R reset spawn · 🎮 RT / R2 backflip in air · LT / L2 frontflip in air · LS steer / air spin · Tap A to wheelie · RB boost</div><aside id="tuner" aria-label="Real-time bike tuning">
  <div class="tuner-header"><strong>⚙️ Live Tuning Garage <span id="dirty-dot" title="Changes since named preset (your ride is autosaved)">●</span></strong><button id="toggle-tuner" type="button">Hide (G)</button></div>
  <div class="tuner-body">
   <nav class="tabs" aria-label="Tuning categories"><button type="button" class="active" data-tab="Ride">Ride</button><button type="button" data-tab="Lean">Turn lean</button><button type="button" data-tab="Air">Air tricks</button><button type="button" data-tab="Shocks">Shocks</button><button type="button" data-tab="Camera">Camera</button><button type="button" data-tab="Crash">Crashes</button><button type="button" data-tab="Debug">Debug</button><button type="button" data-tab="Controller">Controller</button></nav>
@@ -345,6 +345,7 @@ function addRamp(x,z,w,len,height,kind='dirt'){
  for(let j=0;j<segments;j++)for(let i=0;i<rows;i++){
   const a=j*(rows+1)+i,b=a+rows+1;indices.push(a,b,a+1,b,b+1,a+1)
  }
+ for(let i=0;i<indices.length;i+=3)[indices[i+1],indices[i+2]]=[indices[i+2],indices[i+1]];
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();mesh(geo,material);
  // Closed, visible side skirts now match the solid collision volume below the ramp deck.
  for(const edge of [-1,1]){
@@ -438,6 +439,7 @@ function wheel(z){
  }
  tread.computeBoundingSphere();g.add(tread);
  const rim=mesh(new THREE.TorusGeometry(.46,.035,8,40),metal,g);rim.rotation.y=Math.PI/2;
+ const bead=mesh(new THREE.TorusGeometry(.49,.013,6,40),orange,g);bead.rotation.y=Math.PI/2;
  const hub=mesh(new THREE.CylinderGeometry(.105,.105,.28,16),metal,g);hub.rotation.z=Math.PI/2;
  for(let i=0;i<24;i++){
   const a=i*Math.PI*2/24;
@@ -448,19 +450,32 @@ function wheel(z){
  wheels.push(g);
 }wheel(-1.1);wheel(1.12);
 function rod(a,b,r,material=metal,parent=frame){const v1=new THREE.Vector3(...a),v2=new THREE.Vector3(...b),d=v2.clone().sub(v1),o=mesh(new THREE.CylinderGeometry(r,r,d.length(),9),material,parent);o.position.copy(v1).add(v2).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return o}
-rod([0,.72,1.1],[0,1.48,.4],.085,orange);
-rod([0,1.48,.4],[0,.72,-1.1],.09,orange);
-rod([0,.72,-1.1],[0,.72,1.1],.06,metal);
-const forkLeft=rod([-.2,1.5,-.2],[-.2,.7,-1.1],.065);
-const forkRight=rod([.2,1.5,-.2],[.2,.7,-1.1],.065);
-rod([0,1.42,.5],[0,.65,1.1],.085);
-const tankGeometry=new THREE.BoxGeometry(.65,.36,1.05);
-const tankVertices=tankGeometry.attributes.position;
-for(let i=0;i<tankVertices.count;i++){const top=tankVertices.getY(i)>0;tankVertices.setX(i,tankVertices.getX(i)*(top?.72:1));if(top)tankVertices.setZ(i,tankVertices.getZ(i)*.78-.06)}
-tankGeometry.computeVertexNormals();
-const bodyPlastic=mesh(tankGeometry,orange,frame,0,1.52,.12);
-mesh(new THREE.BoxGeometry(.65,.17,.98),black,frame,0,1.75,.7);
-const frontFender=mesh(new THREE.BoxGeometry(.43,.065,1.02),orange,frame,0,1.58,-1.05);frontFender.rotation.x=-.10;
+function shellGeometry(sections){
+ const vertices=[],indices=[];
+ for(const [z,w,top,bottom] of sections)vertices.push(-w,top,z,w,top,z,w,bottom,z,-w,bottom,z);
+ for(let i=0;i<sections.length-1;i++)for(let j=0;j<4;j++){const a=i*4+j,b=i*4+(j+1)%4,c=b+4,d=a+4;indices.push(a,b,d,b,c,d)}
+ indices.push(0,3,1,1,3,2);const end=(sections.length-1)*4;indices.push(end,end+1,end+3,end+1,end+2,end+3);
+ for(let i=0;i<indices.length;i+=3)[indices[i+1],indices[i+2]]=[indices[i+2],indices[i+1]];
+ const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();return geo;
+}
+function sidePanel(profile,side,material,x=.31){
+ const shape=new THREE.Shape();profile.forEach(([z,y],i)=>i?shape.lineTo(-z,y):shape.moveTo(-z,y));shape.closePath();
+ const geo=new THREE.ExtrudeGeometry(shape,{depth:.025,bevelEnabled:true,bevelSize:.014,bevelThickness:.008,bevelSegments:1,steps:1});geo.rotateY(Math.PI/2);
+ const panel=mesh(geo,material,frame,side*x,0,0);if(side<0)panel.scale.x=-1;return panel;
+}
+// Aluminum twin spars wrap the engine, with the compact motocross steering head above.
+for(const side of [-1,1]){
+ rod([side*.15,1.80,-.53],[side*.27,1.16,.37],.070,metal);
+ rod([side*.27,1.16,.37],[side*.20,.78,.48],.055,metal);
+ rod([side*.20,.78,.48],[side*.16,.72,-.15],.047,metal);
+ rod([side*.16,.72,-.15],[side*.15,1.34,-.48],.047,metal);
+ rod([side*.15,1.42,.27],[side*.19,1.42,1.05],.030,metal);
+}
+const forkLeft=rod([-.20,1.97,-.63],[-.20,.70,-1.10],.055,metal);
+const forkRight=rod([.20,1.97,-.63],[.20,.70,-1.10],.055,metal);
+const bodyPlastic=mesh(shellGeometry([[-.55,.13,.11,-.10],[-.31,.24,.21,-.17],[.10,.24,.15,-.20],[.50,.18,.07,-.12]]),orange,frame,0,1.50,0);
+const seat=mesh(shellGeometry([[-.18,.18,.01,-.08],[.18,.23,.02,-.10],[.74,.22,.06,-.10],[1.10,.12,.08,-.04]]),black,frame,0,1.77,0);
+const frontFender=mesh(shellGeometry([[-.88,.05,.015,-.015],[-.70,.18,.05,-.025],[-.20,.22,.11,.025],[.29,.18,.10,.015],[.50,.11,.08,.025]]),orange,frame,0,1.57,-1.05);
 const handlebar=new THREE.Group();handlebar.position.set(0,2.02,-.32);frame.add(handlebar);
 rod([-.58,.06,.06],[-.28,0,0],.035,metal,handlebar);rod([-.28,0,0],[.28,0,0],.035,metal,handlebar);rod([.28,0,0],[.58,.06,.06],.035,metal,handlebar);
 rod([-.30,.10,0],[.30,.10,0],.022,metal,handlebar);
@@ -476,7 +491,12 @@ for(const side of [-1,1]){
 function cable(points,parent=frame){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));return mesh(new THREE.TubeGeometry(curve,16,.012,5,false),rubber,parent)}
 cable([[.34,2.04,-.34],[.29,1.82,-.5],[.30,1.37,-.38],[.22,1.1,.0]]);
 cable([[-.34,2.04,-.34],[-.30,1.65,-.68],[-.25,1.05,-1.13]]);
-const numberPlate=mesh(new THREE.BoxGeometry(.45,.43,.065),white,frame,0,1.82,-.70);numberPlate.rotation.x=-.18;
+const raceCanvas=document.createElement('canvas');raceCanvas.width=256;raceCanvas.height=256;
+const raceCtx=raceCanvas.getContext('2d');raceCtx.fillStyle='#f5f5ef';raceCtx.fillRect(0,0,256,256);raceCtx.fillStyle='#132330';raceCtx.fillRect(12,12,232,35);raceCtx.font='bold 25px sans-serif';raceCtx.textAlign='center';raceCtx.fillStyle='#fff';raceCtx.fillText('STUNT PARK',128,38);raceCtx.fillStyle='#132330';raceCtx.font='italic bold 142px sans-serif';raceCtx.fillText('99',120,191);
+const raceTexture=new THREE.CanvasTexture(raceCanvas);raceTexture.colorSpace=THREE.SRGBColorSpace;
+const raceMaterial=new THREE.MeshStandardMaterial({map:raceTexture,roughness:.5});
+const numberPlate=mesh(shellGeometry([[-.03,.19,.22,-.21],[.03,.19,.22,-.21]]),white,frame,0,1.82,-.70);numberPlate.rotation.x=-.18;
+const frontNumber=mesh(new THREE.PlaneGeometry(.35,.39),raceMaterial,numberPlate,0,0,-.032);frontNumber.rotation.y=Math.PI;
 // Layered mechanical details use the original frame dimensions and do not alter collisions.
 const engineAlloy=mat(0x929b9c,.34,.8),engineDark=mat(0x353b3d,.6,.55);
 mesh(new THREE.BoxGeometry(.48,.43,.48),engineDark,frame,0,1.03,.08);
@@ -487,21 +507,26 @@ for(const side of [-1,1]){
  rod([side*.16,.72,1.12],[side*.2,.82,.20],.045,metal);
  const peg=mesh(new THREE.BoxGeometry(.20,.045,.18),metal,frame,side*.40,.78,.23);
  for(let i=0;i<4;i++)mesh(new THREE.BoxGeometry(.025,.025,.18),black,frame,side*.40+(i-1.5)*.04,.81,.23);
- const shroud=mesh(new THREE.BoxGeometry(.055,.36,.62),orange,frame,side*.34,1.48,-.15);shroud.rotation.x=-.22;
- mesh(new THREE.BoxGeometry(.06,.25,.48),white,frame,side*.345,1.42,.69);
+ sidePanel([[-.62,1.66],[-.16,1.76],[.28,1.60],[.12,1.21],[-.22,1.29]],side,orange);
+ sidePanel([[-.52,1.60],[-.09,1.69],[.18,1.59],[-.22,1.49]],side,white,.345);
+ sidePanel([[-.48,1.50],[-.06,1.61],[.16,1.55],[-.16,1.47]],side,mat(0x35bee8,.45),.365);
+ sidePanel([[.19,1.65],[.86,1.73],[1.10,1.54],[.60,1.28],[.28,1.29]],side,orange,.26);
+ const sideNumber=mesh(new THREE.PlaneGeometry(.36,.26),raceMaterial,frame,side*.30,1.49,.65);sideNumber.rotation.y=side*Math.PI/2;
+ const radiator=mesh(new THREE.BoxGeometry(.085,.39,.22),engineDark,frame,side*.26,1.38,-.35);
+ for(let j=0;j<6;j++)mesh(new THREE.BoxGeometry(.09,.018,.23),engineAlloy,frame,side*.26,1.22+j*.06,-.35);
 }
-const rearFender=mesh(new THREE.BoxGeometry(.43,.075,.83),orange,frame,0,1.64,1.15);rearFender.rotation.x=.15;
+const rearFender=mesh(shellGeometry([[.66,.20,.01,-.05],[1.04,.20,.06,-.01],[1.40,.13,.11,.06],[1.64,.055,.13,.105]]),orange,frame,0,1.68,0);
 // Front suspension sleeves and dust seals, tucked around the existing fork rods.
 for(const side of [-1,1]){
- rod([side*.20,.79,-1.02],[side*.20,1.17,-.65],.079,engineAlloy);
- rod([side*.20,1.17,-.65],[side*.20,1.33,-.48],.086,rubber);
+ rod([side*.20,.72,-1.10],[side*.20,1.32,-.88],.074,engineAlloy);
+ rod([side*.20,1.30,-.89],[side*.20,1.43,-.84],.079,rubber);
 }
 // Drive chain follows the rear swingarm on the left side.
 for(let i=0;i<22;i++){
  const z=.15+i*.044;mesh(new THREE.BoxGeometry(.023,.025,.036),engineAlloy,frame,-.235,.79+(z-.15)*.08,z);
  mesh(new THREE.BoxGeometry(.023,.025,.036),engineAlloy,frame,-.235,.69-(z-.15)*.06,z);
 }
-for(let i=0;i<9;i++)mesh(new THREE.BoxGeometry(.59,.012,.025),rubber,frame,0,1.84,.35+i*.075);
+for(let i=0;i<9;i++)mesh(new THREE.BoxGeometry(.40,.012,.025),rubber,frame,0,1.84,.35+i*.075);
 rod([-.23,1.45,.72],[.23,.81,.6],.035,engineAlloy);
 const rearSpring=mesh(new THREE.TorusGeometry(.09,.025,6,12),metal,frame,0,1.15,.68);rearSpring.rotation.x=Math.PI/2;
 for(let i=0;i<6;i++){const coil=rearSpring.clone();coil.position.y+=i*.045;frame.add(coil)}
@@ -1027,6 +1052,7 @@ function toggleWheelie(){
 }
 let currentSamples=[],lastCollision='None',lastDt=0,frameCount=0,airFlipCount=0,crashTime=0,turnLeanAngle=0,turnLeanTarget=0,turnSteer=0;
 // Separate airborne bike rotation from horizontal flight direction. This stops mid-air steering from curving the jump path.
+let airRoll=0,airRollVelocity=0;
 let airYawVelocity=0,airTravelHeading=0,airYawStart=0,airSpinTurns=0,lastLandedSpinTurns=0;
 // Local forward is -Z; local right is +X. Keep BOTH components of velocity,
 // so rotating a bike in the air never teleports or reverses its world momentum.
@@ -1275,7 +1301,7 @@ function setBikeBend(){
 function detachBikePiece(part,launchSpeed){
  if(!part.visible)return;
  bike.position.copy(pos);bike.rotation.order='YXZ';bike.rotation.y=yaw;bike.rotation.x=pitch;
- frame.rotation.z=turnLeanAngle;bike.updateMatrixWorld(true);
+ frame.rotation.z=turnLeanAngle+airRoll;bike.updateMatrixWorld(true);
  const flying=part.clone(true);part.matrixWorld.decompose(flying.position,flying.quaternion,flying.scale);
  flying.traverse(o=>{if(o.isMesh)o.castShadow=true});scene.add(flying);part.visible=false;
  const v=horizontalVelocity();
@@ -1288,7 +1314,7 @@ function makeRagdoll(speedAtImpact){
  // V3J's original rider remains mounted but invisible until R or J recovers.
  rider.visible=false;wheelieArmed=false;wheelieAirTime=0;
  bike.position.copy(pos);bike.rotation.order='YXZ';bike.rotation.y=yaw;bike.rotation.x=pitch;
- frame.rotation.z=turnLeanAngle;bike.updateMatrixWorld(true);
+ frame.rotation.z=turnLeanAngle+airRoll;bike.updateMatrixWorld(true);
  const normalVelocity=horizontalVelocity();
  const throwRate=Math.min(1.4,.7+speedAtImpact*.025);
  const angular=new THREE.Vector3(-Math.min(12,4+speedAtImpact*.23),
@@ -1437,18 +1463,18 @@ function renderCrashEffects(dt){
  }
 }
 
-function reset(){clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
+function reset(){clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
 // J is a field repair: no move to spawn. Only an overturned bike is righted.
 function repairHere(){
  if(spaceFall.active||!onIsland(pos.x,pos.z)){reset();message('Rescued to the island spawn: no ground exists at this location.');return}
- const inverted=Math.cos(pitch)<.05 || ragdoll.active;
+ const inverted=Math.cos(pitch)<.05 || Math.abs(airRoll)>.55 || ragdoll.active;
  clearCrashEffects();
  damage=0;impact=0;collisionCooldown=0;crashTime=0;
  lastCollision=inverted?'In-place repair: bike righted':'In-place repair';
  wheelieArmed=false;wheelieAirTime=0;
  if(inverted){
   // Keep the same world X/Z and yaw. Bring the tires above the ground at this location.
-  pitch=0;pitchVelocity=0;vertical=0;speed=0;lateralSpeed=0;
+  pitch=0;pitchVelocity=0;vertical=0;speed=0;lateralSpeed=0;airRoll=airRollVelocity=0;
   airYawVelocity=0;airTravelHeading=yaw;airYawStart=yaw;airSpinTurns=0;
   turnLeanAngle=0;turnLeanTarget=0;frame.rotation.z=0;
   const front=surfaceAt(pos.x+Math.sin(yaw)*WHEEL_Z[0],pos.z+Math.cos(yaw)*WHEEL_Z[0]).height;
@@ -1462,7 +1488,7 @@ function repairHere(){
  message(inverted?'J: flipped upright and fully repaired here — no teleport.':'J: fully repaired in place — location and momentum unchanged.');
 }
 // Reproducible debug launch points; they don't alter saved physics tuning.
-function launchAirTest(){reset();pos.set(0,22,12);speed=20;vertical=10;grounded=false;airTravelHeading=yaw;airYawStart=yaw;lastCollision='Debug: jump launch';paused=false;stepping=false;message('Airborne test: W/RT backflip; S/LT frontflip; A/D or left stick to spin sideways.');}
+function launchAirTest(){reset();pos.set(0,22,12);speed=20;vertical=10;grounded=false;airTravelHeading=yaw;airYawStart=yaw;lastCollision='Debug: jump launch';paused=false;stepping=false;message('Airborne test: W/RT backflip; S/LT frontflip; A/D or left stick for flat spins; ←/→ for sideways tabletops. Release arrows to straighten.');}
 function launchSpinTest(){launchAirTest();lastCollision='Debug: 360° spin launch';message('Spin test: hold A or left stick LEFT to spin left; D or stick RIGHT to spin right. Your flight path stays straight.');}
 function launch180LandingTest(){
  reset();pos.set(0,7,25);yaw=Math.PI;speed=18;lateralSpeed=0;vertical=-3;grounded=false;
@@ -1640,7 +1666,13 @@ function simulateSubstep(dt){
  // clamp it to the old -10 m/s reverse-drive limit on touchdown.
  speed=THREE.MathUtils.clamp(speed,-maxSpeed,maxSpeed);
  if(Math.abs(speed)<.03)speed=0;if(Math.abs(lateralSpeed)<.01)lateralSpeed=0;
- const keyboardSteer=(keys.KeyA||keys.ArrowLeft?1:0)-(keys.KeyD||keys.ArrowRight?1:0);const steer=ragdoll.active?0:keyboardSteer!==0?keyboardSteer:-controller.steer;
+ const keyboardSteer=(keys.KeyA?1:0)-(keys.KeyD?1:0);const steer=ragdoll.active?0:keyboardSteer!==0?keyboardSteer:-controller.steer;
+ // Arrow keys control a tabletop roll only in the air; A/D keep yaw steering/spins.
+ const rollInput=!ragdoll.active&&!grounded?((keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0)):0;
+ if(!grounded&&!ragdoll.active){
+  airRollVelocity+=((rollInput*1.4-airRoll)*32-airRollVelocity*10)*dt;
+  airRoll=THREE.MathUtils.clamp(airRoll+airRollVelocity*dt,-1.48,1.48);
+ }else{airRoll*=Math.exp(-dt*16);airRollVelocity=0;}
  // On dirt: steer as before. In the air: apply independent yaw angular momentum for full 360° flat spins.
  // Flight velocity continues along takeoff heading; bike orientation alone does not steer midair.
  if(grounded){
@@ -1666,7 +1698,7 @@ function simulateSubstep(dt){
  let acceleration=-tuning.gravity;
  // Two independent, slope-aware spring/damper loads (normalized to the existing bike-mass model).
  // The front and rear react to their own height, pitch velocity and terrain ascent/descent.
- const upright=Math.cos(pitch)>.16;
+ const upright=Math.cos(pitch)>.16&&Math.cos(airRoll)>.55;
  if(upright)for(const s of before){s.force=wheelSpringForce(s);acceleration+=s.force}
  // Optional mild pitch torque from the load difference; conventional pitch tracking remains stable.
  if(upright && grounded){
@@ -1686,15 +1718,15 @@ function simulateSubstep(dt){
   if(pos.y<hardStop){pos.y=hardStop;if(vertical<0)vertical*=-.12}
  }else{
   // Rider/frame body-ground collision while inverted: no teleporting the wheel probes to the deck.
-  const floor=heightAt(pos.x,pos.z),bodyClearance=.35+Math.max(0,-Math.cos(pitch))*2.55;
+  const floor=heightAt(pos.x,pos.z),bodyClearance=.35+Math.max(0,-Math.cos(pitch),Math.abs(Math.sin(airRoll))*.48)*2.55;
   if(pos.y<floor+bodyClearance){
    pos.y=floor+bodyClearance;
    if(vertical<0)vertical=Math.min(5,-vertical*.12);
    if(crashTime===0){
     const severity=Math.max(downwardBeforeStop,Math.hypot(speed,lateralSpeed)*.45);
     damage=Math.min(100,damage+(8+severity*1.8)*tuning.damageScale);
-    impact=Math.max(impact,severity*3.6);lastCollision='Upside-down body impact';crashTime=.4;
-    handleBikeCrash(severity,'Inverted body');
+    impact=Math.max(impact,severity*3.6);lastCollision=Math.abs(airRoll)>.6?'Sideways tabletop landing':'Upside-down body impact';crashTime=.4;
+    handleBikeCrash(severity,Math.abs(airRoll)>.6?'Sideways body':'Inverted body');
     speed*=.65;lateralSpeed*=.65;
    }
    pitchVelocity*=.7;
@@ -1777,7 +1809,7 @@ function simulateSubstep(dt){
  const speedFactor=THREE.MathUtils.clamp(Math.abs(speed)*3.6/tuning.turnLeanSpeed,0,1);
  turnLeanTarget=grounded ? steer*tuning.turnLeanDirection*maxRadians*speedFactor*(speed<0?-1:1) : 0;
  turnLeanAngle+= (turnLeanTarget-turnLeanAngle)*(1-Math.exp(-tuning.turnLeanResponse*dt));
- frame.rotation.z=turnLeanAngle+Math.sin(travel*2)*damage*.0008;
+ frame.rotation.z=turnLeanAngle+airRoll+Math.sin(travel*2)*damage*.0008;
  if(!spaceFall.active && !onIsland(pos.x,pos.z) && pos.y < -1.5)beginSpaceFall();
 }
 function simulate(dt){
@@ -1849,7 +1881,7 @@ function draw(dt,simDt){
  const leanDegrees=THREE.MathUtils.radToDeg(turnLeanAngle),leanSide=leanDegrees>.15?'LEFT':leanDegrees<-.15?'RIGHT':'UPRIGHT';
  document.getElementById('lean-angle').textContent='Turn lean: '+Math.abs(leanDegrees).toFixed(1)+'° '+leanSide.toLowerCase()+' · target '+Math.abs(THREE.MathUtils.radToDeg(turnLeanTarget)).toFixed(1)+'°';
  const spinAngle=THREE.MathUtils.radToDeg(grounded?0:yaw-airYawStart),spinDirection=airYawVelocity>.1?'left':airYawVelocity<-.1?'right':'idle';
- document.getElementById('air-spin-hud').textContent='Air spin: '+(grounded?'grounded':spinDirection+' '+Math.abs(spinAngle).toFixed(0)+'°')+' · '+Math.abs(airYawVelocity).toFixed(1)+' rad/s';
+ document.getElementById('air-spin-hud').textContent='Tabletop ←/→: '+Math.round(THREE.MathUtils.radToDeg(airRoll))+'° · Air spin: '+(grounded?'grounded':spinDirection+' '+Math.abs(spinAngle).toFixed(0)+'°')+' · '+Math.abs(airYawVelocity).toFixed(1)+' rad/s';
  const momentumHud=document.getElementById('momentum-hud');
  if(momentumHud)momentumHud.textContent='Roll: '+(speed<-1?'BACKWARD':speed>1?'forward':'neutral')+' · slip '+Math.abs(lateralSpeed*3.6).toFixed(0)+' km/h · world travel preserved';
  const airLive=document.getElementById('air-spin-live');if(airLive)airLive.textContent='LIVE SPIN: '+spinDirection.toUpperCase()+' · '+spinAngle.toFixed(1)+'° ('+airSpinTurns.toFixed(2)+' rev) · '+airYawVelocity.toFixed(2)+' rad/s';

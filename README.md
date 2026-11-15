@@ -88,3 +88,7 @@ In the game, open **G → Debug → Publish defaults (owner only)** and press **
 The **Publish owner defaults** workflow permits only the repository owner on `main`. It validates every setting against the game's current schema, commits the defaults to the game HTML, and deploys the updated site in the same run. Invalid/outdated settings fail without a commit. GitHub branch protections or denied Actions write permissions can block the push; inspect the failed workflow rather than assuming publication succeeded.
 
 This is an explicit publishing action, not automatic publication of every slider movement. Ordinary players can only save their own settings. Existing browser settings are preserved; **Defaults** loads the latest published values. No GitHub token or password goes into the game. The copy button itself is visible to everyone, but GitHub enforces ownership before the workflow runs. No live owner-default publish has been executed during development.
+
+## Airborne tabletop controls
+
+Use **← / → only in midair** to lay the bike and rider sideways for a tabletop. Release to ease upright before landing. These arrows do not steer on the ground. **A / D** still steer on dirt and control flat yaw spins in the air; **W / S** (or up/down arrows) retain throttle/brake and airborne pitch control. Landing while strongly sideways causes a body impact; **J** repairs/rights the bike, **R** resets it.
