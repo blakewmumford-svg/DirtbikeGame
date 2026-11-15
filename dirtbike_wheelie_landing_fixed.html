@@ -187,7 +187,7 @@ body.menu-open #sound-controls{position:static;margin:16px auto;width:max-conten
 <text x="100" y="125" text-anchor="middle" fill="#fff" font-size="32" font-weight="850" id="dial-speed">0</text>
 <text x="100" y="143" text-anchor="middle" fill="#9db8c3" font-size="12">km/h</text>
 <text x="100" y="166" text-anchor="middle" fill="#e9a5a0" font-size="10">REV / REDLINE</text>
-</svg></div><button id="reset">Reset bike (R)</button><div id="room-hud" role="status" aria-live="polite"></div><div id="lobby-model-tip">🏍️ <b id="lobby-paint-name">ORANGE GAS BIKE</b><div>YOUR RIDER • READY TO RIDE</div></div><button id="open-main-menu" type="button" title="Return to the main lobby (M)">☰ Menu (M)</button><div id="help">W / ↑ accelerate (AIR: backflip) · S / ↓ brake (AIR: frontflip) · A D steer (AIR: flat spins) · ← → AIR ONLY: sideways tabletop · Tap Space to wheelie · W balances · Shift boost · C camera · G tune · H hitboxes · T contacts · P pause · O step · J repair here · R reset spawn · 🎮 RT / R2 backflip in air · LT / L2 frontflip in air · LS steer / air spin · Tap A to wheelie · RB boost</div><aside id="tuner" aria-label="Real-time bike tuning">
+</svg></div><button id="reset">Reset bike (R)</button><div id="room-hud" role="status" aria-live="polite"></div><div id="lobby-model-tip">🏍️ <b id="lobby-paint-name">ORANGE GAS BIKE</b><div>YOUR RIDER • READY TO RIDE</div></div><button id="open-main-menu" type="button" title="Return to the main lobby (M)">☰ Menu (M)</button><div id="help">W / ↑ accelerate (AIR: backflip) · S / ↓ brake (AIR: frontflip) · A D steer (AIR: flat spins) · ← → AIR ONLY: sideways tabletop · Tap Space to wheelie · W balances · Shift boost / AIR no-hander · Ctrl AIR superman · Alt AIR can-can · C camera · G tune · H hitboxes · T contacts · P pause · O step · J repair here · R reset spawn · 🎮 RT / R2 backflip in air · LT / L2 frontflip in air · LS steer / air spin · Tap A to wheelie · RB boost</div><aside id="tuner" aria-label="Real-time bike tuning">
  <div class="tuner-header"><strong>⚙️ Live Tuning Garage <span id="dirty-dot" title="Changes since named preset (your ride is autosaved)">●</span></strong><button id="toggle-tuner" type="button">Hide (G)</button></div>
  <div class="tuner-body">
   <nav class="tabs" aria-label="Tuning categories"><button type="button" class="active" data-tab="Ride">Ride</button><button type="button" data-tab="Lean">Turn lean</button><button type="button" data-tab="Air">Air tricks</button><button type="button" data-tab="Shocks">Shocks</button><button type="button" data-tab="Camera">Camera</button><button type="button" data-tab="Crash">Crashes</button><button type="button" data-tab="Debug">Debug</button><button type="button" data-tab="Controller">Controller</button></nav>
@@ -345,8 +345,9 @@ function addRamp(x,z,w,len,height,kind='dirt'){
  for(let j=0;j<segments;j++)for(let i=0;i<rows;i++){
   const a=j*(rows+1)+i,b=a+rows+1;indices.push(a,b,a+1,b,b+1,a+1)
  }
- for(let i=0;i<indices.length;i+=3)[indices[i+1],indices[i+2]]=[indices[i+2],indices[i+1]];
- const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();mesh(geo,material);
+ const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();const deck=mesh(geo,material);deck.name="Ramp deck "+ramp.id;ramp.deck=deck;
+ const base=mesh(new THREE.BoxGeometry(w,.035,len),rampWallMat[kind],scene,x,0,z);base.name='Ramp base '+ramp.id;
+ for(const edge of [-1,1])mesh(new THREE.BoxGeometry(w,.035,.035),rampWallMat[kind],scene,x,.0175,z+edge*len/2);
  // Closed, visible side skirts now match the solid collision volume below the ramp deck.
  for(const edge of [-1,1]){
   const wallPositions=[],wallIndices=[],edgePoints=[];
@@ -584,13 +585,15 @@ function updateExhaust(dt){
 }
 // Riding suit, boots, helmet and articulated throttle arm.
 const rider=new THREE.Group();frame.add(rider);
-mesh(new THREE.BoxGeometry(.66,.82,.37),black,rider,0,2.26,.35).rotation.x=-.23;
-mesh(new THREE.BoxGeometry(.44,.32,.055),white,rider,0,2.40,.12).rotation.x=-.23;
-mesh(new THREE.SphereGeometry(.29,20,16),orange,rider,0,2.87,.16);
-mesh(new THREE.BoxGeometry(.45,.14,.15),black,rider,0,2.88,-.09);
-mesh(new THREE.BoxGeometry(.36,.13,.23),white,rider,0,2.71,-.07);
-mesh(new THREE.BoxGeometry(.48,.035,.29),orange,rider,0,3.03,-.02);
-const riderArms=[];
+const upperBody=new THREE.Group();rider.add(upperBody);upperBody.position.set(0,2.26,.35);
+mesh(new THREE.BoxGeometry(.66,.82,.37),black,upperBody).rotation.x=-.23;
+mesh(new THREE.BoxGeometry(.44,.32,.055),white,upperBody,0,.14,-.23).rotation.x=-.23;
+mesh(new THREE.SphereGeometry(.29,20,16),orange,upperBody,0,.61,-.19);
+mesh(new THREE.BoxGeometry(.45,.14,.15),black,upperBody,0,.62,-.44);
+mesh(new THREE.BoxGeometry(.36,.13,.23),white,upperBody,0,.45,-.42);
+mesh(new THREE.BoxGeometry(.48,.035,.29),orange,upperBody,0,.77,-.37);
+const riderArms=[],riderLegs=[];
+const stuntPose={name:"",amount:0,queued:"",hold:0};
 for(const side of [-1,1]){
  const shoulder=new THREE.Vector3(side*.28,2.50,.30),elbow=new THREE.Vector3(side*.48,2.24,.06),hand=new THREE.Vector3(side*.51,2.08,-.26);
  const upper=rod(shoulder.toArray(),elbow.toArray(),.09,black,rider),lower=rod(elbow.toArray(),hand.toArray(),.075,black,rider);
@@ -598,9 +601,9 @@ for(const side of [-1,1]){
  mesh(new THREE.BoxGeometry(.16,.12,.16),white,glove,0,.035,0);
  mesh(new THREE.BoxGeometry(.15,.065,.06),rubber,glove,0,-.04,-.07);
  riderArms.push({side,shoulder,elbow,hand,upper,lower,glove,upperLength:shoulder.distanceTo(elbow),lowerLength:elbow.distanceTo(hand)});
- rod([side*.23,1.98,.5],[side*.35,1.32,.77],.13,black,rider);
- rod([side*.35,1.32,.77],[side*.28,1.15,.18],.12,black,rider);
- mesh(new THREE.BoxGeometry(.19,.29,.25),white,rider,side*.29,1.13,.21);
+ const hip=new THREE.Vector3(side*.23,1.98,.5),knee=new THREE.Vector3(side*.35,1.32,.77),foot=new THREE.Vector3(side*.28,1.15,.18);
+ const thigh=rod(hip.toArray(),knee.toArray(),.13,black,rider),shin=rod(knee.toArray(),foot.toArray(),.12,black,rider),boot=mesh(new THREE.BoxGeometry(.19,.29,.25),white,rider,side*.29,1.13,.21);
+ riderLegs.push({side,hip,knee,foot,thigh,shin,boot,thighLength:hip.distanceTo(knee),shinLength:knee.distanceTo(foot)});
 }
 let visualThrottle=0;
 const armMid=new THREE.Vector3(),armDirection=new THREE.Vector3(),armUp=new THREE.Vector3(0,1,0);
@@ -609,17 +612,99 @@ function updateBikeVisuals(dt,time){
  const target=menuStage==='riding'&&!paused&&!ragdoll.active&&!spaceFall.active?Math.max(keys.KeyW||keys.ArrowUp?1:0,controller.throttle):0;
  visualThrottle+=(target-visualThrottle)*(1-Math.exp(-dt*14));
  throttleGrip.rotation.x=-visualThrottle*.65;
+ const canTrick=menuStage==='riding'&&!paused&&!grounded&&!ragdoll.active&&!spaceFall.active;
+ stuntPose.hold=Math.max(0,stuntPose.hold-dt);
+ const requested=canTrick?(keys.ControlLeft||keys.ControlRight?'Superman':keys.AltLeft||keys.AltRight?'Can-can':keys.ShiftLeft||keys.ShiftRight?'No-hander':stuntPose.hold>0?stuntPose.queued:''):'';
+ if(requested)stuntPose.name=requested;
+ if(!canTrick){stuntPose.amount=0;stuntPose.name='';stuntPose.hold=0;stuntPose.queued=''}
+ else {stuntPose.amount+=((requested?1:0)-stuntPose.amount)*(1-Math.exp(-dt*12));if(stuntPose.amount<.001)stuntPose.name=''}
+ const superman=stuntPose.name==='Superman'?stuntPose.amount:0,noHands=stuntPose.name==='No-hander'?stuntPose.amount:0,canCan=stuntPose.name==='Can-can'?stuntPose.amount:0;
+ upperBody.rotation.x=superman*1.2;upperBody.position.set(0,2.26-superman*.12,.35+superman*.30);
  for(const a of riderArms){
   // Right wrist rolls over the grip; the elbow dips naturally with the twist.
   const twist=a.side===1?visualThrottle:0;
   a.elbow.set(a.side*.48,2.24-twist*.12,.06+twist*.045);
   a.glove.rotation.x=-twist*.65;
-  a.hand.set(a.side*.51,2.08,-.26);
+  a.shoulder.set(a.side*.28,2.50-superman*.30,.30+superman*.45);
+  a.hand.set(a.side*(.51+noHands*.42),2.08+noHands*.83,-.26+noHands*.45);
+  a.elbow.lerp(new THREE.Vector3(a.side*.70,2.65,.25),noHands);a.glove.position.copy(a.hand);
   poseArmSegment(a.upper,a.shoulder,a.elbow,a.upperLength);poseArmSegment(a.lower,a.elbow,a.hand,a.lowerLength);
+ }
+ for(const leg of riderLegs){
+  const side=leg.side;
+  leg.hip.set(side*.23,1.98+superman*.12,.5+superman*.48);
+  leg.knee.set(side*.35-canCan*.90,1.32+superman*.78+canCan*.48,.77+superman*.90);
+  leg.foot.set(side*.28-canCan*1.35,1.15+superman*.88+canCan*.43,.18+superman*2.12);
+  poseArmSegment(leg.thigh,leg.hip,leg.knee,leg.thighLength);poseArmSegment(leg.shin,leg.knee,leg.foot,leg.shinLength);
+  leg.boot.position.copy(leg.foot);leg.boot.rotation.x=superman*1.1;leg.boot.rotation.z=canCan*.7;
  }
  if(BIKE_PAINTS[selectedPaint].rainbow){orange.color.setHSL((time/4)%1,.88,.53);const hex='#'+orange.color.getHexString();document.getElementById('paint-tank').setAttribute('fill',hex);document.getElementById('paint-fender').setAttribute('stroke',hex)}
 }
 // Existing bike, controls, scenery, and save system preserved; V3C extends the collision/air loop.
+// Non-destructive riding events: 10-minute start cadence, 2-minute duration.
+const disaster={type:null,remaining:0,untilNext:600,time:0,automatic:true,root:new THREE.Group(),choice:'storm'};
+try{disaster.automatic=JSON.parse(localStorage.getItem('dirtbike_events_v1')||'{}').automatic!==false}catch{}
+scene.add(disaster.root);disaster.root.visible=false;
+const EVENT_NAMES={storm:'Thunderstorm',dust:'Dust storm',quake:'Earthquake'};
+const weatherTint=new THREE.Color();
+const rainPositions=new Float32Array(180*6),rainSeeds=Array.from({length:180},(_,i)=>[(i*17.13)%50-25,(i*13.37)%45,(i*23.71)%50-25]);
+const rainGeometry=new THREE.BufferGeometry();rainGeometry.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));
+const rain=new THREE.LineSegments(rainGeometry,new THREE.LineBasicMaterial({color:0xc6e2ef,transparent:true,opacity:.48}));rain.frustumCulled=false;disaster.root.add(rain);
+const stormClouds=Array.from({length:28},(_,i)=>{const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTexture,color:0xbd925a,transparent:true,opacity:.12,depthWrite:false}));sprite.scale.setScalar(5+i%5);disaster.root.add(sprite);return sprite});
+const disasterHud=document.createElement('div');disasterHud.id='disaster-hud';disasterHud.style.cssText='position:fixed;top:65px;left:50%;transform:translateX(-50%);z-index:4;pointer-events:none;background:#14212bcc;color:white;padding:8px 14px;border-radius:10px;font:600 13px system-ui;display:none';document.body.append(disasterHud);
+function disasterControls(){
+ const box=document.createElement('div');box.className='legend';
+ const title=document.createElement('strong');title.textContent='Natural disasters';
+ const description=document.createElement('p');description.textContent='Two-minute events about every ten minutes of active riding. Roads and ramps stay open. Pause and menus stop the timer.';
+ const label=document.createElement('label'),automatic=document.createElement('input');automatic.type='checkbox';automatic.checked=disaster.automatic;automatic.setAttribute('aria-label','Automatic natural disasters');
+ automatic.onchange=()=>{disaster.automatic=automatic.checked;try{localStorage.setItem('dirtbike_events_v1',JSON.stringify({automatic:disaster.automatic}))}catch{}};
+ label.append(automatic,document.createTextNode(' Automatic events'));
+ const select=document.createElement('select');select.setAttribute('aria-label','Disaster type');for(const [value,name] of Object.entries(EVENT_NAMES))select.add(new Option(name,value));select.value=disaster.choice;select.onchange=()=>{disaster.choice=select.value};
+ const buttons=document.createElement('div');buttons.className='buttons';
+ for(const [text,fn] of [['Start now',()=>{startDisaster(select.value);document.activeElement?.blur()}],['Stop event',()=>stopDisaster()]]){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=text;button.onclick=fn;buttons.append(button)}
+ const status=document.createElement('p');status.id='event-status';status.textContent='Next event in '+Math.ceil(disaster.untilNext)+' seconds of riding.';
+ box.append(title,description,label,select,buttons,status);return box;
+}
+function startDisaster(type){
+ if(!Object.hasOwn(EVENT_NAMES,type))return;
+ disaster.type=type;disaster.remaining=120;disaster.untilNext=600;disaster.time=0;
+ message(EVENT_NAMES[type]+' started: lasts two minutes. Keep riding, or stop it in Debug.');
+}
+function stopDisaster(){
+ disaster.type=null;disaster.remaining=0;disaster.untilNext=600;disaster.root.visible=false;
+ if(!spaceFall.active){scene.background.copy(stockSky);stockFog.density=THEMES[selectedMap].density;}
+ disasterHud.style.display='none';
+}
+function updateDisasters(dt){
+ const riding=menuStage==='riding'&&!paused&&!document.hidden&&!spaceFall.active;
+ if(riding&&dt>0){
+  if(disaster.type){disaster.remaining=Math.max(0,disaster.remaining-dt);disaster.untilNext=Math.max(0,disaster.untilNext-dt);disaster.time+=dt;if(disaster.remaining===0)disaster.type=null}
+  else if(disaster.automatic){disaster.untilNext=Math.max(0,disaster.untilNext-dt);if(disaster.untilNext===0)startDisaster(Object.keys(EVENT_NAMES)[Math.floor(Math.random()*3)])}
+ }
+ disaster.root.visible=riding&&!!disaster.type;
+ const status=document.getElementById('event-status');if(status){const text=disaster.type?EVENT_NAMES[disaster.type]+': '+Math.ceil(disaster.remaining)+' seconds remaining.':disaster.automatic?'Next event in '+Math.ceil(disaster.untilNext)+' seconds of riding.':'Automatic events off. Start one whenever you like.';if(status.textContent!==text)status.textContent=text}
+ if(!spaceFall.active){
+  scene.background.copy(stockSky);stockFog.density=THEMES[selectedMap].density;
+  if(disaster.root.visible){
+   const fade=Math.min(1,disaster.time/3,disaster.remaining/3);
+   if(disaster.type==='storm'){weatherTint.setHex(0x526573);scene.background.lerp(weatherTint,fade*.65);stockFog.density+=fade*.0006}
+   if(disaster.type==='dust'){weatherTint.setHex(0xc79d68);scene.background.lerp(weatherTint,fade*.55);stockFog.density+=fade*.001}
+  }
+ }
+ disasterHud.style.display=disaster.root.visible?'block':'none';if(disaster.root.visible)disasterHud.textContent=EVENT_NAMES[disaster.type]+' · '+Math.ceil(disaster.remaining)+'s · keep riding';
+ if(!disaster.root.visible)return;
+ disaster.root.position.set(pos.x,Math.max(0,pos.y),pos.z);
+ rain.visible=disaster.type==='storm';
+ if(rain.visible){
+  for(let i=0;i<rainSeeds.length;i++){const [x,y,z]=rainSeeds[i],h=((y-disaster.time*22)%45+45)%45;rainPositions.set([x,h,z,x-.25,h-1.1,z+.12],i*6)}
+  rainGeometry.attributes.position.needsUpdate=true;
+ }
+ for(let i=0;i<stormClouds.length;i++){const p=stormClouds[i],quake=disaster.type==='quake';p.visible=disaster.type==='dust'||quake;if(p.visible){p.scale.setScalar(quake?1.7+i%3:5+i%5);p.position.set(((i*13.7+disaster.time*(quake?.4:3))%65)-32,quake?.15+(i%3)*.2:1+(i*3.13)%9,((i*21.1)%65)-32)}}
+ // A low thunder rumble, spaced well apart; no flashing lights or damage.
+ if(disaster.type==='quake'&&dt>0&&Math.floor(disaster.time/12)!==Math.floor((disaster.time-dt)/12))playSoundNoise(1.8,100,.10);
+ if(rain.visible&&dt>0&&Math.floor(disaster.time/18)!==Math.floor((disaster.time-dt)/18))playSoundNoise(1.2,180,.14);
+}
+
 const TUNING_SCHEMA = [
  {tab:'Ride',key:'maxSpeedKmh',label:'Top speed',min:25,max:240,step:1,value:144,unit:'km/h'},
  {tab:'Ride',key:'acceleration',label:'Acceleration',min:3,max:60,step:1,value:20,unit:'m/s²'},
@@ -781,7 +866,7 @@ function renderFields(){
   for(const [label,fn] of [['Test airborne flips',launchAirTest],['Test air spins',launchSpinTest],['Test 180° backward landing',launch180LandingTest],['Test ramp wall',launchRampWallTest],['Test rock collision',launchRockTest],['🌙 Test circular edge fall',launchMoonFallTest],['Repair here (J)',repairHere]]){
    const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;button.addEventListener('click',fn);testButtons.append(button);
   }
-  tuningFields.append(legend,b,stepButton,verifyButton,publishBox,testButtons,telemetry);return;
+  tuningFields.append(legend,b,stepButton,verifyButton,publishBox,disasterControls(),testButtons,telemetry);return;
  }
  if(activeTab==='Crash'){
   const p=document.createElement('p');p.className='legend';p.textContent='Severe rock/ramp side hits and upside-down body crashes eject a 16-joint rider, while clean wheel-first landings stay safe. This lightweight joint/constraint ragdoll is tuned for a browser; it is not BeamNG soft-body physics. Hard crashes and moon hits rotate through your recorded screams with matching bubbles. Crash voices use only your uploaded recordings. Use the Sound button and volume slider to adjust audio. J repairs and puts your rider back on the bike; R resets to spawn.';
@@ -993,8 +1078,9 @@ addEventListener('keydown',e=>{
  const editor=e.target?.closest?.('input,select,textarea,button');if(editor)return;
  if(menuStage!=='riding'){if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();return;}
  keys[e.code]=true;
- if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+ if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight'].includes(e.code)||e.ctrlKey||e.altKey)e.preventDefault();
  if(e.repeat)return;
+ if(!grounded&&!ragdoll.active){const trick={ControlLeft:'Superman',ControlRight:'Superman',AltLeft:'Can-can',AltRight:'Can-can'}[e.code];if(trick){stuntPose.queued=trick;stuntPose.hold=1.2;}}
  if(e.code==='Space')toggleWheelie();
  if(e.code==='KeyC')camMode=(camMode+1)%3;
  if(e.code==='KeyR')reset();
@@ -1463,7 +1549,7 @@ function renderCrashEffects(dt){
  }
 }
 
-function reset(){clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
+function reset(){stuntPose.hold=0;stuntPose.queued='';stuntPose.amount=0;stuntPose.name='';clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
 // J is a field repair: no move to spawn. Only an overturned bike is righted.
 function repairHere(){
  if(spaceFall.active||!onIsland(pos.x,pos.z)){reset();message('Rescued to the island spawn: no ground exists at this location.');return}
@@ -1649,7 +1735,7 @@ function resolveSolidScenery(previousX,previousZ){
 const clock=new THREE.Clock();
 function simulateSubstep(dt){
  const throttle=ragdoll.active?0:Math.max(keys.KeyW||keys.ArrowUp?1:0,controller.throttle);
- const brake=ragdoll.active?0:Math.max(keys.KeyS||keys.ArrowDown?1:0,controller.brake),lean=wheelieArmed,boost=!ragdoll.active&&(!!(keys.ShiftLeft||keys.ShiftRight)||controller.boost);
+ const brake=ragdoll.active?0:Math.max(keys.KeyS||keys.ArrowDown?1:0,controller.brake),lean=wheelieArmed,boost=!ragdoll.active&&(!!(keys.ShiftLeft||keys.ShiftRight)||controller.boost)&&grounded;
  engineThrottle=throttle;exhaustTime+=dt*(7+Math.min(35,Math.hypot(speed,lateralSpeed)*1.05)+throttle*14);
  const accelerate=throttle>0,maxSpeed=tuning.maxSpeedKmh/3.6*(boost?tuning.boostMultiplier:1);
  // The wheel-mounted motor and brake affect speed on dirt, but pitch/angular momentum in the air.
@@ -1664,7 +1750,9 @@ function simulateSubstep(dt){
  }
  // An airborne 180° can arrive with -20 m/s of signed wheel speed: do NOT
  // clamp it to the old -10 m/s reverse-drive limit on touchdown.
- speed=THREE.MathUtils.clamp(speed,-maxSpeed,maxSpeed);
+ // Keep takeoff speed when releasing ground boost to perform an airborne trick.
+ const velocityLimit=grounded?maxSpeed:tuning.maxSpeedKmh/3.6*tuning.boostMultiplier;
+ speed=THREE.MathUtils.clamp(speed,-velocityLimit,velocityLimit);
  if(Math.abs(speed)<.03)speed=0;if(Math.abs(lateralSpeed)<.01)lateralSpeed=0;
  const keyboardSteer=(keys.KeyA?1:0)-(keys.KeyD?1:0);const steer=ragdoll.active?0:keyboardSteer!==0?keyboardSteer:-controller.steer;
  // Arrow keys control a tabletop roll only in the air; A/D keep yaw steering/spins.
@@ -1874,7 +1962,7 @@ function draw(dt,simDt){
  document.getElementById('speed').textContent=Math.round(Math.hypot(speed,lateralSpeed)*3.6)+' km/h';
  updateRideDial(Math.hypot(speed,lateralSpeed)*3.6);
  const spinning=!grounded&&Math.abs(airYawVelocity)>.2;
- document.getElementById('status').textContent=paused&&!stepping?'PAUSED':ragdoll.active?'💥 RIDER EJECTED · J TO REPAIR · R TO RESET':grounded?(speed< -1&&Math.abs(speed)>Math.abs(lateralSpeed)?'ROLLING BACKWARD':Math.abs(lateralSpeed)>Math.abs(speed)&&Math.abs(lateralSpeed)>1?'SIDEWAYS SKID':wheelieArmed?'TAP WHEELIE · W TO BALANCE':pitch>.2?'WHEELIE / RIDING':'Riding'):'AIRBORNE · '+(spinning?(airYawVelocity>0?'SPIN LEFT':'SPIN RIGHT')+' · ':'')+(pitchVelocity>=0?'BACK':'FRONT')+' FLIP';
+ document.getElementById('status').textContent=stuntPose.amount>.2&&!grounded?stuntPose.name+' · release to return':paused&&!stepping?'PAUSED':ragdoll.active?'💥 RIDER EJECTED · J TO REPAIR · R TO RESET':grounded?(speed< -1&&Math.abs(speed)>Math.abs(lateralSpeed)?'ROLLING BACKWARD':Math.abs(lateralSpeed)>Math.abs(speed)&&Math.abs(lateralSpeed)>1?'SIDEWAYS SKID':wheelieArmed?'TAP WHEELIE · W TO BALANCE':pitch>.2?'WHEELIE / RIDING':'Riding'):'AIRBORNE · '+(spinning?(airYawVelocity>0?'SPIN LEFT':'SPIN RIGHT')+' · ':'')+(pitchVelocity>=0?'BACK':'FRONT')+' FLIP';
  document.getElementById('angle').textContent=(wheelieArmed?'Wheelie ARMED · ':'Wheelie angle: ')+Math.round(THREE.MathUtils.radToDeg(Math.max(0,pitch)))+'° · Camera '+(camMode+1)+'/3 · Damage '+Math.round(damage)+'% · Impact '+Math.round(impact)+' km/h';
  const crashHud=document.getElementById('crash-hud');if(crashHud)crashHud.textContent=ragdoll.active?'💥 RAGDOLL · 16 joints · '+debris.length+' flying parts · J repair':bikeBend>.02?'Bike bent '+Math.round(bikeBend*100)+'% · '+debris.length+' flying parts · J repair':'Crash system: ready · J repairs, R resets';
  renderCrashEffects(dt);
@@ -1911,19 +1999,20 @@ function draw(dt,simDt){
    'Frame dt: '+(lastDt*1000).toFixed(1)+' ms | sim frames: '+frameCount;
  }
  if(simDt){updateExhaust(simDt);updateTireDust(simDt);}
+ if(disaster.type==='quake'&&disaster.root.visible&&viewMode!==1){camera.position.x+=Math.sin(disaster.time*28)*.055;camera.position.y+=Math.sin(disaster.time*37)*.035;}
  renderer.render(scene,camera);
 }
 function loop(){
  requestAnimationFrame(loop);
  const dt=Math.min(clock.getDelta(),.025);lastDt=dt;readController();updateRideAudio(dt);updateBikeVisuals(dt,clock.elapsedTime);
  if(menuStage!=='riding'){
-  bike.position.set(0,.08,25);bike.rotation.order='YXZ';bike.rotation.y=-.65+Math.sin(clock.elapsedTime*.42)*.12;bike.rotation.x=0;
+  updateDisasters(0);bike.position.set(0,.08,25);bike.rotation.order='YXZ';bike.rotation.y=-.65+Math.sin(clock.elapsedTime*.42)*.12;bike.rotation.x=0;
   camera.up.set(0,1,0);camera.position.set(menuStage==='lobby'?9.5:8.5,menuStage==='lobby'?4.4:5,38);camera.lookAt(menuStage==='lobby'?5.6:0,1.35,25);
   updateMultiplayer(dt);renderer.render(scene,camera);return;
  }
  const simDt=(!paused||stepping)?(stepping?1/60:dt):0;
  if(simDt){simulate(simDt);frameCount++;stepping=false}
- updateMultiplayer(dt);draw(dt,simDt);
+ updateDisasters(simDt);updateMultiplayer(dt);draw(dt,simDt);
 }
 
 // V3O main-menu selection intentionally uses its own key. V3N physics autosave

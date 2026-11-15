@@ -92,3 +92,11 @@ This is an explicit publishing action, not automatic publication of every slider
 ## Airborne tabletop controls
 
 Use **← / → only in midair** to lay the bike and rider sideways for a tabletop. Release to ease upright before landing. These arrows do not steer on the ground. **A / D** still steer on dirt and control flat yaw spins in the air; **W / S** (or up/down arrows) retain throttle/brake and airborne pitch control. Landing while strongly sideways causes a body impact; **J** repairs/rights the bike, **R** resets it.
+
+## Modifier tricks and natural disasters
+
+Airborne tricks: hold **Shift** for a no-hander, tap **Ctrl** for a superman, or tap **Alt** for a can-can. Ctrl/Alt taps play a short pose, so release those modifier keys before pressing other browser shortcut keys. Landing returns the rider to the normal pose. Shift remains ground boost; boosted takeoff speed carries into the jump.
+
+Automatic events start every ten minutes of active riding and last two minutes. Thunderstorms bring rain and low thunder, dust storms bring drifting dust and mild haze, and earthquakes bring low rumbles, small dust puffs and gentle external-camera shake. These events do not destroy terrain, block ramps or change bike handling. First-person remains steady. Timers freeze in menus, while paused or while the tab is hidden; moon-fall effects take priority.
+
+For immediate testing: **G → Debug → Natural disasters**, choose an event and press **Start now**. **Stop event** clears it. The Automatic events checkbox controls future automatic events and saves on this device. Weather timing/effects are local to each browser; they are not synchronized multiplayer disasters.
