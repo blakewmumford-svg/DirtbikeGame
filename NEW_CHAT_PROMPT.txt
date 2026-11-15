@@ -1,0 +1,5 @@
+Continue my Dirtbike Game in the repository blakewmumford-svg/DirtbikeGame on main. The project has already been imported; do not re-extract an old ZIP over it.
+
+Read AGENTS.md, SESSION_HANDOFF.md, README.md, and docs/CHAT_HISTORY_HANDOFF.md. Start from dirtbike_wheelie_landing_fixed.html. Preserve my tuning/saves, wheelie fix, uploaded-only reactions including the full Mickey scream, three audio sliders, original DnB music, and rear-wheel dust. Multiplayer is Trystero by default with an unresolved all-relays-closed failure; simulated tests do not prove live cross-device play.
+
+Run npm ci, npm run check, and npm test, installing Chromium if needed. Tell me which checks pass and what cannot be verified. Then tell me you are ready for my next change. Keep SESSION_HANDOFF.md updated and save future changes to the repository so new chats can find the latest version. Do not deploy or change repository visibility.

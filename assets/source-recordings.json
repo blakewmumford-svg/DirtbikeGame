@@ -1,0 +1,27 @@
+[
+  {
+    "file": "assets/original-recordings/Screen_Recording_20261114_132740_YouTube.mp4",
+    "bytes": 14402320,
+    "sha256": "94e1f36502cc7f74a1f6a788698cd22469da933046e1d07a175c936b3e0c8dc1"
+  },
+  {
+    "file": "assets/original-recordings/Screen_Recording_20261114_144038_YouTube.mp4",
+    "bytes": 6807765,
+    "sha256": "0068ae68f6d945f4094852371e0b5868e8d843027e910b5205195cf9aae03d08"
+  },
+  {
+    "file": "assets/original-recordings/Screen_Recording_20261114_143932_YouTube.mp4",
+    "bytes": 6592528,
+    "sha256": "56d918cb4d13653aa19906820be19b7617bcf001f83fa658a34c944e8b048519"
+  },
+  {
+    "file": "assets/original-recordings/Screen_Recording_20261114_143908_YouTube.mp4",
+    "bytes": 12553923,
+    "sha256": "bed665bbb9b80da0f26b247ce07c97bd76260afb5bc71167194ae3aa015cce06"
+  },
+  {
+    "file": "assets/original-recordings/Screen_Recording_20261114_145033_YouTube.mp4",
+    "bytes": 4064250,
+    "sha256": "33d7a3591fd51aea7c95585f3f0d5d5427d1d898776007c325b38f4b1052b01c"
+  }
+]

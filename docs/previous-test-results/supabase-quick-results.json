@@ -1,0 +1,61 @@
+{
+  "scope": "Browser integration against a simulated Phoenix/Supabase relay; no production Supabase credentials used.",
+  "target": "/workspace/work/supabase-test.html",
+  "reports": [
+    {
+      "test": "Create room and join in independent browser contexts",
+      "status": "passed"
+    }
+  ],
+  "errors": [],
+  "messages": [
+    {
+      "label": "Host Rider",
+      "kind": "claim",
+      "room": "realtime:dirtbike-v3z-723"
+    },
+    {
+      "label": "Host Rider",
+      "kind": "discover",
+      "room": "realtime:dirtbike-v3z-723"
+    },
+    {
+      "label": "Host Rider",
+      "kind": "host",
+      "room": "realtime:dirtbike-v3z-723"
+    },
+    {
+      "label": "Host Rider",
+      "kind": "host",
+      "room": "realtime:dirtbike-v3z-723"
+    },
+    {
+      "label": "Guest Rider",
+      "kind": "discover",
+      "room": "realtime:dirtbike-v3z-723"
+    },
+    {
+      "label": "Host Rider",
+      "kind": "host",
+      "to": "f5847ba50ebb66ab5a1e9e4f",
+      "room": "realtime:dirtbike-v3z-723"
+    },
+    {
+      "label": "Guest Rider",
+      "kind": "hello",
+      "to": "1c87dc4c0389a3223f68c855",
+      "room": "realtime:dirtbike-v3z-723"
+    },
+    {
+      "label": "Host Rider",
+      "kind": "welcome",
+      "to": "f5847ba50ebb66ab5a1e9e4f",
+      "room": "realtime:dirtbike-v3z-723"
+    },
+    {
+      "label": "Host Rider",
+      "kind": "host",
+      "room": "realtime:dirtbike-v3z-723"
+    }
+  ]
+}

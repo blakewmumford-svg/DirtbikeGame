@@ -1,0 +1,2071 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dirt Bike V3Y — Simple Friend Rooms</title><style>body{margin:0;overflow:hidden;background:#b7d7e7;font-family:system-ui,Arial;color:white}#hud{position:absolute;top:15px;left:15px;background:#101820b8;padding:15px 18px;border-radius:12px;line-height:1.65;max-width:340px;pointer-events:none}#speed{font-size:26px;font-weight:800}#status{color:#ffd17e}#help{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:#101820ba;border-radius:10px;padding:9px 16px;text-align:center;font-size:13px;white-space:normal;max-width:95vw}#err{position:absolute;top:20%;left:10%;right:10%;background:#5b1414;padding:20px;display:none;white-space:pre-wrap}button{position:absolute;right:16px;top:16px;border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#f4b65e;cursor:pointer}
+/* V3L: V3K preserved; inscribed circular island and silent moon-fall cutscene added. */
+#tuner{position:fixed;z-index:10;right:14px;top:62px;width:min(365px,calc(100vw - 28px));max-height:calc(100vh - 116px);background:#101b24ee;border:1px solid #ffffff38;border-radius:14px;box-shadow:0 14px 40px #0007;overflow:hidden;font-size:13px;color:#f8fbff}
+#tuner.collapsed{width:auto;max-height:50px}
+#tuner.collapsed .tuner-body{display:none}
+#tuner .tuner-header{display:flex;justify-content:space-between;align-items:center;background:#263543;gap:8px;padding:10px 12px;font-size:14px}
+#tuner .tuner-header button{position:static;border:0;background:#dba55b;color:#161f2a;font-size:12px;padding:7px 10px;border-radius:7px}
+#tuner .tuner-body{max-height:calc(100vh - 172px);overflow:auto;padding:12px}
+#tuner button,#tuner select,#tuner input{font:inherit}
+#tuner .tabs{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 12px}
+#tuner .tabs button{position:static;flex:1 1 28%;background:#273b4a;color:#e7edf2;padding:7px 4px;border:1px solid #ffffff26;border-radius:7px;cursor:pointer;font-weight:600}
+#tuner .tabs button.active{background:#dba55b;color:#14212b}
+#tuner .setting{display:block;margin:0 0 14px}
+#tuner .setting-line{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:10px}
+#tuner .setting-line output{color:#ffd58e;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+#tuner .setting input[type=range]{display:block;width:100%;accent-color:#f1ac52;cursor:pointer}
+#tuner .buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0}
+#tuner .buttons button{position:static;padding:8px 3px;border-radius:7px;background:#dba55b;color:#151d27;border:0;cursor:pointer;font-size:12px}
+#tuner .buttons button.secondary{background:#405668;color:#fff}
+#tuner .row-fields{display:flex;gap:6px;margin:7px 0}
+#tuner .row-fields input,#tuner .row-fields select{min-width:0;background:#172a37;color:#fff;border:1px solid #637786;border-radius:7px;padding:8px}
+#tuner .row-fields input{flex:1}
+#tuner .row-fields select{width:100%}
+#tuner .autosave-status{font-size:12px;font-weight:650;color:#9ff2d2;background:#15342f;border:1px solid #427967;padding:8px 10px;border-radius:8px;margin:4px 0 10px}
+#tuner .autosave-status.error{color:#ffd79a;background:#4b2e1b;border-color:#ad7444}
+#tuner .save-note{font-size:11px;color:#b7c8d3;line-height:1.35;margin:8px 0}
+#tuner .profile-message{font-size:11px;min-height:18px;color:#ffe0a2}
+#tuner .telemetry{white-space:pre-wrap;line-height:1.6;background:#08151ddd;border:1px solid #2f4958;border-radius:8px;color:#b6f8db;padding:10px;font:12px/1.6 ui-monospace,SFMono-Regular,monospace;min-height:110px}
+#tuner .section-title{font-weight:700;color:#ffcb7a;margin:13px 0 8px}
+#tuner .legend{font-size:11px;color:#c8d7e0;line-height:1.5}
+#gamepad-hud{font-size:12px;color:#b9e8f8;margin-top:5px;max-width:320px;overflow-wrap:anywhere}
+#tuner .pad-status{background:#182d39;border:1px solid #3b6575;border-radius:8px;padding:10px;margin-bottom:8px;line-height:1.5;color:#bff7e5}
+#tuner .pad-map{font-size:12px;color:#dfebf2;line-height:1.7;margin:8px 0 14px}
+#tuner .pad-map b{color:#ffce7a}
+#tuner .pad-meter{margin:10px 0;font:12px/1.6 ui-monospace,monospace;color:#b9f0e0;white-space:pre-wrap;background:#08151d;border-radius:7px;padding:8px}
+#tuner .setting select{display:block;width:100%;padding:9px;color:#fff;background:#182d39;border:1px solid #638293;border-radius:8px}
+#tuner .lean-meter{font:12px/1.6 ui-monospace,SFMono-Regular,monospace;color:#dafbea;background:#0d222b;border:1px solid #456876;padding:10px;border-radius:8px;margin-top:10px}
+#tuner .lean-track{position:relative;height:13px;background:linear-gradient(90deg,#264f61,#152b39 50%,#264f61);border:1px solid #658492;border-radius:7px;margin-top:6px}
+#tuner .lean-track:before{content:'';position:absolute;left:50%;top:0;bottom:0;border-left:1px solid #e9f7ff77}
+#tuner #lean-indicator{position:absolute;top:-4px;left:50%;width:7px;height:19px;border-radius:4px;background:#f5b154;transform:translateX(-50%);box-shadow:0 0 5px #efc78d}
+#lean-angle{font-size:12px;color:#ffdb9f}
+#air-spin-hud{font-size:12px;color:#b7f0fd}
+#crash-hud{font-size:12px;color:#ffc896}
+#space-cinema{display:none;position:fixed;inset:0;z-index:3;pointer-events:none;font-weight:800;text-align:center;color:#fff;text-shadow:0 2px 12px #000;}
+#space-cinema.active{display:block}
+#one-minute-later{display:none;position:fixed;inset:0;z-index:90;background:#05040e;color:#ffe5a1;align-items:center;justify-content:center;text-align:center;font:900 clamp(32px,7vw,84px)/1.1 system-ui,Arial,sans-serif;letter-spacing:.06em;text-shadow:0 5px 0 #4c2c45,0 10px 30px #000;pointer-events:none}
+#one-minute-later.active{display:flex}
+#space-cinema:before,#space-cinema:after{content:"";position:absolute;left:0;right:0;height:clamp(25px,7vh,65px);background:#020510ed}
+#space-cinema:before{top:0}#space-cinema:after{bottom:0}
+#space-caption{position:absolute;bottom:clamp(46px,10vh,100px);left:0;right:0;letter-spacing:.14em;font-size:clamp(16px,2.3vw,27px);color:#ffefd0}
+#space-restart{position:absolute;top:clamp(32px,8vh,80px);left:0;right:0;font-size:13px;letter-spacing:.04em;color:#ecf3ff}
+.crash-bubble.pow{background:#fff176;color:#1f1531;font-size:34px;border-color:#542c75;box-shadow:0 6px 0 #151020a8}
+.crash-bubble.pow:after{background:#fff176;border-color:#542c75}
+#crash-bubbles{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.crash-bubble{position:absolute;display:block;padding:7px 14px;border-radius:20px;background:#fff9df;color:#25212a;border:3px solid #2b2b35;font:900 19px/1.1 system-ui,Arial,sans-serif;text-shadow:none;box-shadow:0 5px 0 #20232a66;white-space:nowrap;will-change:transform,opacity;}
+.crash-bubble:after{content:'';position:absolute;left:22px;bottom:-11px;width:14px;height:14px;background:#fff9df;border-right:3px solid #2b2b35;border-bottom:3px solid #2b2b35;transform:rotate(45deg)}
+#hud{z-index:2} #help{z-index:2} #err{z-index:99}
+@media(max-width:780px){#hud{max-width:220px;font-size:12px;padding:8px 10px}#speed{font-size:18px}#tuner{top:52px;max-height:calc(100vh - 96px);width:min(330px,calc(100vw - 26px))}#tuner .tuner-body{max-height:calc(100vh - 140px)}#help{font-size:11px}body>button#reset{top:7px;right:8px}}
+
+
+#menu-layer [hidden]{display:none!important}
+/* V3O: compact main menu & three map themes; game mechanics are inherited from V3N. */
+#menu-layer{position:fixed;inset:0;z-index:95;display:none;align-items:center;justify-content:center;padding:16px;background:linear-gradient(115deg,#07151ad9,#0a181bb8 52%,#0b1e20b1);color:#f9f5eb;overflow:auto;box-sizing:border-box}
+body.menu-open #menu-layer{display:flex}
+body.menu-open #hud,body.menu-open #help,body.menu-open #tuner,body.menu-open #reset,body.menu-open #open-main-menu{display:none}
+#menu-layer .menu-panel{width:min(540px,100%);max-height:calc(100dvh - 30px);overflow:auto;box-sizing:border-box;border:1px solid #f3d49d5e;border-radius:23px;background:linear-gradient(155deg,#182c31f5,#0c1a24f7);box-shadow:0 26px 80px #000a;padding:clamp(19px,4vw,29px)}
+#menu-layer .eyebrow{font-size:11px;color:#f0b86f;letter-spacing:.21em;font-weight:850;text-transform:uppercase}
+#menu-layer h1{font-size:clamp(25px,5vw,38px);line-height:1.1;letter-spacing:-.035em;margin:8px 0 7px}
+#menu-layer .lead{margin:0 0 21px;color:#b9cfca;font-size:13px;line-height:1.5}
+#menu-layer .step-label{font-size:12px;font-weight:800;color:#e6e8d8;margin:0 0 11px;letter-spacing:.05em;text-transform:uppercase}
+#menu-layer button{position:static;top:auto;right:auto;font:inherit;color:inherit;cursor:pointer}
+#menu-layer .bike-preview{height:115px;border-radius:12px;background:linear-gradient(180deg,#35505a,#1d353a);margin:0 0 17px;display:flex;justify-content:center;overflow:hidden}
+#menu-layer .bike-preview svg{height:100%;width:min(100%,480px)}
+#bike-swatch-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+#bike-swatch-grid .bike-swatch{border:2px solid #ffffff34;background:#20343b;border-radius:14px;padding:9px 3px 7px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:7px;font-size:10px;font-weight:750;transition:transform .13s,border-color .13s}
+#bike-swatch-grid .bike-swatch:hover{transform:translateY(-2px)}
+#bike-swatch-grid .bike-swatch[aria-pressed=true]{border-color:#ffe6a4;box-shadow:0 0 0 2px #d6a45f33;background:#314042}
+#bike-swatch-grid .paint-dot{display:block;width:31px;height:31px;border:2px solid #fffc;border-radius:50%;box-shadow:inset -6px -7px 10px #0004,0 2px 7px #0006}
+#menu-layer .selected-line{font-size:12px;color:#b9d6cd;margin:14px 0 22px;display:flex;align-items:center;gap:7px}
+#menu-layer .selected-line b{color:#ffdd98}
+#menu-layer .menu-primary{width:100%;background:linear-gradient(120deg,#ffbb65,#f18c4b);color:#22231e;font-weight:900;font-size:17px;letter-spacing:.02em;border:0;border-radius:13px;padding:13px 18px;box-shadow:0 6px 0 #a45726}
+#menu-layer .menu-primary:hover{filter:brightness(1.08)}
+#menu-layer .menu-back{display:block;margin:16px auto 0;background:transparent;border:0;color:#a9c9c9;text-decoration:underline;font-size:13px}
+#menu-layer .map-options{display:grid;gap:10px;margin:0 0 19px}
+#menu-layer .map-card{width:100%;display:flex;align-items:center;text-align:left;gap:14px;padding:9px;border-radius:13px;border:2px solid #ffffff24;background:#1b3238;color:#fff}
+#menu-layer .map-card[aria-pressed=true]{border-color:#ffdaa0;background:#2e4341}
+#menu-layer .map-art{width:96px;min-width:96px;height:65px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:31px;text-shadow:0 2px 7px #0005}
+#menu-layer .map-art.desert{background:linear-gradient(174deg,#93c4d9 0 45%,#e2ad6c 46% 73%,#aa7c50 74%)}
+#menu-layer .map-art.forest{background:linear-gradient(175deg,#97bdc4 0 44%,#4f7652 45% 78%,#304f39 79%)}
+#menu-layer .map-art.hillside{background:linear-gradient(172deg,#9ecbdf 0 44%,#9cac58 45% 70%,#648b48 71%)}
+#menu-layer .map-copy{display:flex;flex-direction:column;gap:5px}
+#menu-layer .map-copy strong{font-size:16px}
+#menu-layer .map-copy small{font-size:12px;color:#acc7c2;line-height:1.3}
+#menu-layer .fine-print{margin-top:17px;color:#9bb7b3;font-size:11px;text-align:center}
+#open-main-menu{right:156px;z-index:3;background:#203b48;color:white}
+#menu-layer button:focus-visible,#open-main-menu:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media(max-width:560px){#bike-swatch-grid{gap:6px}#bike-swatch-grid .bike-swatch{font-size:9px;padding:8px 2px}#bike-swatch-grid .paint-dot{width:26px;height:26px}#menu-layer .map-art{width:69px;min-width:69px;height:62px}#menu-layer .map-copy strong{font-size:14px}#open-main-menu{right:119px;top:7px;padding:10px 7px;font-size:11px}}
+
+/* V3Q: friend room is accessible from the first lobby and the map screen. */
+body.stage-lobby #menu-layer{justify-content:flex-end;background:linear-gradient(100deg,#07151a46 0%,#08131b7e 51%,#08131beb 85%)}
+body.stage-lobby #menu-layer .menu-panel{width:min(420px,100%);margin-left:auto}
+body.stage-lobby #menu-layer .lobby-big{font-weight:950;font-size:clamp(33px,6vw,51px);line-height:1.05;margin:11px 0 12px}
+body.stage-lobby #menu-layer .lobby-big em{font-style:normal;color:#ffbc70}
+#lobby-model-tip{display:none;position:fixed;left:clamp(15px,6vw,90px);bottom:clamp(19px,8vh,105px);background:#0b1c25c7;padding:14px 17px;border-left:4px solid #ffc779;border-radius:10px;max-width:43%;color:#f8e8cc;z-index:95;pointer-events:none}
+body.stage-lobby #lobby-model-tip{display:block}
+#menu-layer .lobby-intro{font-size:12px;color:#b9d0cc;line-height:1.65;margin-bottom:22px}
+#menu-layer .lobby-steps{border:1px solid #556d70;background:#18303a;border-radius:13px;padding:15px;margin-bottom:17px;font-size:13px;line-height:1.85}
+#menu-layer .lobby-steps b{color:#ffcf8e}
+#menu-layer .player-name-field{display:flex;align-items:center;gap:10px;margin:13px 0 19px;font-size:13px;font-weight:700}
+#menu-layer .player-name-field input{width:100%;min-width:0;border:1px solid #799393;background:#0e222b;color:white;border-radius:8px;padding:11px 12px;font:inherit}
+body.stage-maps #menu-layer .menu-panel{width:min(900px,100%)}
+#menu-layer .maps-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.94fr);gap:19px;align-items:start}
+#menu-layer .room-panel{padding:16px 16px 13px;background:#112731;border:1px solid #45646c;border-radius:15px}
+#menu-layer .room-title{font-size:16px;font-weight:900;margin-bottom:4px;color:#f8dfaf}
+#menu-layer .room-description{font-size:11px;line-height:1.45;color:#b6cecc;margin:0 0 15px}
+#menu-layer .room-code{font:900 38px/1.1 ui-monospace,monospace;letter-spacing:.16em;color:#ffdc9f;margin:4px 0 7px}
+#menu-layer .room-code-state{font-size:11px;font-weight:850;color:#ffc97f;line-height:1.5;letter-spacing:.04em;margin:0 0 7px}
+#menu-layer .room-code-state.ready{color:#a9edc1}
+#menu-layer .room-code-state.wait{color:#f9c67b}
+#menu-layer .room-code-state.error{color:#f8aba5}
+#menu-layer .lobby-room-slot{margin:12px 0 0}
+#menu-layer .lobby-room-shortcuts{display:flex;gap:8px;margin:15px 0 5px}
+#menu-layer .lobby-room-shortcuts button{flex:1;padding:10px 5px;background:#234954;border:1px solid #789c94;color:#fce4b1;border-radius:9px;font-size:11px;font-weight:850}
+#menu-layer .lobby-room-shortcuts button:disabled{opacity:.5}
+#menu-layer .lobby-room-slot .room-panel{padding:13px}
+#menu-layer .multiplayer-guide{margin-top:12px;border:1px solid #41636b;border-radius:9px;padding:10px 11px;color:#bcd4cc;font-size:11px;line-height:1.55}
+#menu-layer .multiplayer-guide summary{cursor:pointer;color:#ffdb9c;font-weight:800}
+#menu-layer .multiplayer-guide ol{margin:9px 0;padding-left:20px}
+#menu-layer .multiplayer-guide li{margin-bottom:7px}
+#menu-layer .multiplayer-guide p{margin:10px 0 0}
+#menu-layer .room-actions{display:flex;gap:8px;margin:9px 0 7px}
+#menu-layer .room-actions button,#menu-layer #room-copy,#menu-layer #room-leave{border:1px solid #60818b;background:#1c4654;border-radius:9px;padding:9px 10px;font-size:12px;font-weight:800}
+#menu-layer .room-actions button{flex:1}
+#menu-layer button:disabled{opacity:.5;cursor:not-allowed}
+#menu-layer .room-join-row{display:flex;gap:8px;margin-bottom:6px}
+#menu-layer #room-input{width:90px;min-width:0;border:1px solid #6a9296;background:#081d28;color:white;font:800 18px/1 ui-monospace,monospace;letter-spacing:.2em;text-align:center;border-radius:9px;padding:12px 8px}
+#menu-layer #room-join{flex:1;border:0;border-radius:9px;background:#f0b567;color:#17202a;font-weight:900;padding:11px 8px}
+#menu-layer #room-status{background:#0a1e27;border-radius:8px;padding:10px;font-size:12px;line-height:1.5;min-height:40px;color:#c8e7d8;overflow-wrap:anywhere}
+#menu-layer #room-roster{font-size:12px;color:#dbe7df;list-style:none;padding:0;margin:12px 0 0}
+#menu-layer #room-roster li{padding:6px 0;border-bottom:1px solid #44606a77}
+#menu-layer .room-warning{font-size:10px;line-height:1.45;color:#9fbdb9;margin:12px 0 0}
+#menu-layer .multiplayer-help{font-size:11px;color:#bdcfc9;margin:9px 0 0;line-height:1.45}
+#room-hud{display:none;position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#112c38dd;border:1px solid #547583;border-radius:10px;padding:8px 15px;z-index:3;color:#fff1cb;font-size:12px;font-weight:750;pointer-events:none;white-space:nowrap}
+body.room-active:not(.menu-open) #room-hud{display:block}
+@media(max-width:730px){#menu-layer .maps-columns{grid-template-columns:1fr}body.stage-lobby #menu-layer .menu-panel{width:min(420px,80%)}#lobby-model-tip{max-width:35%;font-size:10px;padding:8px}}
+@media(max-width:480px){body.stage-lobby #menu-layer{background:linear-gradient(0deg,#06151cfa 25%,#06151cad 72%,#07151a40)}body.stage-lobby #menu-layer .menu-panel{width:100%;align-self:flex-end;max-height:78vh}body.stage-lobby #lobby-model-tip{top:30px;bottom:auto;left:14px;max-width:65%}#menu-layer .room-panel{padding:12px}#room-hud{top:auto;bottom:55px}}
+
+/* V3Y: Simple Supabase Realtime connection panel */
+#menu-layer .room-stage{border:1px solid #4d6b78;background:#0a202c;border-radius:8px;padding:8px 10px;color:#c5e4ed;font:11px/1.5 system-ui;margin:8px 0}
+#menu-layer .room-advanced{margin-top:10px;border:1px solid #4b6870;padding:10px;border-radius:9px;font:11px/1.55 system-ui;color:#c6d7d9}
+#menu-layer .room-advanced summary{cursor:pointer;color:#ffd698;font-weight:800}
+#menu-layer .room-advanced label{display:block;font-weight:750;margin:8px 0 3px;color:#d1e3e5}
+#menu-layer .room-advanced select,#menu-layer .room-advanced input{width:100%;background:#0a202c;color:white;border:1px solid #74939b;border-radius:7px;padding:9px;font:12px system-ui;min-width:0}
+#menu-layer .room-advanced p{margin:7px 0;line-height:1.5}
+#menu-layer .room-advanced button{margin:7px 7px 0 0;padding:8px;border-radius:7px;border:1px solid #91b0b8;background:#284655;color:#ffe6bb;font:700 11px system-ui;cursor:pointer}
+#menu-layer .room-advanced button:disabled{opacity:.55;cursor:not-allowed}
+#menu-layer .room-custom-note{color:#fbd7a2}
+#menu-layer .room-network-log{font:10px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:90px;overflow:auto;background:#0a1b20;padding:7px;margin:9px 0 0;color:#bcded9;border-radius:5px}
+
+/* V3S: display-only HUD redesign. No physics or multiplayer changes. */
+#hud-toggle{position:fixed;left:12px;top:12px;right:auto;z-index:7;padding:8px 12px;background:#152c38e8;color:#fff;border:1px solid #829aa6;font-size:12px}
+#hud{top:52px;left:12px;max-width:min(330px,calc(100vw - 28px));padding:10px 12px;font-size:12px;line-height:1.45}
+#hud[hidden]{display:none!important}
+#speedometer{position:fixed;right:15px;bottom:15px;width:clamp(140px,17vw,190px);aspect-ratio:1;z-index:4;pointer-events:none;filter:drop-shadow(0 5px 14px #0008)}
+#speedometer svg{width:100%;height:100%}
+body.menu-open #hud-toggle,body.menu-open #speedometer{display:none}
+@media(max-width:600px){#speedometer{width:135px;right:7px;bottom:7px}#hud-toggle{top:7px;left:7px;padding:7px 9px}#hud{top:43px;left:7px;max-width:210px}}
+#room-advanced input{background:#101b20;color:#fff1df;border:1px solid #56707c;border-radius:8px;padding:9px;font-size:12px}
+#room-advanced label{display:block;margin:7px 0 4px;font-size:11px;color:#d4e0d6}
+#room-advanced input::placeholder{color:#8fa2a4}
+</style></head><body class="menu-open stage-lobby"><button id="hud-toggle" type="button" aria-controls="hud" aria-expanded="false" title="Show ride details (I)">☰ Info (I)</button><div id="hud" hidden><b>🏍️ <span id="map-hud-name">DESERT STUNT PARK</span> · V3Y</b><div id="speed">0 km/h</div><div id="status">Ready to ride</div><div id="angle">Wheelie angle: 0°</div><div id="lean-angle">Turn lean: 0° (upright)</div><div id="air-spin-hud">Air spin: 0° · stationary</div><div id="crash-hud">Crash system: ready · J repairs, R resets</div><div id="momentum-hud">Rolling: forward · world momentum preserved</div><div id="gamepad-hud">🎮 Controller: not connected</div><div style="font-size:12px;opacity:.8">CIRCULAR ISLAND · Fall off the edge for a moon cutscene · G: tune · J: repair · R: reset</div></div><div id="speedometer" aria-label="Speedometer and engine rev indicator">
+<svg viewBox="0 0 200 200" role="img" aria-label="Speed and revs">
+<circle cx="100" cy="100" r="87" fill="#0c1820" stroke="#59727b" stroke-width="4"/>
+<path id="rpm-track" d="" fill="none" stroke="#344e59" stroke-width="11" stroke-linecap="round"/>
+<path id="rpm-redline" d="" fill="none" stroke="#f04742" stroke-width="11" stroke-linecap="round"/>
+<path id="rpm-fill" d="" fill="none" stroke="#f6c367" stroke-width="6" stroke-linecap="round"/>
+<g id="rpm-ticks"></g>
+<line id="rpm-needle" x1="100" y1="100" x2="100" y2="35" stroke="#fff1cc" stroke-width="4" stroke-linecap="round"/>
+<circle cx="100" cy="100" r="7" fill="#e65a46"/>
+<text x="100" y="125" text-anchor="middle" fill="#fff" font-size="32" font-weight="850" id="dial-speed">0</text>
+<text x="100" y="143" text-anchor="middle" fill="#9db8c3" font-size="12">km/h</text>
+<text x="100" y="166" text-anchor="middle" fill="#e9a5a0" font-size="10">REV / REDLINE</text>
+</svg></div><button id="reset">Reset bike (R)</button><div id="room-hud" role="status" aria-live="polite"></div><div id="lobby-model-tip">🏍️ <b id="lobby-paint-name">ORANGE GAS BIKE</b><div>YOUR RIDER • READY TO RIDE</div></div><button id="open-main-menu" type="button" title="Return to the main lobby (M)">☰ Menu (M)</button><div id="help">W / ↑ accelerate (AIR: backflip) · S / ↓ brake (AIR: frontflip) · A D steer (AIR: 360° spins) · Tap Space to wheelie · W balances · Shift boost · C camera · G tune · H hitboxes · T contacts · P pause · O step · J repair here · R reset spawn · 🎮 RT / R2 backflip in air · LT / L2 frontflip in air · LS steer / air spin · Tap A to wheelie · RB boost</div><aside id="tuner" aria-label="Real-time bike tuning">
+ <div class="tuner-header"><strong>⚙️ Live Tuning Garage <span id="dirty-dot" title="Changes since named preset (your ride is autosaved)">●</span></strong><button id="toggle-tuner" type="button">Hide (G)</button></div>
+ <div class="tuner-body">
+  <nav class="tabs" aria-label="Tuning categories"><button type="button" class="active" data-tab="Ride">Ride</button><button type="button" data-tab="Lean">Turn lean</button><button type="button" data-tab="Air">Air tricks</button><button type="button" data-tab="Shocks">Shocks</button><button type="button" data-tab="Camera">Camera</button><button type="button" data-tab="Crash">Crashes</button><button type="button" data-tab="Debug">Debug</button><button type="button" data-tab="Controller">Controller</button></nav>
+  <div id="tuning-fields"></div>
+  <div id="autosave-status" class="autosave-status" role="status" aria-live="polite">Auto-save: preparing your tuning...</div>
+  <div class="section-title">Optional named presets</div>
+  <div class="row-fields"><input id="preset-name" aria-label="Preset name" placeholder="Name your setup" maxlength="54" value="My favorite setup"></div>
+  <div class="row-fields"><select id="preset-select" aria-label="Saved setup list"><option value="">Select a saved setup</option></select></div>
+  <div class="buttons"><button type="button" id="save-preset">Save setup</button><button type="button" id="load-preset" class="secondary">Apply preset</button><button type="button" id="delete-preset" class="secondary">Delete</button></div>
+  <div class="buttons"><button type="button" id="export-preset">Export JSON</button><button type="button" id="import-preset" class="secondary">Import JSON</button><button type="button" id="default-preset" class="secondary">Defaults</button></div>
+  <input type="file" accept=".json,application/json" id="preset-file" style="display:none" aria-label="Import tuning JSON">
+  <div class="profile-message" id="profile-message" role="status" aria-live="polite"></div>
+  <div class="save-note"><b>Auto-save:</b> Every tuning change and debug view is saved immediately. <b>To keep settings across versions:</b> open your existing <b>Dirtbike_Launcher.html</b>, then choose <b>Install a newer game HTML</b>. Keep opening that same launcher from the same location. Separate downloaded standalone files can use different browser storage, so an older file may need one JSON export/import. If storage is blocked, no browser-only game can promise saving across restarts; use Export JSON.</div>
+ </div>
+</aside><div id="menu-layer" role="dialog" aria-modal="true" aria-label="Dirt bike main menu">
+ <div class="menu-panel">
+  <div class="eyebrow">🏁 Dirt Bike V3Y • Simple friend rooms</div>
+  <section id="menu-lobby">
+   <h1 class="lobby-big">YOUR DIRT BIKE <em>LOBBY</em></h1>
+   <p class="lobby-intro">That's your rider and bike beside the menu. Start here, pick a bright paint color, then choose a circular stunt map. Ride solo or share a room code with friends.</p>
+   <div class="lobby-steps"><b>01</b> Main lobby &amp; your rider<br><b>02</b> Gas bike color<br><b>03</b> Map &amp; friends lobby code</div>
+   <label class="player-name-field">Rider name <input id="player-name" maxlength="18" autocomplete="nickname" spellcheck="false" placeholder="Your rider name" value="Rider"></label>
+   <button id="lobby-start" class="menu-primary" type="button">START → PICK YOUR BIKE</button>
+      <p class="fine-print">Use the Create Room or Join Room controls below (they are the same controls on the map screen). Share a code only when it says READY.</p>
+   <div id="lobby-room-slot" class="lobby-room-slot"></div>
+  </section>
+  <section id="menu-bikes" hidden>
+   <h1>DIRT BIKE GARAGE</h1>
+   <p class="lead">Choose the paint on your gas dirt bike. Every color has the same engine, handling, tricks, and tuning.</p>
+
+   <div class="bike-preview" aria-hidden="true"><svg viewBox="0 0 470 135" xmlns="http://www.w3.org/2000/svg" focusable="false">
+    <ellipse cx="230" cy="122" rx="181" ry="7" fill="#040c13" opacity=".45"/>
+    <g stroke-linejoin="round" stroke-linecap="round">
+     <circle cx="101" cy="95" r="34" fill="#131b1f" stroke="#050a0c" stroke-width="7"/><circle cx="359" cy="95" r="34" fill="#131b1f" stroke="#050a0c" stroke-width="7"/>
+     <circle cx="101" cy="95" r="23" fill="#657275" stroke="#b1bbba" stroke-width="3"/><circle cx="359" cy="95" r="23" fill="#657275" stroke="#b1bbba" stroke-width="3"/>
+     <circle cx="101" cy="95" r="16" fill="#1a2426"/><circle cx="359" cy="95" r="16" fill="#1a2426"/>
+     <path d="M101 95 L177 42 L258 88 L198 88 Z M177 42 L213 95 L359 95 M101 95 L224 95 M262 32 L359 95" fill="none" stroke="#afbfc3" stroke-width="8"/>
+     <path d="M172 42 L198 36 L259 51 L250 67 L202 70 Z" id="paint-tank" fill="#f06d22" stroke="#101719" stroke-width="4"/>
+     <path d="M254 35 Q279 20 309 27 L326 39 L269 41 Z" fill="#161e25"/>
+     <path d="M316 32 L340 30" stroke="#d0d6cd" stroke-width="5"/>
+     <path d="M330 30 L359 95" stroke="#dfe9e6" stroke-width="7"/>
+     <path d="M327 57 Q353 36 383 61" id="paint-fender" fill="none" stroke="#f06d22" stroke-width="10"/>
+     <path d="M62 62 Q96 42 130 61" fill="none" stroke="#a2b4a6" stroke-width="5"/>
+     <path d="M212 75 L235 85" stroke="#293536" stroke-width="16"/>
+     <path d="M218 93 L277 96" stroke="#434f51" stroke-width="9"/>
+     <circle cx="224" cy="88" r="12" fill="#3f5159" stroke="#101719" stroke-width="4"/>
+    </g></svg></div>
+   <p class="step-label">01 / Pick your gas bike color</p>
+   <div id="bike-swatch-grid" role="group" aria-label="Gas dirt bike paint colors"></div>
+   <div class="selected-line">🏍️ <span>Selected: <b id="selected-bike-name">Orange</b> gas dirt bike</span></div>
+   <button id="menu-play" class="menu-primary" type="button">NEXT → CHOOSE A MAP</button><button id="bike-back-lobby" type="button" class="menu-back">← Back to main lobby</button>
+  </section>
+  <section id="menu-maps" hidden>
+   <h1>CHOOSE YOUR MAP</h1>
+   <p class="lead">Three circular stunt parks, all with the same ramps, bike physics, and moon-fall ending.</p>
+   <p class="step-label">02 / Choose a circular arena</p>
+   <div class="maps-columns"><div class="map-choice-column"><div class="map-options" role="group" aria-label="Choose a map">
+    <button type="button" class="map-card" data-map="desert" aria-pressed="true"><span class="map-art desert" aria-hidden="true">🏜️</span><span class="map-copy"><strong>Desert Stunt Park</strong><small>The original sandy island and all your jumps</small></span></button>
+    <button type="button" class="map-card" data-map="forest" aria-pressed="false"><span class="map-art forest" aria-hidden="true">🌲</span><span class="map-copy"><strong>Pine Forest</strong><small>Green trails, tall pines, and solid tree trunks</small></span></button>
+    <button type="button" class="map-card" data-map="hillside" aria-pressed="false"><span class="map-art hillside" aria-hidden="true">⛰️</span><span class="map-copy"><strong>Green Hillside</strong><small>Grass slopes, extra hills, and a mountain feel</small></span></button>
+   </div>
+   <button id="menu-start" class="menu-primary" type="button">START RIDING →</button>
+   <button id="menu-back" class="menu-back" type="button">← Back to bike colors</button>
+   </div>
+   <div id="map-room-slot" class="map-room-slot"><aside class="room-panel" aria-label="Friends multiplayer room">
+    <div class="room-title">🎮 PLAY WITH FRIENDS</div>
+    <p class="room-description">Create a room, tell your friend the three-digit code, or enter their code to join them. Same map, different colored bikes.</p>
+    <div class="step-label">YOUR ROOM CODE</div>
+    <div class="room-code" id="room-code">— — —</div>
+    <div class="room-code-state" id="room-code-state" role="status" aria-live="polite">OFFLINE · NO ACTIVE CODE</div>
+    <div class="room-actions"><button id="room-host" type="button">+ CREATE ROOM</button><button id="room-copy" type="button" disabled>Copy code</button></div>
+    <div class="step-label" style="margin:15px 0 7px">JOIN A FRIEND'S ROOM</div>
+    <div class="room-join-row"><input id="room-input" inputmode="numeric" pattern="[0-9]{3}" maxlength="3" placeholder="132" aria-label="Friend's three digit room code"><button id="room-join" type="button">JOIN ROOM →</button></div>
+    <div class="room-actions"><button id="room-leave" type="button" disabled>Cancel / Leave room</button></div>
+    <div id="room-status" role="status" aria-live="polite">Solo mode is ready. Create or join a room to race together.</div>
+    <div id="room-stage" class="room-stage" role="status" aria-live="polite">Connection: Idle</div>
+    <details class="room-advanced" id="room-advanced">
+     <summary>⚙️ One-time multiplayer setup (Supabase)</summary>
+     <p>Set this up once. Afterward, you and your friends can simply Create Room / Join Room. Both devices must use the <b>same Supabase project</b>. No PeerJS, Trystero, WebRTC, or separate server deployment.</p>
+     <label for="room-project-url">Supabase Project URL</label>
+     <input id="room-project-url" type="url" placeholder="https://your-project.supabase.co" spellcheck="false" autocomplete="off" style="width:100%;box-sizing:border-box;margin-bottom:8px">
+     <label for="room-public-key">Supabase publishable key (sb_publishable_...)</label>
+     <input id="room-public-key" type="text" placeholder="sb_publishable_..." spellcheck="false" autocomplete="off" style="width:100%;box-sizing:border-box;margin-bottom:8px">
+     <div class="room-actions"><button id="room-save-config" type="button">SAVE SETUP</button><button id="room-test-server" type="button">TEST CONNECTION</button></div>
+     <button id="room-copy-diagnostics" type="button">COPY CONNECTION DETAILS</button>
+     <div class="room-network-log" id="room-network-log">No connection attempts yet.</div>
+     <p class="room-custom-note">Create one free project at <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" style="color:#ffcc85">supabase.com/dashboard</a>. Get its URL and <b>publishable</b> key from the project's Connect panel. Realtime public channels must be enabled. <b>NEVER paste a secret or service_role key here.</b> Settings are saved only in this browser.</p>
+    </details>
+    <ul id="room-roster" aria-label="Connected riders"><li>🏍️ You · solo</li></ul>
+    <details class="multiplayer-guide" id="multiplayer-guide">
+     <summary>How friends join (three steps)</summary>
+     <ol>
+      <li>Both devices open the exact same V3Y game. Configure the same Supabase project under One-time setup (only needed once per browser).</li>
+      <li>Player 1 presses <b>CREATE ROOM</b> and shares the three-digit code when it says READY.</li>
+      <li>Player 2 enters the code and presses <b>JOIN ROOM</b>. When both names appear, select colors/map, then each press START RIDING.</li>
+     </ol>
+     <p>Supabase is an actual hosted connection service. It avoids peer-to-peer connection negotiation, but you still need internet and a free Supabase project. Server-connected does not mean your friend has joined yet.</p>
+    </details>
+    <p class="room-warning">Free experimental friend rooms. Three-digit codes are guessable and are not private or authenticated. Use a dedicated Supabase project without personal data. No audio or gameplay changes.</p>
+   </aside></div></div>
+  </section>
+  <div class="fine-print">Gas bikes only • Original physics preserved • No new sounds</div>
+ </div>
+</div><div id="space-cinema" aria-hidden="true"><div id="space-restart">🌙 MOON FALL · Press R to return to the island</div><div id="space-caption">FALLING INTO SPACE...</div></div><div id="one-minute-later" aria-hidden="true">ONE MINUTE LATER...</div><div id="crash-bubbles" aria-hidden="true"></div><div id="err"></div><script>
+window.addEventListener('error',function(e){const el=document.getElementById('err');if(el){el.style.display='block';el.textContent='Game could not start: '+(e.message||'Failed to load Three.js. Check internet access.')}});
+window.addEventListener('unhandledrejection',function(e){const el=document.getElementById('err');if(el){el.style.display='block';el.textContent='Game error: '+(e.reason?.message||e.reason||'Unknown error')}});
+</script><script type="module">
+// If the primary CDN is blocked, try another. Show a real error instead of a blank sky.
+let THREE;
+try{THREE=await import('https://esm.sh/three@0.170.0')}
+catch(primaryError){
+ try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js')}
+ catch(secondaryError){
+  const el=document.getElementById('err');el.style.display='block';
+  el.textContent='Three.js could not load. Connect to the internet or allow esm.sh / jsDelivr, then reload.\n'+String(secondaryError);
+  throw secondaryError;
+ }
+}
+const err=document.getElementById('err'); window.addEventListener('error',e=>{err.style.display='block';err.textContent=e.message});
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9fc5dd);scene.fog=new THREE.FogExp2(0xc5b99d,.0024);
+const stockSky=scene.background.clone(),stockFog=scene.fog;
+const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.1,1800);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe8f4ff,0x967148,2));const sun=new THREE.DirectionalLight(0xffdfac,2.8);sun.position.set(-110,160,80);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-200;sun.shadow.camera.right=200;sun.shadow.camera.top=200;sun.shadow.camera.bottom=-200;scene.add(sun);
+const mat=(c,r=1,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});const sand=mat(0xc9a36c),darkSand=mat(0x99724b),rock=mat(0x9c7054),metal=mat(0x41484c,.45,.65),rubber=mat(0x17191a),orange=mat(0xf06d22,.45),white=mat(0xe9e4d9,.5),black=mat(0x202326),skin=mat(0xd9a47d);
+function mesh(geo,material,parent=scene,x=0,y=0,z=0){const o=new THREE.Mesh(geo,material);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+// V3L: EXACT existing world coordinates, now clipped to a round island. The
+// inscribed 600-unit radius preserves all interior ramp locations and terrain.
+// The top disk has a real open edge; the darker side wall is purely visual.
+const MAP_RADIUS=600,OFF_ISLAND_FLOOR=-10000;
+const onIsland=(x,z)=>x*x+z*z<=MAP_RADIUS*MAP_RADIUS;
+const ground=mesh(new THREE.CircleGeometry(MAP_RADIUS,192),sand);ground.rotation.x=-Math.PI/2;ground.castShadow=false;
+const islandWall=mesh(new THREE.CylinderGeometry(MAP_RADIUS,MAP_RADIUS,22,192,1,true),darkSand,scene,0,-11,0);
+islandWall.castShadow=false;
+const islandBottom=mesh(new THREE.CircleGeometry(MAP_RADIUS,192),darkSand,scene,0,-22,0);islandBottom.rotation.x=Math.PI/2;islandBottom.castShadow=false;
+const rim=new THREE.Mesh(new THREE.TorusGeometry(MAP_RADIUS-.7,.55,6,192),new THREE.MeshStandardMaterial({color:0xe7ba7c,roughness:1}));rim.rotation.x=Math.PI/2;rim.position.y=.05;rim.castShadow=false;scene.add(rim);
+// Ramps are smooth continuous takeoff-to-landing profiles, traversable along local Z.
+const ramps=[];
+const dirtRampSurface=mat(0x99724b);
+const rampWallMat={dirt:new THREE.MeshStandardMaterial({color:0x8e6540,side:THREE.DoubleSide,roughness:1}),metal:new THREE.MeshStandardMaterial({color:0x505b62,side:THREE.DoubleSide,roughness:.5,metalness:.6})};
+function rampHeight(r,z){
+ if(Math.abs(z-r.z)>r.len/2)return 0;
+ const t=(z-r.z)/r.len+.5;
+ return r.height*Math.sin(Math.PI*t)**2;
+}
+function addRamp(x,z,w,len,height,kind='dirt'){
+ const ramp={x,z,w,len,height,kind,id:ramps.length};ramps.push(ramp);
+ const material=kind==='metal'?metal:dirtRampSurface;
+ const segments=48,rows=8,vertices=[],indices=[];
+ for(let j=0;j<=segments;j++){
+  const t=j/segments,localZ=(t-.5)*len,y=height*Math.sin(Math.PI*t)**2;
+  for(let i=0;i<=rows;i++){const lx=(i/rows-.5)*w;vertices.push(x+lx,y+.035,z+localZ)}
+ }
+ for(let j=0;j<segments;j++)for(let i=0;i<rows;i++){
+  const a=j*(rows+1)+i,b=a+rows+1;indices.push(a,b,a+1,b,b+1,a+1)
+ }
+ const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();mesh(geo,material);
+ // Closed, visible side skirts now match the solid collision volume below the ramp deck.
+ for(const edge of [-1,1]){
+  const wallPositions=[],wallIndices=[],edgePoints=[];
+  for(let j=0;j<=segments;j++){
+   const t=j/segments,rz=z+(t-.5)*len,ry=height*Math.sin(Math.PI*t)**2;
+   wallPositions.push(x+edge*w/2,.015,rz, x+edge*w/2,ry+.035,rz);
+   edgePoints.push(new THREE.Vector3(x+edge*w*.5,ry+.12,rz));
+  }
+  for(let j=0;j<segments;j++){let a=j*2;wallIndices.push(a,a+2,a+1,a+1,a+2,a+3)}
+  const sideGeo=new THREE.BufferGeometry();sideGeo.setAttribute('position',new THREE.Float32BufferAttribute(wallPositions,3));sideGeo.setIndex(wallIndices);sideGeo.computeVertexNormals();mesh(sideGeo,rampWallMat[kind]);
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(edgePoints),new THREE.LineBasicMaterial({color:kind==='metal'?0xffbc65:0xecd0a0}));scene.add(line);
+ }
+}
+
+addRamp(0,-55,16,44,7);addRamp(0,-145,22,65,13);addRamp(48,-85,14,45,10,'metal');addRamp(-55,-120,20,60,17);addRamp(70,-200,22,72,22,'metal');addRamp(-65,-230,26,86,25);addRamp(0,-280,30,95,30);
+// Scattered desert rocks, far enough from initial driving lane.
+// Every scenery rock and hill has a matching collision volume. Reuse these exact dimensions for debug wireframes.
+let activeMap="desert";
+const obstacles=[];let terrainSeed=0xD1A7B1CE;const rand=(a,b)=>{terrainSeed=(1664525*terrainSeed+1013904223)>>>0;return a+(terrainSeed/4294967296)*(b-a)};
+for(let i=0;i<130;i++){
+ const x=rand(-440,440),z=rand(-440,440);if(Math.abs(x)<20&&z>-320&&z<50)continue;
+ const r=rand(1.5,9),b=mesh(new THREE.DodecahedronGeometry(r,0),i%3?rock:darkSand,scene,x,r*.38,z);
+ b.scale.set(rand(.8,1.8),rand(.5,1.5),rand(.8,1.6));b.rotation.y=rand(0,6.28);
+ // Conservative ellipse encloses the rotated rock's irregular footprint.
+ const rx=r*Math.hypot(b.scale.x*Math.cos(b.rotation.y),b.scale.z*Math.sin(b.rotation.y));
+ const rz=r*Math.hypot(b.scale.z*Math.cos(b.rotation.y),b.scale.x*Math.sin(b.rotation.y));
+ const boundR=Math.max(r*b.scale.x,r*b.scale.z);
+ if(!onIsland(x,z)){b.visible=false;continue}
+ obstacles.push({kind:'rock',mesh:b,x,z,rx:Math.max(rx,boundR*.82),rz:Math.max(rz,boundR*.82),height:r*(.38+b.scale.y)});
+}
+for(let i=0;i<38;i++){
+ const x=rand(-550,550),z=rand(-550,550);if(Math.abs(x)<80&&z>-320&&z<30)continue;
+ const h=rand(14,55),radius=rand(20,50);
+ const hill=mesh(new THREE.ConeGeometry(radius,h,6),i%2?rock:darkSand,scene,x,h*.35,z);hill.rotation.y=rand(0,6.28);
+ if(!onIsland(x,z)){hill.visible=false;continue}
+ obstacles.push({kind:'hill',mesh:hill,x,z,rx:radius,rz:radius,height:h*.85});
+}
+
+
+// V3O: all three worlds share the SAME flat 600-unit disk and seven original ramps.
+// Theme-only solid objects register as ordinary scenery colliders and are disabled
+// whenever their map is not selected. Tree canopies are decorative; TRUNKS collide.
+const forestScenery=new THREE.Group(),hillsideScenery=new THREE.Group();scene.add(forestScenery,hillsideScenery);
+const pineTrunkMaterial=mat(0x77543c),pineNeedle=mat(0x24563b),pineNeedleLight=mat(0x34734b),hillsideGrass=mat(0x648a46);
+const TREE_COUNT=245;
+const treeTrunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.34,.48,1,7),pineTrunkMaterial,TREE_COUNT);
+const treeNeedlesLow=new THREE.InstancedMesh(new THREE.ConeGeometry(1,1,7),pineNeedle,TREE_COUNT);
+const treeNeedlesHigh=new THREE.InstancedMesh(new THREE.ConeGeometry(1,1,7),pineNeedleLight,TREE_COUNT);
+for(const im of [treeTrunks,treeNeedlesLow,treeNeedlesHigh]){im.castShadow=true;im.receiveShadow=true;forestScenery.add(im)}
+const pineDummy=new THREE.Object3D();
+function pineInstance(im,i,x,y,z,sx,sy,sz){pineDummy.position.set(x,y,z);pineDummy.rotation.set(0,0,0);pineDummy.scale.set(sx,sy,sz);pineDummy.updateMatrix();im.setMatrixAt(i,pineDummy.matrix)}
+let pineCount=0,forestAttempts=0;
+while(pineCount<TREE_COUNT&&forestAttempts++<TREE_COUNT*30){
+ const angle=rand(0,Math.PI*2),distance=rand(75,MAP_RADIUS-22);
+ const x=Math.cos(angle)*distance,z=Math.sin(angle)*distance;
+ if(Math.abs(x)<27&&z>-335&&z<80)continue;
+ if(ramps.some(r=>Math.abs(x-r.x)<r.w/2+14&&Math.abs(z-r.z)<r.len/2+14))continue;
+ if(obstacles.some(o=>!o.theme&&Math.hypot(o.x-x,o.z-z)<Math.max(7,Math.min(16,o.rx+4))))continue;
+ const trunkH=rand(3.4,6.2),foliageH=rand(8,14),width=rand(2.5,4.8),trunkRadius=rand(.5,.82);
+ pineInstance(treeTrunks,pineCount,x,trunkH/2,z,trunkRadius,trunkH,trunkRadius);
+ pineInstance(treeNeedlesLow,pineCount,x,trunkH+foliageH*.32,z,width,foliageH*.72,width);
+ pineInstance(treeNeedlesHigh,pineCount,x,trunkH+foliageH*.75,z,width*.73,foliageH*.68,width*.73);
+ obstacles.push({kind:'tree',theme:'forest',x,z,rx:trunkRadius,rz:trunkRadius,height:trunkH+1.1});
+ pineCount++;
+}
+for(const im of [treeTrunks,treeNeedlesLow,treeNeedlesHigh]){im.count=pineCount;im.instanceMatrix.needsUpdate=true;im.computeBoundingSphere()}
+for(let i=0;i<24;i++){
+ const angle=rand(0,Math.PI*2),distance=rand(285,535),x=Math.cos(angle)*distance,z=Math.sin(angle)*distance;
+ if(Math.abs(x)<48&&z>-335&&z<80)continue;
+ if(ramps.some(r=>Math.abs(x-r.x)<r.w/2+35&&Math.abs(z-r.z)<r.len/2+35))continue;
+ const radius=rand(14,29),height=rand(8,24);
+ const mound=mesh(new THREE.ConeGeometry(radius,height,14),hillsideGrass,hillsideScenery,x,height/2,z);
+ mound.rotation.y=rand(0,Math.PI*2);
+ obstacles.push({kind:'hill',theme:'hillside',mesh:mound,x,z,rx:radius,rz:radius,height});
+}
+forestScenery.visible=false;hillsideScenery.visible=false;
+
+// Bike local forward = -Z. Wheels roll around local X.
+const bike=new THREE.Group();scene.add(bike);const frame=new THREE.Group();bike.add(frame);
+const wheels=[];function wheel(z){const g=new THREE.Group();g.position.set(0,.66,z);frame.add(g);const tire=mesh(new THREE.TorusGeometry(.61,.17,12,28),rubber,g);tire.rotation.y=Math.PI/2;const rim=mesh(new THREE.CylinderGeometry(.44,.44,.13,24),metal,g);rim.rotation.z=Math.PI/2;const hub=mesh(new THREE.CylinderGeometry(.13,.13,.24,12),white,g);hub.rotation.z=Math.PI/2;for(let a=0;a<8;a++){const spoke=mesh(new THREE.BoxGeometry(.035,.78,.035),white,g);spoke.rotation.x=a*Math.PI/8}wheels.push(g)}wheel(-1.1);wheel(1.12);
+function rod(a,b,r,material=metal,parent=frame){const v1=new THREE.Vector3(...a),v2=new THREE.Vector3(...b),d=v2.clone().sub(v1),o=mesh(new THREE.CylinderGeometry(r,r,d.length(),9),material,parent);o.position.copy(v1).add(v2).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return o}
+rod([0,.72,1.1],[0,1.48,.4],.085,orange);
+rod([0,1.48,.4],[0,.72,-1.1],.09,orange);
+rod([0,.72,-1.1],[0,.72,1.1],.06,metal);
+const forkLeft=rod([-.2,1.5,-.2],[-.2,.7,-1.1],.065);
+const forkRight=rod([.2,1.5,-.2],[.2,.7,-1.1],.065);
+rod([0,1.42,.5],[0,.65,1.1],.085);
+const bodyPlastic=mesh(new THREE.BoxGeometry(.65,.36,1.4),orange,frame,0,1.52,.12);
+mesh(new THREE.BoxGeometry(.65,.17,.98),black,frame,0,1.75,.7);
+const frontFender=mesh(new THREE.BoxGeometry(.76,.11,.24),white,frame,0,1.7,-.8);
+const handlebar=mesh(new THREE.BoxGeometry(.95,.1,.14),metal,frame,0,2.02,-.32);
+const numberPlate=mesh(new THREE.BoxGeometry(.55,.18,.6),white,frame,0,1.86,-.9);
+// Preserve stock geometry and transforms for reversible, visual-only deformation.
+const vulnerable=[forkLeft,forkRight,frontFender,handlebar,numberPlate,bodyPlastic];
+const stockTransforms=new Map(vulnerable.map(o=>[o,{pos:o.position.clone(),quat:o.quaternion.clone(),scale:o.scale.clone()}]));
+// Offset rear muffler: mounts on the bike's right-rear side, behind the seat.
+// It vibrates increasingly with speed; world-space smoke exits the rear-facing +Z tip.
+const exhaustSteel=mat(0x858b90,.35,.86),exhaustTip=mat(0x171d21,.7,.35);
+rod([.28,1.42,.20],[.44,1.63,.77],.083,exhaustSteel);
+const exhaustRig=new THREE.Group();exhaustRig.position.set(.44,1.63,.88);frame.add(exhaustRig);
+const exhaustCan=mesh(new THREE.CylinderGeometry(.165,.205,.74,16),exhaustSteel,exhaustRig,0,0,.10);
+exhaustCan.rotation.x=Math.PI/2;
+for(const z of [-.23,.40]){const band=mesh(new THREE.CylinderGeometry(.205,.205,.065,16),metal,exhaustRig,0,0,z);band.rotation.x=Math.PI/2}
+const exhaustMouth=mesh(new THREE.CylinderGeometry(.126,.126,.03,16),exhaustTip,exhaustRig,0,0,.46);
+exhaustMouth.rotation.x=Math.PI/2;
+const smokeCanvas=document.createElement('canvas');smokeCanvas.width=smokeCanvas.height=64;
+const smokeCtx=smokeCanvas.getContext('2d');
+const smokeGrad=smokeCtx.createRadialGradient(32,32,3,32,32,31);
+smokeGrad.addColorStop(0,'rgba(241,243,240,.72)');smokeGrad.addColorStop(.4,'rgba(203,210,208,.38)');smokeGrad.addColorStop(1,'rgba(160,167,164,0)');
+smokeCtx.fillStyle=smokeGrad;smokeCtx.fillRect(0,0,64,64);
+const smokeTexture=new THREE.CanvasTexture(smokeCanvas);
+const exhaustPuffs=Array.from({length:58},()=>{
+ const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTexture,transparent:true,depthWrite:false,opacity:0}));
+ sprite.visible=false;scene.add(sprite);return {sprite,age:0,life:0,velocity:new THREE.Vector3()};
+});
+let nextPuff=0,smokeAccumulator=0,exhaustTime=0,engineThrottle=0;
+function updateExhaust(dt){
+ // Preserve pose if the simulation is paused; no exhaust effect should advance the physics.
+ exhaustRig.rotation.x=Math.sin(exhaustTime*1.7)*(.006+Math.min(.045,Math.abs(speed)*.0014));
+ exhaustRig.rotation.z=Math.sin(exhaustTime*3.0)*(.004+Math.min(.055,Math.abs(speed)*.002));
+ bike.updateMatrixWorld(true);
+ const emissionRate=exhaustRig.visible?(3+Math.min(13,Math.hypot(speed,lateralSpeed)*.19)+engineThrottle*6):0;
+ smokeAccumulator+=Math.min(dt,.05)*emissionRate;
+ let count=Math.min(4,Math.floor(smokeAccumulator));smokeAccumulator-=count;
+ const exhaustBack=new THREE.Vector3(0,0,1).transformDirection(exhaustRig.matrixWorld);
+ const source=exhaustRig.localToWorld(new THREE.Vector3(0,0,.52));
+ const motion=horizontalVelocity();
+ while(count-- >0){
+  const p=exhaustPuffs[nextPuff++%exhaustPuffs.length];p.age=0;p.life=1.1+Math.random()*.95;
+  p.sprite.visible=true;p.sprite.position.copy(source);
+  p.sprite.scale.setScalar(.22+Math.random()*.13);
+  p.velocity.set(exhaustBack.x*(1.7+engineThrottle*1.0)+motion.x*.22+(Math.random()-.5)*.45,
+                 .55+Math.random()*.5,
+                 exhaustBack.z*(1.7+engineThrottle*1.0)+motion.z*.22+(Math.random()-.5)*.45);
+ }
+ for(const p of exhaustPuffs){
+  if(!p.sprite.visible)continue;
+  p.age+=dt;if(p.age>=p.life){p.sprite.visible=false;continue}
+  const t=p.age/p.life;
+  p.sprite.position.addScaledVector(p.velocity,dt);
+  p.sprite.scale.setScalar(.26+t*.98);
+  p.sprite.material.opacity=(1-t)**1.65*(.21+engineThrottle*.08);
+ }
+}
+// Rider silhouette with helmet, torso, legs and arms.
+const rider=new THREE.Group();frame.add(rider);mesh(new THREE.BoxGeometry(.66,.82,.37),black,rider,0,2.26,.35).rotation.x=-.23;mesh(new THREE.SphereGeometry(.29,14,12),orange,rider,0,2.87,.16);mesh(new THREE.BoxGeometry(.44,.1,.24),black,rider,0,2.82,-.1);for(const s of [-1,1]){rod([s*.28,2.5,.3],[s*.43,2.06,-.25],.095,black,rider);rod([s*.23,1.98,.5],[s*.35,1.32,.77],.13,black,rider);rod([s*.35,1.32,.77],[s*.28,1.15,.18],.12,black,rider)}
+// Existing bike, controls, scenery, and save system preserved; V3C extends the collision/air loop.
+const TUNING_SCHEMA = [
+ {tab:'Ride',key:'maxSpeedKmh',label:'Top speed',min:25,max:240,step:1,value:144,unit:'km/h'},
+ {tab:'Ride',key:'acceleration',label:'Acceleration',min:3,max:60,step:1,value:20,unit:'m/s²'},
+ {tab:'Ride',key:'braking',label:'Braking / reverse force',min:5,max:70,step:1,value:34,unit:'m/s²'},
+ {tab:'Ride',key:'turnRate',label:'Turning response',min:.2,max:3,step:.05,value:1.25,unit:'rad/s'},
+ // Turn lean changes visual bank, separately from the steering/yaw physics.
+ {tab:'Lean',key:'turnLeanDirection',label:'Lean direction while turning',min:-1,max:1,step:1,value:1,unit:'',type:'select',options:[{value:1,label:'Into the turn (natural)'},{value:-1,label:'Away from the turn'},{value:0,label:'Keep bike upright'}]},
+ {tab:'Lean',key:'turnLeanDegrees',label:'Maximum turn lean',min:0,max:65,step:1,value:10,unit:'°'},
+ {tab:'Lean',key:'turnLeanSpeed',label:'Speed for maximum lean',min:15,max:180,step:1,value:126,unit:'km/h'},
+ {tab:'Lean',key:'turnLeanResponse',label:'Lean transition speed',min:1,max:24,step:.5,value:9,unit:'1/s'},
+ {tab:'Ride',key:'coastDrag',label:'Rolling resistance',min:.05,max:2.5,step:.05,value:.75,unit:'×'},
+ {tab:'Ride',key:'lateralGrip',label:'Sideways landing tire grip',min:.5,max:18,step:.5,value:6,unit:'1/s'},
+ {tab:'Ride',key:'boostMultiplier',label:'Boost strength',min:1,max:3,step:.05,value:1.55,unit:'×'},
+ {tab:'Ride',key:'wheelieLift',label:'Wheelie strength / nose lift',min:0,max:1.0,step:.01,value:.53,unit:'rad'},
+ {tab:'Ride',key:'wheelieBalance',label:'Wheelie throttle balance response',min:1,max:18,step:.5,value:8,unit:'1/s'},
+ {tab:'Ride',key:'damageScale',label:'Impact damage',min:0,max:3,step:.1,value:1,unit:'×'},
+ {tab:'Crash',key:'ejectSpeedKmh',label:'Rider ejection impact speed',min:20,max:130,step:2,value:52,unit:'km/h'},
+ {tab:'Crash',key:'deformStrength',label:'Bike bending sensitivity',min:.2,max:2.5,step:.1,value:1,unit:'×'},
+ {tab:'Crash',key:'ragdollBounce',label:'Ragdoll ground bounce',min:0,max:.7,step:.05,value:.22,unit:'×'},
+ {tab:'Crash',key:'ragdollJointStrength',label:'Joint constraint stiffness',min:.4,max:1,step:.05,value:.85,unit:'×'},
+ {tab:'Crash',key:'crashBubbleInterval',label:'Ow / Oof speech bubble interval',min:.35,max:2.5,step:.05,value:.85,unit:'s'},
+ {tab:'Air',key:'airFlipTorque',label:'Air flip torque (W back / S forward)',min:1,max:24,step:.5,value:12,unit:'rad/s²'},
+ {tab:'Air',key:'airYawTorque',label:'Air spin strength (A left / D right)',min:.5,max:25,step:.5,value:11,unit:'rad/s²'},
+ {tab:'Air',key:'airYawDamping',label:'Air spin damping (release to slow)',min:.05,max:6,step:.05,value:1.3,unit:'1/s'},
+ {tab:'Air',key:'airYawLimit',label:'Maximum air spin speed',min:.5,max:12,step:.25,value:6,unit:'rad/s'},
+ {tab:'Air',key:'airSpinDamping',label:'Air rotation damping',min:.05,max:5,step:.05,value:1.1,unit:'1/s'},
+ {tab:'Air',key:'airSpinLimit',label:'Maximum air rotation rate',min:1,max:10,step:.25,value:6,unit:'rad/s'},
+ {tab:'Air',key:'airDrag',label:'Horizontal air resistance',min:0,max:.6,step:.01,value:.025,unit:'1/s'},
+ {tab:'Shocks',key:'gravity',label:'Gravity',min:4,max:32,step:.5,value:17,unit:'m/s²'},
+ {tab:'Shocks',key:'shockStiffness',label:'Shock spring stiffness',min:60,max:440,step:5,value:210,unit:'N/kg/m'},
+ {tab:'Shocks',key:'shockDamping',label:'Shock damping',min:2,max:55,step:1,value:24,unit:'1/s'},
+ {tab:'Shocks',key:'suspensionTravel',label:'Suspension travel',min:.12,max:.7,step:.01,value:.38,unit:'m'},
+ {tab:'Shocks',key:'contactPitchGain',label:'Front/rear load pitch response',min:0,max:.08,step:.005,value:.02,unit:'×'},
+ {tab:'Camera',key:'cameraDistance',label:'Chase camera distance',min:4,max:32,step:.5,value:12,unit:'m'},
+ {tab:'Camera',key:'cameraHeight',label:'Chase camera height',min:2,max:16,step:.5,value:7,unit:'m'},
+ {tab:'Camera',key:'cameraFollow',label:'Camera follow speed',min:1,max:18,step:.5,value:4,unit:'1/s'},
+ {tab:'Camera',key:'reverseCameraTurnSpeed',label:'Reverse camera orbit speed',min:.4,max:4,step:.1,value:1.4,unit:'rad/s'},
+ {tab:'Controller',key:'controllerDeadzone',label:'Steering stick dead zone',min:.02,max:.45,step:.01,value:.14,unit:'×'},
+ {tab:'Controller',key:'controllerSteerSensitivity',label:'Controller steering sensitivity',min:.3,max:2.5,step:.05,value:1,unit:'×'},
+ {tab:'Controller',key:'controllerTriggerDeadzone',label:'Trigger dead zone',min:0,max:.4,step:.01,value:.05,unit:'×'},
+ {tab:'Controller',key:'controllerTriggerCurve',label:'Throttle trigger response curve',min:.5,max:2.5,step:.05,value:1.25,unit:'×'},
+ {tab:'Controller',key:'controllerLookSpeed',label:'Right-stick camera speed',min:.3,max:4,step:.05,value:1.7,unit:'rad/s'},
+ {tab:'Controller',key:'invertLookY',label:'Invert camera vertical look',min:0,max:1,step:1,value:0,unit:'',type:'toggle'}
+];
+const STORAGE_KEY='dirtbike_v3a_tuning_v1';
+const DEBUG_TABS=['Ride','Shocks','Lean','Air','Camera','Crash','Controller','Debug'];
+const BRIDGE_SAVE='dirtbike-v3j-profile-save',BRIDGE_ACK='dirtbike-v3j-profile-ack';
+const schemaByKey=new Map(TUNING_SCHEMA.map(s=>[s.key,s]));
+const defaultTuning=Object.fromEntries(TUNING_SCHEMA.map(s=>[s.key,s.value]));
+const tuning={...defaultTuning};
+let savedData={presets:{},selected:'',lastTuning:{...defaultTuning},debug:{hitboxes:false,contacts:false},activeTab:'Ride',updatedAt:0};
+let dirty=false, activeTab='Ride',lastRideRestored=false;
+function storageRead(){try{return localStorage.getItem(STORAGE_KEY)}catch{return null}}
+// A successful write alone is not proof that the browser kept it. Read the bytes back.
+function storageWrite(){try{const value=JSON.stringify(savedData);localStorage.setItem(STORAGE_KEY,value);return localStorage.getItem(STORAGE_KEY)===value}catch{return false}}
+function sendProfileToLauncher(){
+ if(window.parent===window || window.__DIRTBIKE_HOSTED__!==true)return false;
+ try{window.parent.postMessage({type:BRIDGE_SAVE,profile:JSON.parse(JSON.stringify(savedData))},'*');return true}catch{return false}
+}
+window.addEventListener('message',e=>{
+ if(e.source!==window.parent||e.data?.type!==BRIDGE_ACK)return;
+ if(e.data.ok)showAutoSave(true,'✓ Tuning verified and saved by launcher · next version can load it');
+ else if(!storageRead())showAutoSave(false,'⚠ Launcher could not save: export JSON before closing.');
+});
+
+function sanitizeValues(input){
+ const result={}; for(const s of TUNING_SCHEMA){
+  const n=Number(input?.[s.key]);
+  result[s.key]=input && input[s.key]!==undefined && input[s.key]!==null && Number.isFinite(n)
+   ? THREE.MathUtils.clamp(Math.round(n/s.step)*s.step,s.min,s.max) : s.value;
+ } return result;
+}
+try{
+ const shared=window.__DIRTBIKE_BOOT_PROFILE__;
+ const stored=shared&&typeof shared==='object'&&!Array.isArray(shared)?shared:JSON.parse(storageRead()||'null');
+ if(stored && typeof stored==='object'){
+  if(stored.presets&&typeof stored.presets==='object'&&!Array.isArray(stored.presets))
+   for(const [name,values] of Object.entries(stored.presets).slice(0,60)){
+    if(name.length<=54&&values&&typeof values==='object')savedData.presets[name]=sanitizeValues(values);
+   }
+  savedData.selected=typeof stored.selected==='string'?stored.selected:'';
+  savedData.activeTab=DEBUG_TABS.includes(stored.activeTab)?stored.activeTab:'Ride';
+  activeTab=savedData.activeTab;
+  savedData.debug={hitboxes:stored.debug?.hitboxes===true,contacts:stored.debug?.contacts===true};
+  lastRideRestored=Boolean(stored.lastTuning || savedData.presets[savedData.selected]);
+  savedData.lastTuning=sanitizeValues(stored.lastTuning || savedData.presets[savedData.selected] || defaultTuning);
+  Object.assign(tuning,savedData.lastTuning);
+ }
+}catch(e){console.warn('Tuning storage could not be read',e)}
+const tuner=document.getElementById('tuner');
+const tuningFields=document.getElementById('tuning-fields');
+const presetSelect=document.getElementById('preset-select');
+const presetName=document.getElementById('preset-name');
+const profileMessage=document.getElementById('profile-message');
+const fieldRows=new Map();
+function message(text){profileMessage.textContent=text}
+function markDirty(isDirty){dirty=isDirty;document.getElementById('dirty-dot').style.color=dirty?'#ffb452':'#75efb6';document.getElementById('dirty-dot').title=dirty?'Changes since named preset · current ride auto-saved':'Current ride auto-saved'}
+const autoStatus=document.getElementById('autosave-status');
+function showAutoSave(ok,text){autoStatus.classList.toggle('error',!ok);autoStatus.textContent=text}
+function persistCurrent(){
+ savedData.lastTuning={...tuning};
+ savedData.activeTab=activeTab;
+ // Debug state is captured after the controls are initialized. Early calls can omit it safely.
+ if(typeof showHitboxes!=='undefined')savedData.debug={hitboxes:showHitboxes,contacts:showContactDebug};
+ savedData.updatedAt=Date.now();
+ const ok=storageWrite(),parentOk=sendProfileToLauncher();
+ if(ok){showAutoSave(true,'✓ Saved and verified in browser · '+new Date(savedData.updatedAt).toLocaleTimeString());return true}
+ if(parentOk){showAutoSave(true,'↗ Sent to launcher; checking that it saved your tuning...');return true}
+ showAutoSave(false,'⚠ Tuning cannot be saved here. Open via the same launcher or Export JSON.');return false;
+}
+function numberText(s,n){
+ if(s.type==='select')return s.options.find(o=>o.value===n)?.label||String(n);
+ return s.type==='toggle'?(n?'On':'Off'):Number(n.toFixed(s.step<.1?2:s.step<1?1:0)).toString()+(s.unit?' '+s.unit:'');
+}
+function renderFields(){
+ tuningFields.replaceChildren();fieldRows.clear();
+ if(activeTab==='Controller'){
+  const status=document.createElement('div');status.id='gamepad-status';status.className='pad-status';status.textContent='Connect a gamepad and press a button.';
+  const mapping=document.createElement('p');mapping.className='pad-map';
+  mapping.innerHTML='<b>Standard Xbox / PlayStation layout</b><br>Left stick: steer on ground / flat spin in air · RT/R2: throttle on ground, backflip in air · LT/L2: brake on ground, frontflip in air<br>Tap A / Cross: start/stop wheelie · RB/R1: boost · Y / Triangle: camera<br>X / Square: repair/reset · B / Circle: tire probes<br>Start / Options: tuning garage · Back / Share: hitboxes<br>LB/L1: pause · D-pad right: step while paused<br>D-pad up/down: camera zoom · Right stick: orbit camera · R3: recenter';
+  const meter=document.createElement('div');meter.id='pad-telemetry';meter.className='pad-meter';meter.textContent='No live controller inputs.';
+  tuningFields.append(status,mapping,meter);
+ }
+ if(activeTab==='Debug'){
+  const legend=document.createElement('p');legend.className='legend';legend.textContent='Debug view settings (hitboxes/contacts) now auto-save. J repairs in place and rights overturned bikes; R still resets to spawn. Clean wheel landings do not cause health damage. H: solid collider outlines · T: wheel contact probes · P: pause · O: single frame. V3J keeps world velocity when landing backwards or sideways after a spin. A 180° landing rolls backward at the same travel speed; the sideways landing tire-grip slider controls lateral skids. Contact and scenery collision models remain approximations.';
+  const b=document.createElement('div');b.className='buttons';
+  for(const [label,fn] of [['Hitboxes (H)',()=>toggleHitboxes()],['Contacts (T)',()=>toggleContacts()],['Pause (P)',()=>togglePause()]]){
+   const button=document.createElement('button');button.type='button';button.textContent=label;button.className='secondary';button.addEventListener('click',fn);b.append(button);
+  }
+  const stepButton=document.createElement('button');stepButton.type='button';stepButton.textContent='Single frame (O)';stepButton.className='secondary';stepButton.style.width='100%';stepButton.style.position='static';stepButton.addEventListener('click',()=>{paused=true;stepping=true;message('Stepped one physics frame')});
+  const verifyButton=document.createElement('button');verifyButton.type='button';verifyButton.textContent='Check saved tuning now';verifyButton.className='secondary';verifyButton.style.position='static';verifyButton.style.width='100%';
+  verifyButton.onclick=()=>{const expected=JSON.stringify(savedData),stored=storageRead();const ok=stored===expected;message(ok?'✓ Verified: latest tuning and debug settings are saved in this browser.':window.__DIRTBIKE_HOSTED__===true?'Tuning sent to launcher; check the status above and use Back up tuning in launcher.':'⚠ Save failed or storage isolated; export a JSON tuning file.');};
+  const telemetry=document.createElement('pre');telemetry.id='telemetry';telemetry.className='telemetry';telemetry.textContent='Contact sensors loading (front/rear independent loads)...';
+  const testButtons=document.createElement('div');testButtons.className='buttons';
+  for(const [label,fn] of [['Test airborne flips',launchAirTest],['Test air spins',launchSpinTest],['Test 180° backward landing',launch180LandingTest],['Test ramp wall',launchRampWallTest],['Test rock collision',launchRockTest],['🌙 Test circular edge fall',launchMoonFallTest],['Repair here (J)',repairHere]]){
+   const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;button.addEventListener('click',fn);testButtons.append(button);
+  }
+  tuningFields.append(legend,b,stepButton,verifyButton,testButtons,telemetry);return;
+ }
+ for(const s of TUNING_SCHEMA.filter(s=>s.tab===activeTab)){
+  const wrapper=document.createElement('label');wrapper.className='setting';
+  const line=document.createElement('div');line.className='setting-line';
+  const title=document.createElement('span');title.textContent=s.label;
+  const out=document.createElement('output');out.textContent=numberText(s,tuning[s.key]);
+  const input=document.createElement(s.type==='select'?'select':'input');
+  if(s.type==='select')for(const o of s.options)input.add(new Option(o.label,String(o.value)));
+  else {input.type=s.type==='toggle'?'checkbox':'range';input.min=s.min;input.max=s.max;input.step=s.step;}
+  input.value=tuning[s.key];if(s.type==='toggle')input.checked=!!tuning[s.key];input.setAttribute('aria-label',s.label);
+  input.addEventListener(s.type==='toggle'||s.type==='select'?'change':'input',()=>{
+   tuning[s.key]=s.type==='toggle'?(input.checked?1:0):Number(input.value);out.textContent=numberText(s,tuning[s.key]);
+   markDirty(true);persistCurrent();
+  });
+  line.append(title,out);wrapper.append(line,input);tuningFields.append(wrapper);fieldRows.set(s.key,{input,out});
+ }
+ if(activeTab==='Crash'){
+  const p=document.createElement('p');p.className='legend';p.textContent='Severe rock/ramp side hits and upside-down body crashes eject a 16-joint rider, while clean wheel-first landings stay safe. This lightweight joint/constraint ragdoll is tuned for a browser; it is not BeamNG soft-body physics. Crash bubbles are text only: NO sound. J repairs and puts your rider back on the bike; R resets to spawn.';
+  const btn=document.createElement('button');btn.type='button';btn.className='secondary';btn.style.position='static';btn.style.width='100%';btn.textContent='💥 Test hard crash + ragdoll';btn.addEventListener('click',launchCrashTest);
+  tuningFields.append(p,btn);
+ }
+ if(activeTab==='Air'){
+  const info=document.createElement('p');info.className='legend';info.textContent='Ground: A/D or left stick steers. Air: A or stick-left spins left, D or stick-right spins right around the vertical axis. W/RT backflips and S/LT frontflips remain separate. Spinning changes bike orientation, not its flight path. Release steering to let damping slow the spin.';
+  const readout=document.createElement('div');readout.id='air-spin-live';readout.className='lean-meter';readout.textContent='LIVE AIR SPIN: 0° · 0.0 rad/s';
+  tuningFields.append(info,readout);
+ }
+ if(activeTab==='Lean'){
+  const explanation=document.createElement('p');explanation.className='legend';explanation.textContent='Turn lean banks the visible bike and rider. It follows your A / D keys or controller left stick; speed and steering amount determine the angle. In the air, automatic cornering lean returns to neutral. This is a visual lean model, not yet a tire-grip or gyroscopic balance simulation.';
+  const meter=document.createElement('div');meter.className='lean-meter';meter.innerHTML='<b>LIVE BANK ANGLE</b><div id="lean-live-label" aria-live="off">Upright · 0.0°</div><div class="lean-track" aria-label="Lean direction gauge: left, center, right"><div id="lean-indicator"></div></div><div style="display:flex;justify-content:space-between;opacity:.8"><span>LEFT</span><span>UPRIGHT</span><span>RIGHT</span></div>';
+  tuningFields.append(explanation,meter);
+ }
+}
+function applyValues(values,changed=false){Object.assign(tuning,sanitizeValues(values));renderFields();markDirty(changed);persistCurrent()}
+function refreshPresetSelect(name=savedData.selected){
+ presetSelect.replaceChildren(new Option('Select a saved setup',''));
+ for(const n of Object.keys(savedData.presets).sort((a,b)=>a.localeCompare(b)))presetSelect.add(new Option(n,n));
+ presetSelect.value=Object.hasOwn(savedData.presets,name)?name:'';
+}
+function savePreset(){
+ const name=presetName.value.trim();if(!name){message('Enter a setup name first.');return}
+ if(name==='__proto__'||name==='constructor'||name==='prototype'){message('Choose another name.');return}
+ savedData.presets[name]={...tuning};savedData.selected=name;
+ refreshPresetSelect(name);markDirty(false);persistCurrent();
+ message(storageRead()?'Saved "'+name+'" to this browser.':'Browser storage is blocked; export JSON instead.');
+}
+function loadPreset(){const name=presetSelect.value;
+ if(!name||!Object.hasOwn(savedData.presets,name)){message('Select a saved setup first.');return}
+ savedData.selected=name;presetName.value=name;applyValues(savedData.presets[name]);message('Applied "'+name+'". It is now your auto-saved current ride.');
+}
+function deletePreset(){const name=presetSelect.value;
+ if(!name||!Object.hasOwn(savedData.presets,name)){message('Select a saved setup first.');return}
+ delete savedData.presets[name];if(savedData.selected===name)savedData.selected='';
+ refreshPresetSelect();storageWrite();markDirty(true);message('Deleted preset "'+name+'".');
+}
+function exportPreset(){
+ const name=presetName.value.trim()||'My Bike Setup';
+ const content=JSON.stringify({game:'Desert Stunt Park Three.js',format:'dirtbike-tuning-v1',name,settings:{...tuning},debug:{hitboxes:showHitboxes,contacts:showContactDebug},activeTab},null,2);
+ const blob=new Blob([content],{type:'application/json'}),url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download='dirtbike-setup-'+name.toLowerCase().replace(/[^a-z0-9_-]+/g,'-').slice(0,40)+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ message('Exported the current settings as JSON.');
+}
+async function importPreset(e){
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>200000)throw Error('File is too large');
+  const data=JSON.parse(await file.text());
+  if(data?.format!=='dirtbike-tuning-v1'||!data.settings||typeof data.settings!=='object')throw Error('Not a Dirt Bike tuning preset');
+  const settings=sanitizeValues(data.settings);
+  const name=(String(data.name||file.name.replace(/\.json$/i,'')).slice(0,54).trim()||'Imported setup');
+  if(name==='__proto__'||name==='constructor'||name==='prototype')throw Error('Invalid setup name');
+  presetName.value=name;savedData.selected=name;savedData.presets[name]=settings;
+  applyValues(settings);refreshPresetSelect(name);
+  if(data.debug&&typeof data.debug==='object'){
+   if(showHitboxes!==(data.debug.hitboxes===true))toggleHitboxes();
+   if(showContactDebug!==(data.debug.contacts===true))toggleContacts();
+  }
+  if(DEBUG_TABS.includes(data.activeTab)){
+   activeTab=data.activeTab;
+   document.querySelectorAll('#tuner [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===activeTab));
+   renderFields();persistCurrent();
+  }
+  message('Imported and applied "'+name+'". This is now auto-saved in your current game/launcher.');
+ }catch(err){message('Import failed: '+err.message)}finally{e.target.value=''}
+}
+document.querySelectorAll('#tuner [data-tab]').forEach(b=>b.addEventListener('click',()=>{
+ activeTab=b.dataset.tab;document.querySelectorAll('#tuner [data-tab]').forEach(t=>t.classList.toggle('active',t===b));renderFields();persistCurrent();
+}));
+function toggleTuner(){const hidden=tuner.classList.toggle('collapsed');document.getElementById('toggle-tuner').textContent=hidden?'Show (G)':'Hide (G)'}
+document.getElementById('toggle-tuner').addEventListener('click',toggleTuner);
+document.getElementById('save-preset').addEventListener('click',savePreset);
+document.getElementById('load-preset').addEventListener('click',loadPreset);
+document.getElementById('delete-preset').addEventListener('click',deletePreset);
+document.getElementById('export-preset').addEventListener('click',exportPreset);
+document.getElementById('import-preset').addEventListener('click',()=>document.getElementById('preset-file').click());
+document.getElementById('preset-file').addEventListener('change',importPreset);
+document.getElementById('default-preset').addEventListener('click',()=>{applyValues(defaultTuning,true);message('Factory defaults applied (save to keep a named preset).')});
+presetSelect.addEventListener('change',()=>{if(presetSelect.value)loadPreset()});
+refreshPresetSelect();if(savedData.selected&&savedData.presets[savedData.selected])presetName.value=savedData.selected;
+renderFields();markDirty(false);
+document.querySelectorAll('#tuner [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===activeTab));
+const storageAvailable=(()=>{try{const key='__dirtbike_test__';localStorage.setItem(key,'ok');const yes=localStorage.getItem(key)==='ok';localStorage.removeItem(key);return yes}catch{return false}})();
+showAutoSave(storageAvailable||window.__DIRTBIKE_HOSTED__===true,
+ lastRideRestored?'✓ Last tuning restored · change any slider to verify next save':storageAvailable?'✓ Browser storage available · changes auto-save':'⚠ Storage unavailable here. Use the stable launcher or Export JSON.');
+// Every slider/controller adjustment saves immediately; pagehide adds an extra safety checkpoint.
+window.addEventListener('pagehide',()=>{persistCurrent()});
+// Existing controls remain; new keys add inspector functionality.
+const keys={};
+let paused=false,stepping=false,showHitboxes=!!savedData.debug?.hitboxes,showContactDebug=!!savedData.debug?.contacts;
+function toggleHitboxes(){showHitboxes=!showHitboxes;for(const v of hitboxVisuals)v.visible=showHitboxes;for(const v of solidHitboxVisuals)v.visible=showHitboxes&&(!v.userData.theme||v.userData.theme===activeMap);persistCurrent()}
+function toggleContacts(){showContactDebug=!showContactDebug;for(const m of contactMarkers){m.ball.visible=showContactDebug;m.line.visible=showContactDebug}persistCurrent()}
+function togglePause(){paused=!paused;stepping=false;message(paused?'Simulation paused — O advances one frame.':'Simulation resumed.')}
+// Gamepad API (standard mapping): poll once per animation frame so hot-plugging works.
+// These analog inputs are merged with keyboard controls in simulate(), not emulated key presses.
+const controller={index:-1,connected:false,name:'',steer:0,throttle:0,brake:0,lookX:0,lookY:0,lean:false,boost:false,previousButtons:[]};
+let cameraOrbitYaw=0,cameraOrbitPitch=0;
+const gamepadHud=document.getElementById('gamepad-hud');
+function triggerLevel(button){return THREE.MathUtils.clamp(Number(button?.value??(button?.pressed?1:0))||0,0,1)}
+function gamepadAxis(axis,deadzone){
+ const v=THREE.MathUtils.clamp(Number(axis)||0,-1,1),m=Math.abs(v);
+ return m<=deadzone?0:Math.sign(v)*(m-deadzone)/(1-deadzone);
+}
+function adjustCameraZoom(direction){
+ const s=schemaByKey.get('cameraDistance'),before=tuning.cameraDistance;
+ tuning.cameraDistance=THREE.MathUtils.clamp(before+direction,s.min,s.max);
+ if(tuning.cameraDistance!==before){markDirty(true);persistCurrent();if(activeTab==='Camera')renderFields()}
+}
+function clearController(){
+ controller.index=-1;controller.connected=false;controller.name='';controller.steer=controller.throttle=controller.brake=controller.lookX=controller.lookY=0;
+ controller.lean=controller.boost=false;controller.previousButtons=[];
+}
+function readController(){
+ let pads=[];
+ try{if(typeof navigator.getGamepads==='function')pads=Array.from(navigator.getGamepads()||[])}catch(e){clearController();gamepadHud.textContent='🎮 Gamepad access unavailable';return}
+ let pad=pads.find(p=>p&&p.index===controller.index&&p.connected!==false&&p.mapping==='standard');
+ if(!pad)pad=pads.find(p=>p&&p.connected!==false&&p.mapping==='standard');
+ if(!pad){
+  clearController();gamepadHud.textContent=pads.some(p=>p&&p.connected!==false)?'🎮 Connected, but standard controller mapping unavailable':'🎮 Controller: not connected (press a controller button)';return;
+ }
+ const freshlyConnected=!controller.connected||pad.index!==controller.index;
+ const buttons=Array.from(pad.buttons||[],b=>!!b?.pressed);
+ controller.connected=true;controller.index=pad.index;controller.name=String(pad.id||'Gamepad').slice(0,65);
+ controller.steer=THREE.MathUtils.clamp(gamepadAxis(pad.axes?.[0],tuning.controllerDeadzone)*tuning.controllerSteerSensitivity,-1,1);
+ controller.lookX=gamepadAxis(pad.axes?.[2],tuning.controllerDeadzone);
+ controller.lookY=gamepadAxis(pad.axes?.[3],tuning.controllerDeadzone);
+ controller.throttle=Math.pow(gamepadAxis(triggerLevel(pad.buttons?.[7]),tuning.controllerTriggerDeadzone),tuning.controllerTriggerCurve);
+ controller.brake=gamepadAxis(triggerLevel(pad.buttons?.[6]),tuning.controllerTriggerDeadzone);
+ controller.lean=buttons[0]||false;
+ controller.boost=buttons[5]||false;
+ // Suppress edges on connection to avoid an accidentally held reset/menu button.
+ if(!freshlyConnected && menuStage!=='riding'){
+  const newlyPressed=n=>buttons[n]&&!controller.previousButtons[n];
+  if(newlyPressed(14)||newlyPressed(12))changeMenuChoice(-1);
+  if(newlyPressed(15)||newlyPressed(13))changeMenuChoice(1);
+  if(newlyPressed(0)||newlyPressed(9)){if(menuStage==='lobby')showMenuStage('bikes');else if(menuStage==='bikes')showMenuStage('maps');else if(menuStage==='maps')document.getElementById('menu-start').click()}
+  if(newlyPressed(1)){if(menuStage==='maps')showMenuStage('bikes');else if(menuStage==='bikes')showMenuStage('lobby')}
+ }
+ if(!freshlyConnected && menuStage==='riding'){
+  const justPressed=(n)=>buttons[n]&&!controller.previousButtons[n];
+  if(justPressed(0))toggleWheelie(); // A / Cross: TAP to enter/exit wheelie
+  if(justPressed(3))camMode=(camMode+1)%3; // Y / Triangle
+  if(justPressed(2))reset(); // X / Square
+  if(justPressed(14))repairHere(); // D-pad left: repair in place
+  if(justPressed(1))toggleContacts(); // B / Circle
+  if(justPressed(4))togglePause(); // LB / L1
+  if(justPressed(8))toggleHitboxes(); // Back / Share
+  if(justPressed(9))toggleTuner(); // Start / Options
+  if(justPressed(11)){cameraOrbitYaw=0;cameraOrbitPitch=0} // R3
+  if(justPressed(12))adjustCameraZoom(-1);
+  if(justPressed(13))adjustCameraZoom(1);
+  if(justPressed(15)&&paused){stepping=true} // D-pad right
+ }
+ controller.previousButtons=buttons;
+ gamepadHud.textContent='🎮 '+controller.name+' · Connected';
+}
+addEventListener('gamepaddisconnected',()=>{clearController();gamepadHud.textContent='🎮 Controller disconnected'});
+// V3S: HUD panel is hidden by default; click the top-left button or press I.
+const rideHud=document.getElementById('hud');
+const hudToggle=document.getElementById('hud-toggle');
+function setRideHud(open){rideHud.hidden=!open;hudToggle.setAttribute('aria-expanded',String(open));hudToggle.textContent=open?'✕ Close (I)':'☰ Info (I)'}
+hudToggle.addEventListener('click',()=>setRideHud(rideHud.hidden));
+function dialPoint(deg,r){const a=(deg-90)*Math.PI/180;return [100+r*Math.cos(a),100+r*Math.sin(a)]}
+function dialArc(a,b,r){const p=dialPoint(a,r),q=dialPoint(b,r);return `M ${p[0]} ${p[1]} A ${r} ${r} 0 ${b-a>180?1:0} 1 ${q[0]} ${q[1]}`}
+document.getElementById('rpm-track').setAttribute('d',dialArc(225,495,77));
+document.getElementById('rpm-redline').setAttribute('d',dialArc(440,495,77));
+const ticks=document.getElementById('rpm-ticks');
+for(let i=0;i<=10;i++){const a=225+i*27,p=dialPoint(a,65),q=dialPoint(a,i>=8?53:58);const line=document.createElementNS('http://www.w3.org/2000/svg','line');for(const [k,v] of Object.entries({x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:i>=8?'#fa5b50':'#a5bfc9','stroke-width':i%2===0?3:2}))line.setAttribute(k,v);ticks.appendChild(line)}
+function updateRideDial(kmh){
+ document.getElementById('dial-speed').textContent=String(Math.round(kmh));
+ // V3T visual-only redline: use the reachable top speed for the current tuning.
+ // Rolling resistance often limits actual speed below the tuned hard speed cap.
+ const boosting=!!(keys.ShiftLeft||keys.ShiftRight||controller.boost);
+ const power=boosting?tuning.boostMultiplier:1;
+ const speedCap=tuning.maxSpeedKmh*power;
+ const resistanceLimitedSpeed=tuning.acceleration*power/Math.max(.05,tuning.coastDrag)*3.6;
+ const topSpeed=Math.max(1,Math.min(speedCap,resistanceLimitedSpeed));
+ const fraction=Math.max(0,Math.min(1,kmh/topSpeed));
+ const accelerating=!!(keys.KeyW||keys.ArrowUp||controller.throttle>.2)&&!ragdoll.active;
+ const atRedline=grounded&&accelerating&&fraction>=.95;
+ // Once the bike tops out, bounce the needle back and forth in the red arc.
+ // This does not change acceleration, top speed, engine physics, or sound.
+ const rev=atRedline
+   ? Math.max(.84,Math.min(1,.936+.048*Math.sin(clock.elapsedTime*52)+.014*Math.sin(clock.elapsedTime*91)))
+   : fraction;
+ const angle=225+270*rev;
+ document.getElementById('rpm-needle').setAttribute('transform',`rotate(${angle} 100 100)`);
+ document.getElementById('rpm-fill').setAttribute('d',dialArc(225,225+Math.max(.01,270*rev),77));
+}
+addEventListener('keydown',e=>{
+ // Menu shortcut must work even if the Start Riding button still has focus.
+ if(menuStage==='riding'&&e.code==='KeyI'){e.preventDefault();setRideHud(rideHud.hidden);return;}
+ if(menuStage==='riding'&&(e.code==='KeyM'||e.code==='Escape')){e.preventDefault();openMainMenu();return;}
+ if(menuStage==='maps'&&e.code==='Escape'){e.preventDefault();showMenuStage('bikes');return;}
+ if(menuStage==='bikes'&&e.code==='Escape'){e.preventDefault();showMenuStage('lobby');return;}
+ const editor=e.target?.closest?.('input,select,textarea,button');if(editor)return;
+ if(menuStage!=='riding'){if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();return;}
+ keys[e.code]=true;
+ if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+ if(e.repeat)return;
+ if(e.code==='Space')toggleWheelie();
+ if(e.code==='KeyC')camMode=(camMode+1)%3;
+ if(e.code==='KeyR')reset();
+ if(e.code==='KeyJ')repairHere();
+ if(e.code==='KeyG')toggleTuner();
+ if(e.code==='KeyH')toggleHitboxes();
+ if(e.code==='KeyT')toggleContacts();
+ if(e.code==='KeyP')togglePause();
+ if(e.code==='KeyO'){paused=true;stepping=true}
+});
+addEventListener('keyup',e=>keys[e.code]=false);
+addEventListener('blur',()=>{for(const k of Object.keys(keys))keys[k]=false});
+document.getElementById('reset').onclick=reset;
+
+let damage=0,impact=0,collisionCooldown=0;
+const collisionMat=new THREE.MeshBasicMaterial({color:0x00ffb3,wireframe:true,transparent:true,opacity:.6,depthTest:false});
+const hitboxVisuals=[];
+for(const [x,y,z,w,h,d] of [[0,1.25,0,.85,1.2,2.5],[0,2.25,.3,.9,1.55,.8],[0,.65,-1.1,1.3,1.3,.35],[0,.65,1.12,1.3,1.3,.35]]){
+ const v=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),collisionMat);v.position.set(x,y,z);v.visible=showHitboxes;bike.add(v);hitboxVisuals.push(v);
+}
+// Wireframe hitboxes are generated from the same collision data used by physics.
+const solidHitboxVisuals=[];
+const solidWireMat=new THREE.MeshBasicMaterial({color:0xffab32,wireframe:true,depthTest:false,transparent:true,opacity:.48});
+const rockWireGeo=new THREE.SphereGeometry(1,14,10),hillWireGeo=new THREE.ConeGeometry(1,1,9,4,true),treeWireGeo=new THREE.CylinderGeometry(1,1,1,10);
+for(const o of obstacles){
+ const debug=new THREE.Mesh(o.kind==='hill'?hillWireGeo:o.kind==='tree'?treeWireGeo:rockWireGeo,solidWireMat);debug.userData.theme=o.theme||null;
+ debug.position.set(o.x,o.height/2,o.z);debug.scale.set(o.rx,o.height,o.rz);debug.visible=showHitboxes&&(!o.theme||o.theme===activeMap);scene.add(debug);solidHitboxVisuals.push(debug);
+}
+for(const r of ramps){
+ for(const side of [-1,1]){
+  const coords=[];for(let j=0;j<=24;j++){
+   const rz=r.z+(j/24-.5)*r.len,top=rampHeight(r,rz);
+   coords.push(new THREE.Vector3(r.x+side*r.w/2,top+.05,rz));
+   if(j%4===0){coords.push(new THREE.Vector3(r.x+side*r.w/2,.05,rz));coords.push(new THREE.Vector3(r.x+side*r.w/2,top+.05,rz))}
+  }
+  const wire=new THREE.Line(new THREE.BufferGeometry().setFromPoints(coords),new THREE.LineBasicMaterial({color:0xffb942,depthTest:false,transparent:true,opacity:.9}));
+  wire.visible=showHitboxes;scene.add(wire);solidHitboxVisuals.push(wire);
+ }
+}
+const WHEEL_Z=[-1.1,1.12],WHEEL_RADIUS=.78,WHEEL_Y=.66;
+const contactMarkers=WHEEL_Z.map((offset,i)=>{
+ const ball=mesh(new THREE.SphereGeometry(.19,10,8),new THREE.MeshBasicMaterial({color:0x32fc93,depthTest:false}),scene);
+ ball.visible=showContactDebug;ball.castShadow=false;ball.receiveShadow=false;
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+ const line=new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0xf6ed91,depthTest:false}));line.visible=showContactDebug;scene.add(line);
+ return {ball,line};
+});
+let pos=new THREE.Vector3(0,.08,25),yaw=0,speed=0,lateralSpeed=0,vertical=0,pitch=0,pitchVelocity=0,camMode=0,grounded=true,travel=0;
+let wheelieArmed=false,wheelieAirTime=0,cameraHeading=0,cameraHeadingReady=false,cameraReverseView=false;
+function toggleWheelie(){
+ if(ragdoll.active){message('Rider ejected! Press J to recover here or R to reset.');return}
+ wheelieArmed=!wheelieArmed;wheelieAirTime=0;
+ if(wheelieArmed && grounded && speed>0.5) pitchVelocity=Math.max(pitchVelocity,1.5+.85*tuning.wheelieLift);
+ message(wheelieArmed?'Wheelie started! Use W/RT to lift or recover; ease off to let the nose fall. Tap Space/A again to cancel.':'Wheelie assist off.');
+}
+let currentSamples=[],lastCollision='None',lastDt=0,frameCount=0,airFlipCount=0,crashTime=0,turnLeanAngle=0,turnLeanTarget=0,turnSteer=0;
+// Separate airborne bike rotation from horizontal flight direction. This stops mid-air steering from curving the jump path.
+let airYawVelocity=0,airTravelHeading=0,airYawStart=0,airSpinTurns=0,lastLandedSpinTurns=0;
+// Local forward is -Z; local right is +X. Keep BOTH components of velocity,
+// so rotating a bike in the air never teleports or reverses its world momentum.
+function velocityAtHeading(heading,forward=speed,side=lateralSpeed){
+ return {x:-Math.sin(heading)*forward+Math.cos(heading)*side,
+         z:-Math.cos(heading)*forward-Math.sin(heading)*side};
+}
+function horizontalVelocity(){return velocityAtHeading(grounded?yaw:airTravelHeading)}
+// Re-express an unchanged world velocity using a NEW bike-facing yaw.
+// A 180° spin yields reverse signed wheel rolling, not a sudden direction flip.
+function projectVelocityBetweenHeadings(fromHeading,toHeading){
+ const delta=toHeading-fromHeading,cos=Math.cos(delta),sin=Math.sin(delta);
+ const oldForward=speed,oldSide=lateralSpeed;
+ speed=oldForward*cos-oldSide*sin;
+ lateralSpeed=oldForward*sin+oldSide*cos;
+}
+function worldTravelHeading(){
+ const v=horizontalVelocity();return Math.hypot(v.x,v.z)>.2?Math.atan2(-v.x,-v.z):yaw;
+}
+// V3K: browser-friendly position-based ragdoll. Each articulation has its own
+// mass point, collision sphere and distance-constrained ball joint. Unlike the
+// attached silhouette, limbs flex and collide independently after ejection.
+const jointSpecs={
+ hips:[0,1.94,.45,.22],chest:[0,2.42,.31,.27],neck:[0,2.72,.23,.14],head:[0,2.98,.17,.29],
+ lShoulder:[-.34,2.49,.28,.13],rShoulder:[.34,2.49,.28,.13],
+ lElbow:[-.44,2.13,-.23,.12],rElbow:[.44,2.13,-.23,.12],
+ lHand:[-.43,1.99,-.43,.11],rHand:[.43,1.99,-.43,.11],
+ lHip:[-.23,1.91,.49,.16],rHip:[.23,1.91,.49,.16],
+ lKnee:[-.35,1.34,.76,.15],rKnee:[.35,1.34,.76,.15],
+ lFoot:[-.31,1.11,.16,.16],rFoot:[.31,1.11,.16,.16]
+};
+const skeletonLinks=[
+ ['hips','chest',.30],['chest','neck',.13],['neck','head',.14],
+ ['chest','lShoulder',.13],['lShoulder','lElbow',.102],['lElbow','lHand',.10],
+ ['chest','rShoulder',.13],['rShoulder','rElbow',.102],['rElbow','rHand',.10],
+ ['hips','lHip',.16],['lHip','lKnee',.14],['lKnee','lFoot',.13],
+ ['hips','rHip',.16],['rHip','rKnee',.14],['rKnee','rFoot',.13],
+ // Bracing keeps the helmet, shoulders, pelvis and chest approximately solid,
+ // while elbow/knee/hip/shoulder connections remain articulated.
+ ['lShoulder','rShoulder',.0],['lHip','rHip',.0],
+ ['chest','lHip',0],['chest','rHip',0],['hips','lShoulder',0],['hips','rShoulder',0]
+];
+const ragdoll={active:false,root:new THREE.Group(),nodes:{},links:[],bubbleCooldown:0,collisions:0};
+scene.add(ragdoll.root);ragdoll.root.visible=false;
+const jointSphere=new THREE.SphereGeometry(1,10,8),linkCylinder=new THREE.CylinderGeometry(1,1,1,10);
+for(const [name,s] of Object.entries(jointSpecs)){
+ const o=new THREE.Mesh(jointSphere,name==='head'?orange:(name.endsWith('Knee')?orange:black));
+ o.scale.setScalar(s[3]);o.castShadow=true;ragdoll.root.add(o);
+ ragdoll.nodes[name]={p:new THREE.Vector3(),old:new THREE.Vector3(),r:s[3],mesh:o,
+  invMass:name==='hips'||name==='chest'?.55:name==='head'?.75:1};
+}
+for(const [a,b,radius] of skeletonLinks){
+ const rest=new THREE.Vector3(...jointSpecs[a].slice(0,3)).distanceTo(new THREE.Vector3(...jointSpecs[b].slice(0,3)));
+ const show=radius>0;
+ let visual=null;
+ if(show){visual=new THREE.Mesh(linkCylinder,a==='hips'&&b==='chest'?orange:black);visual.castShadow=true;ragdoll.root.add(visual)}
+ ragdoll.links.push({a,b,rest,visual,r:radius});
+}
+// Original helmet visor shape, attached to the independently tumbling head.
+const helmetVisor=mesh(new THREE.BoxGeometry(.34,.09,.10),black,ragdoll.nodes.head.mesh,0,-.03,-.85);
+// Mesh child is expressed in parent's sphere-scaled coordinates.
+helmetVisor.castShadow=true;
+// V3L stage only appears AFTER leaving the island. No outside game art or audio.
+const spaceCinema=document.getElementById('space-cinema'),spaceCaption=document.getElementById('space-caption');
+const oneMinuteLater=document.getElementById('one-minute-later');
+const PRE_TITLE_FALL_SECONDS=3.0;
+const ONE_MINUTE_CARD_SECONDS=1.8; // On-screen title duration, not an actual minute.
+const SPACE_MOON_RADIUS=16;
+const moon=new THREE.Group();scene.add(moon);moon.visible=false;
+const moonSurface=new THREE.Mesh(new THREE.SphereGeometry(SPACE_MOON_RADIUS,48,32),mat(0xb1b2b9,.97));moonSurface.castShadow=true;moonSurface.receiveShadow=true;moon.add(moonSurface);
+const craterDark=new THREE.MeshBasicMaterial({color:0x777982,transparent:true,opacity:.56,side:THREE.DoubleSide,depthWrite:false});
+const craterRim=mat(0xd6d6da,.94);
+// Deterministic crater marks make the sphere visibly lunar without a CDN texture.
+let craterSeed=5831;function craterRand(){craterSeed=(1664525*craterSeed+1013904223)>>>0;return craterSeed/4294967296}
+for(let i=0;i<29;i++){
+ const a=craterRand()*Math.PI*2,y=craterRand()*1.8-.9,r=1+craterRand()*1.9;
+ const n=new THREE.Vector3(Math.cos(a)*Math.sqrt(1-y*y),y,Math.sin(a)*Math.sqrt(1-y*y));
+ const mark=new THREE.Mesh(new THREE.CircleGeometry(r,24),craterDark);
+ mark.position.copy(n).multiplyScalar(SPACE_MOON_RADIUS+.09);
+ mark.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),n);moon.add(mark);
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(r,Math.min(.18,r*.07),5,24),craterRim);
+ ring.position.copy(n).multiplyScalar(SPACE_MOON_RADIUS+.14);ring.quaternion.copy(mark.quaternion);moon.add(ring);
+}
+const starPoints=[];let starSeed=932104;
+for(let i=0;i<1500;i++){
+ starSeed=(1664525*starSeed+1013904223)>>>0;const u=starSeed/4294967296;
+ starSeed=(1664525*starSeed+1013904223)>>>0;const v=starSeed/4294967296;
+ starSeed=(1664525*starSeed+1013904223)>>>0;const dist=390+(starSeed/4294967296)*850;
+ const phi=2*Math.PI*u,cy=2*v-1,rad=Math.sqrt(1-cy*cy);
+ starPoints.push(dist*rad*Math.cos(phi),dist*cy,dist*rad*Math.sin(phi));
+}
+const starGeo=new THREE.BufferGeometry();starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPoints,3));
+const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xf5f5ff,size:2.5,sizeAttenuation:false,depthWrite:false,fog:false}));
+stars.visible=false;stars.frustumCulled=false;scene.add(stars);
+const spaceFall={active:false,time:0,titleTime:0,titleShown:false,hit:false,hitTime:0,origin:new THREE.Vector3(),
+ direction:new THREE.Vector3(1,0,0),side:new THREE.Vector3(0,0,1),impactPoint:new THREE.Vector3(),
+ target:new THREE.Vector3(),bikeYaw:0,bikePitch:0,startingBike:new THREE.Vector3()};
+function popMoonPow(world){
+ const el=document.createElement('div');el.className='crash-bubble pow';el.textContent='POW!';
+ speechLayer.append(el);bubbles.push({el,at:world.clone(),age:0,life:2.2});
+ while(bubbles.length>5){bubbles.shift().el.remove()}
+}
+function beginSpaceFall(){
+ if(spaceFall.active)return;
+ spaceFall.active=true;spaceFall.time=0;spaceFall.titleTime=0;spaceFall.titleShown=false;spaceFall.hit=false;spaceFall.hitTime=0;
+ spaceFall.origin.copy(pos);spaceFall.startingBike.copy(pos);
+ spaceFall.direction.set(pos.x,0,pos.z).normalize();
+ if(spaceFall.direction.lengthSq()<.01)spaceFall.direction.set(0,0,1);
+ spaceFall.side.set(-spaceFall.direction.z,0,spaceFall.direction.x);
+ spaceFall.bikeYaw=yaw;spaceFall.bikePitch=pitch;
+ makeRagdoll(Math.max(10,Math.hypot(speed,lateralSpeed)));
+ // Space cutscene uses the existing jointed rider but owns its movement.
+ for(const b of bubbles)b.el.remove();bubbles.length=0;
+ const chest=ragdoll.nodes.chest.p;
+ for(const j of Object.values(ragdoll.nodes)){
+  const rel=j.p.clone().sub(chest);
+  const tumble=new THREE.Vector3(-rel.z*2,rel.x*2+.25,rel.y*1.5);
+  j.old.copy(j.p).addScaledVector(tumble,-1/75);
+ }
+ moon.position.copy(spaceFall.origin).addScaledVector(spaceFall.direction,34);
+ moon.position.y-=154;moon.visible=false;
+ stars.position.copy(spaceFall.origin);stars.position.y-=115;stars.visible=false;
+ spaceCinema.classList.add('active');spaceCaption.textContent='FALLING OFF THE EDGE...';
+ wheelieArmed=false;engineThrottle=0;lastCollision='Off the circular island — moon fall';
+ message('🌙 You fell off the circular island! Watch the silent moon cutscene. Press R to return.');
+}
+function stopSpaceFall(){
+ spaceFall.active=false;spaceFall.time=0;spaceFall.titleTime=0;spaceFall.titleShown=false;spaceFall.hit=false;oneMinuteLater.classList.remove('active');
+ moon.visible=false;stars.visible=false;spaceCinema.classList.remove('active');
+ scene.fog=stockFog;scene.background.copy(stockSky);
+}
+function stepSpaceFall(dt){
+ if(spaceFall.titleTime>0){
+  spaceFall.titleTime=Math.max(0,spaceFall.titleTime-dt);
+  if(spaceFall.titleTime===0){
+   oneMinuteLater.classList.remove('active');
+   scene.fog=null;scene.background.setHex(0x050816);
+   moon.visible=true;stars.visible=true;
+   spaceCaption.textContent='FALLING INTO SPACE...';
+  }
+  return;
+ }
+ const t=spaceFall.time+=dt,impactT=4.15;
+ if(!spaceFall.titleShown && t>=PRE_TITLE_FALL_SECONDS){
+  spaceFall.titleShown=true;
+  spaceFall.titleTime=ONE_MINUTE_CARD_SECONDS;
+  oneMinuteLater.classList.add('active');
+  return;
+ }
+ const phase=Math.min(1,t/impactT);
+ if(!spaceFall.hit){
+  const travel=phase*phase;
+  spaceFall.target.copy(spaceFall.origin).addScaledVector(spaceFall.direction,34*travel);
+  spaceFall.target.y-=141*travel;
+ }else{
+  const drift=t-spaceFall.hitTime;
+  spaceFall.target.copy(spaceFall.impactPoint).addScaledVector(spaceFall.direction,drift*8);
+  spaceFall.target.addScaledVector(spaceFall.side,drift*2.1);spaceFall.target.y+=drift*4.2;
+ }
+ // Verlet motion of all 16 nodes continues as a floating articulated body.
+ for(const j of Object.values(ragdoll.nodes)){
+  const v=j.p.clone().sub(j.old).multiplyScalar(Math.exp(-dt*.85));
+  j.old.copy(j.p);j.p.add(v);
+ }
+ for(let k=0;k<6;k++)for(const link of ragdoll.links)constrainRagdoll(link);
+ const correction=spaceFall.target.clone().sub(ragdoll.nodes.chest.p);
+ for(const j of Object.values(ragdoll.nodes)){j.p.add(correction);j.old.add(correction)}
+ // The impact happens where the character actually meets the moon's sphere.
+ if(!spaceFall.hit && ragdoll.nodes.chest.p.distanceTo(moon.position)<=SPACE_MOON_RADIUS+ragdoll.nodes.chest.r+1){
+  spaceFall.hit=true;spaceFall.hitTime=t;spaceFall.impactPoint.copy(ragdoll.nodes.chest.p);
+  popMoonPow(ragdoll.nodes.head.p);spaceCaption.textContent='POW!  ·  DRIFTING INTO SPACE';
+  for(const j of Object.values(ragdoll.nodes)){
+   const r=j.p.clone().sub(ragdoll.nodes.chest.p);
+   const impulse=new THREE.Vector3(-r.z,1.4+r.x,r.y).multiplyScalar(.035);
+   j.old.sub(impulse);
+  }
+ }
+ if(!spaceFall.hit && t>1.45 && spaceFall.titleShown)spaceCaption.textContent=t>3.5?'THE MOON IS GETTING CLOSER...':'THE BIKE FLOATS AWAY...';
+ if(t>4.7)spaceCaption.textContent='FLOATING AWAY...  🌙';
+ // Bike drifts UP and sideways while the rider falls out of sight below it.
+ bike.position.copy(spaceFall.startingBike).addScaledVector(spaceFall.direction,t*7.5).addScaledVector(spaceFall.side,t*9);
+ bike.position.y=spaceFall.startingBike.y+1.5+t*2.1;
+ bike.rotation.order='YXZ';bike.rotation.y=spaceFall.bikeYaw+t*.40;bike.rotation.x=spaceFall.bikePitch+t*.47;
+ // Keep the moon centered in the stage: no movement of ordinary stunt objects.
+ for(let i=bubbles.length-1;i>=0;i--){const b=bubbles[i];b.age+=dt;if(b.age>=b.life){b.el.remove();bubbles.splice(i,1)}}
+}
+function drawSpaceFall(dt){
+ const riderCenter=ragdoll.nodes.chest.p;
+ const stageLook=riderCenter.clone();
+ if(!spaceFall.hit){
+  // Frame both the floating motorcycle and rider for the first half of the fall.
+  const bikeFraming=.22*THREE.MathUtils.clamp((3-spaceFall.time)/.8,0,1);
+  stageLook.lerp(bike.position,bikeFraming);
+  stageLook.lerp(moon.position,Math.min(.23,Math.max(0,spaceFall.time-2.2)*.15));
+ }
+ const follow=riderCenter.clone().addScaledVector(spaceFall.direction,-34).addScaledVector(spaceFall.side,12);
+ follow.y+=15;
+ camera.position.lerp(follow,1-Math.exp(-dt*3.6));camera.lookAt(stageLook);
+ renderCrashEffects(dt);
+ document.getElementById('speed').textContent='🌙 SPACE FALL';
+ document.getElementById('status').textContent=spaceFall.hit?'POW! · FLOATING AWAY':'FALLING OFF THE CIRCULAR MAP';
+ document.getElementById('angle').textContent='R: return to island · J: rescue to spawn';
+ document.getElementById('crash-hud').textContent='16-joint rider · bike drifting away · silent cutscene';
+ renderer.render(scene,camera);
+}
+const speechLayer=document.getElementById('crash-bubbles');
+const bubbles=[];let bubbleIndex=0,bikeBend=0;
+const debris=[];
+const crashTexts=['Oof!','Ow!','Oof!','Ow! Ow!','Ouch!'];
+const bendAxis=new THREE.Vector3(0,0,1);
+function popCrashBubble(world){
+ const el=document.createElement('div');el.className='crash-bubble';el.textContent=crashTexts[bubbleIndex++%crashTexts.length];
+ speechLayer.append(el);bubbles.push({el,at:world.clone(),age:0,life:1.35});
+ while(bubbles.length>5){bubbles.shift().el.remove()}
+}
+function setBikeBend(){
+ for(const o of vulnerable){const s=stockTransforms.get(o);o.position.copy(s.pos);o.quaternion.copy(s.quat);o.scale.copy(s.scale)}
+ const twist=new THREE.Quaternion().setFromAxisAngle(bendAxis,bikeBend*.35);
+ forkLeft.position.x-=bikeBend*.1;forkRight.position.x+=bikeBend*.07;
+ forkLeft.quaternion.premultiply(twist);forkRight.quaternion.premultiply(twist);
+ handlebar.position.x+=bikeBend*.29;handlebar.rotation.z+=bikeBend*.55;
+ frontFender.position.x+=bikeBend*.17;frontFender.rotation.z+=bikeBend*.34;
+ numberPlate.rotation.z+=bikeBend*.25;
+ bodyPlastic.scale.x*=1-bikeBend*.16;bodyPlastic.rotation.z+=bikeBend*.075;
+ wheels[0].position.x=bikeBend*.18;wheels[0].rotation.z=bikeBend*.18;
+}
+function detachBikePiece(part,launchSpeed){
+ if(!part.visible)return;
+ bike.position.copy(pos);bike.rotation.order='YXZ';bike.rotation.y=yaw;bike.rotation.x=pitch;
+ frame.rotation.z=turnLeanAngle;bike.updateMatrixWorld(true);
+ const flying=part.clone(true);part.matrixWorld.decompose(flying.position,flying.quaternion,flying.scale);
+ flying.traverse(o=>{if(o.isMesh)o.castShadow=true});scene.add(flying);part.visible=false;
+ const v=horizontalVelocity();
+ debris.push({obj:flying,v:new THREE.Vector3(v.x*.75+(Math.random()-.5)*launchSpeed*.7,
+     4+Math.random()*4+launchSpeed*.12,v.z*.75+(Math.random()-.5)*launchSpeed*.6),
+    spin:new THREE.Vector3((Math.random()-.5)*10,(Math.random()-.5)*10,(Math.random()-.5)*10),age:0});
+}
+function makeRagdoll(speedAtImpact){
+ if(ragdoll.active)return;
+ // V3J's original rider remains mounted but invisible until R or J recovers.
+ rider.visible=false;wheelieArmed=false;wheelieAirTime=0;
+ bike.position.copy(pos);bike.rotation.order='YXZ';bike.rotation.y=yaw;bike.rotation.x=pitch;
+ frame.rotation.z=turnLeanAngle;bike.updateMatrixWorld(true);
+ const normalVelocity=horizontalVelocity();
+ const throwRate=Math.min(1.4,.7+speedAtImpact*.025);
+ const angular=new THREE.Vector3(-Math.min(12,4+speedAtImpact*.23),
+     (Math.random()-.5)*2.5,(Math.random()-.5)*3.5);
+ const center=frame.localToWorld(new THREE.Vector3(0,2.15,.3));
+ for(const [name,s] of Object.entries(jointSpecs)){
+  const joint=ragdoll.nodes[name];
+  joint.p.copy(frame.localToWorld(new THREE.Vector3(s[0],s[1],s[2])));
+  const radial=joint.p.clone().sub(center),angularVelocity=angular.clone().cross(radial);
+  const velocity=new THREE.Vector3(normalVelocity.x*throwRate,
+    Math.max(1.5,vertical)+4+speedAtImpact*.13,normalVelocity.z*throwRate).add(angularVelocity);
+  joint.old.copy(joint.p).addScaledVector(velocity,-1/120);
+ }
+ ragdoll.active=true;ragdoll.root.visible=true;ragdoll.bubbleCooldown=.68;
+ popCrashBubble(ragdoll.nodes.head.p);
+ // The rider has flown clear; let the empty bike bounce and pitch after the hit.
+ pitchVelocity+=Math.min(6,speedAtImpact*.16);vertical+=Math.min(3.5,speedAtImpact*.1);
+}
+function handleBikeCrash(severity,hitName){
+ if(!Number.isFinite(severity)||severity<=0)return;
+ // Small taps don't deform the bike. Significant side impacts accumulate bend.
+ bikeBend=Math.min(1,bikeBend+Math.max(0,severity-4.5)*.025*tuning.deformStrength);
+ setBikeBend();
+ if(severity>=11||bikeBend>.55)detachBikePiece(frontFender,severity);
+ if(severity>=16||bikeBend>.77)detachBikePiece(exhaustRig,severity);
+ if(severity>=23)detachBikePiece(handlebar,severity);
+ if(severity>=tuning.ejectSpeedKmh/3.6){
+  makeRagdoll(severity);
+  lastCollision=hitName+' — HARD CRASH / rider ejected';
+  message('💥 Rider ejected! Jointed ragdoll active, frame bent. No audio. J repairs here; R resets to spawn.');
+ }
+}
+function clearCrashEffects(){
+ ragdoll.active=false;ragdoll.root.visible=false;ragdoll.collisions=0;ragdoll.bubbleCooldown=0;
+ rider.visible=true;bikeBend=0;setBikeBend();
+ exhaustRig.visible=true;frontFender.visible=true;handlebar.visible=true;
+ for(const d of debris)scene.remove(d.obj);debris.length=0;
+ for(const b of bubbles)b.el.remove();bubbles.length=0;
+}
+function constrainRagdoll(link){
+ const a=ragdoll.nodes[link.a],b=ragdoll.nodes[link.b];
+ const diff=new THREE.Vector3().subVectors(b.p,a.p),len=diff.length();
+ if(len<1e-6)return;
+ const corr=(len-link.rest)/len*tuning.ragdollJointStrength;
+ const total=a.invMass+b.invMass;
+ a.p.addScaledVector(diff,corr*a.invMass/total);
+ b.p.addScaledVector(diff,-corr*b.invMass/total);
+}
+function collideRagdollJoint(joint,name,dt,announce){
+ const p=joint.p,old=joint.old,rad=joint.r;
+ // The same continuous ground / raised ramp / hill shapes used by tire probes
+ // catch body parts; impact response is per joint, not a rigid rider teleport.
+ // Side-on strikes against rock volumes push limbs out rather than allowing
+ // them to pass through the boulder when below its curved top.
+ for(const o of obstacles){
+  if((o.kind!=='rock'&&o.kind!=='tree')||(o.theme&&o.theme!==activeMap)||Math.abs(p.x-o.x)>o.rx+rad||Math.abs(p.z-o.z)>o.rz+rad||p.y>o.height+rad)continue;
+  const dx=p.x-o.x,dz=p.z-o.z,rx=o.rx+rad,rz=o.rz+rad;
+  const u=Math.hypot(dx/rx,dz/rz);
+  if(u>=1||p.y-rad>=obstacleTopAt(o,p.x,p.z)-rad*.3)continue;
+  const nx=dx/(rx*rx),nz=dz/(rz*rz),length=Math.hypot(nx,nz)||1;
+  const push=Math.min(1.2,(1-u)*Math.min(rx,rz)+.008);
+  p.x+=(nx/length)*push;p.z+=(nz/length)*push;
+  old.x=p.x+(p.x-old.x)*tuning.ragdollBounce;
+  old.z=p.z+(p.z-old.z)*tuning.ragdollBounce;
+  if(announce && ragdoll.bubbleCooldown<=0 && (name==='head'||name==='chest')){
+   popCrashBubble(ragdoll.nodes.head.p);ragdoll.bubbleCooldown=tuning.crashBubbleInterval;ragdoll.collisions++;
+  }
+  break;
+ }
+ const terrain=surfaceAt(p.x,p.z);
+ if(p.y-rad < terrain.height){
+  const downVelocity=(p.y-old.y)/dt;
+  p.y=terrain.height+rad;
+  if(downVelocity<0){
+   const newV=-downVelocity*Math.max(.05,tuning.ragdollBounce)*dt;
+   old.y=p.y-newV;
+   old.x=p.x-(p.x-old.x)*.62;old.z=p.z-(p.z-old.z)*.62;
+   if(announce && downVelocity< -3 && ragdoll.bubbleCooldown<=0 && (name==='head'||name==='chest'||name.endsWith('Knee'))){
+    popCrashBubble(name==='head'?p:ragdoll.nodes.head.p);ragdoll.bubbleCooldown=tuning.crashBubbleInterval;
+    ragdoll.collisions++;
+   }
+  }else if(old.y>p.y)old.y=p.y;
+ }
+ // Ramp walls have collision depth instead of letting detached limbs pass
+ // through the visible side skirts while below the ramp deck.
+ for(const r of ramps){
+  if(Math.abs(p.z-r.z)>r.len/2 || Math.abs(p.x-r.x)>r.w/2+rad || p.y>rampHeight(r,p.z)+rad)continue;
+  const wallX=Math.sign(p.x-r.x)*r.w/2,delta=p.x-wallX;
+  if(Math.abs(delta)<rad && p.y<rampHeight(r,p.z)-rad*.25){
+   p.x=wallX+Math.sign(p.x-r.x||1)*rad;
+   old.x=p.x+(p.x-old.x)*tuning.ragdollBounce;
+  }
+ }
+}
+function stepCrashEffects(dt){
+ for(let i=debris.length-1;i>=0;i--){
+  const part=debris[i];part.age+=dt;
+  part.v.y-=tuning.gravity*dt;
+  part.obj.position.addScaledVector(part.v,dt);
+  part.obj.rotation.x+=part.spin.x*dt;part.obj.rotation.y+=part.spin.y*dt;part.obj.rotation.z+=part.spin.z*dt;
+  const floor=surfaceAt(part.obj.position.x,part.obj.position.z).height+.13;
+  if(part.obj.position.y<floor){part.obj.position.y=floor;part.v.y=Math.abs(part.v.y)*.27;part.v.x*=.84;part.v.z*=.84;part.spin.multiplyScalar(.88)}
+  if(part.age>20){scene.remove(part.obj);debris.splice(i,1)}
+ }
+ for(let i=bubbles.length-1;i>=0;i--){bubbles[i].age+=dt;if(bubbles[i].age>=bubbles[i].life){bubbles[i].el.remove();bubbles.splice(i,1)}}
+ if(!ragdoll.active)return;
+ ragdoll.bubbleCooldown=Math.max(0,ragdoll.bubbleCooldown-dt);
+ // Verlet integration retains joint-specific momentum, including angular front-flip
+ // velocity from the crash. Substeps in simulate() reduce tunnelling.
+ for(const j of Object.values(ragdoll.nodes)){
+  const v=j.p.clone().sub(j.old).multiplyScalar(Math.exp(-dt*.45));
+  j.old.copy(j.p);j.p.add(v);j.p.y-=tuning.gravity*dt*dt;
+ }
+ for(let iter=0;iter<6;iter++){
+  for(const link of ragdoll.links)constrainRagdoll(link);
+  // Project contacts twice per solver step; less expensive than collision-checking
+  // all 16 joints against the whole stunt park six times per substep.
+  if(iter===2||iter===5)for(const [name,j] of Object.entries(ragdoll.nodes))collideRagdollJoint(j,name,dt,iter===2);
+ }
+}
+function renderCrashEffects(dt){
+ if(ragdoll.active){
+  for(const j of Object.values(ragdoll.nodes))j.mesh.position.copy(j.p);
+  const up=new THREE.Vector3(0,1,0);
+  for(const link of ragdoll.links){
+   if(!link.visual)continue;
+   const a=ragdoll.nodes[link.a].p,b=ragdoll.nodes[link.b].p,axis=new THREE.Vector3().subVectors(b,a);
+   link.visual.position.copy(a).add(b).multiplyScalar(.5);
+   link.visual.quaternion.setFromUnitVectors(up,axis.clone().normalize());
+   link.visual.scale.set(link.r,axis.length(),link.r);
+  }
+ }
+ for(const bubble of bubbles){
+  const v=bubble.at.clone().add(new THREE.Vector3(0,bubble.age*.48+.5,0)).project(camera);
+  const visible=v.z>-1&&v.z<1&&Math.abs(v.x)<1.5&&Math.abs(v.y)<1.5;
+  bubble.el.style.display=visible?'block':'none';
+  if(!visible)continue;
+  bubble.el.style.left=((v.x+1)*.5*innerWidth)+'px';
+  bubble.el.style.top=((-v.y+1)*.5*innerHeight)+'px';
+  bubble.el.style.opacity=String(Math.min(1,(bubble.life-bubble.age)*2.4));
+  bubble.el.style.transform='translate(-50%,-100%) rotate('+(-7+(bubbleIndex%3)*7)+'deg) scale('+(0.84+Math.min(.16,bubble.age*1.2))+')';
+ }
+}
+
+function reset(){const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
+// J is a field repair: no move to spawn. Only an overturned bike is righted.
+function repairHere(){
+ if(spaceFall.active||!onIsland(pos.x,pos.z)){reset();message('Rescued to the island spawn: no ground exists at this location.');return}
+ const inverted=Math.cos(pitch)<.05 || ragdoll.active;
+ clearCrashEffects();
+ damage=0;impact=0;collisionCooldown=0;crashTime=0;
+ lastCollision=inverted?'In-place repair: bike righted':'In-place repair';
+ wheelieArmed=false;wheelieAirTime=0;
+ if(inverted){
+  // Keep the same world X/Z and yaw. Bring the tires above the ground at this location.
+  pitch=0;pitchVelocity=0;vertical=0;speed=0;lateralSpeed=0;
+  airYawVelocity=0;airTravelHeading=yaw;airYawStart=yaw;airSpinTurns=0;
+  turnLeanAngle=0;turnLeanTarget=0;frame.rotation.z=0;
+  const front=surfaceAt(pos.x+Math.sin(yaw)*WHEEL_Z[0],pos.z+Math.cos(yaw)*WHEEL_Z[0]).height;
+  const rear=surfaceAt(pos.x+Math.sin(yaw)*WHEEL_Z[1],pos.z+Math.cos(yaw)*WHEEL_Z[1]).height;
+  const tireRestY=Math.max(front,rear)+WHEEL_RADIUS-WHEEL_Y+.015;
+  // On the ground, upright the bike onto its tires. High in the air, keep its altitude.
+  const closeToGround=pos.y<=Math.max(front,rear)+3.15;
+  if(closeToGround)pos.y=tireRestY;
+  grounded=closeToGround;currentSamples=sampleWheels();
+ }
+ message(inverted?'J: flipped upright and fully repaired here — no teleport.':'J: fully repaired in place — location and momentum unchanged.');
+}
+// Reproducible debug launch points; they don't alter saved physics tuning.
+function launchAirTest(){reset();pos.set(0,22,12);speed=20;vertical=10;grounded=false;airTravelHeading=yaw;airYawStart=yaw;lastCollision='Debug: jump launch';paused=false;stepping=false;message('Airborne test: W/RT backflip; S/LT frontflip; A/D or left stick to spin sideways.');}
+function launchSpinTest(){launchAirTest();lastCollision='Debug: 360° spin launch';message('Spin test: hold A or left stick LEFT to spin left; D or stick RIGHT to spin right. Your flight path stays straight.');}
+function launch180LandingTest(){
+ reset();pos.set(0,7,25);yaw=Math.PI;speed=18;lateralSpeed=0;vertical=-3;grounded=false;
+ airTravelHeading=0;airYawStart=0;airSpinTurns=.5;airYawVelocity=0;paused=false;stepping=false;
+ lastCollision='Debug: airborne 180° backward landing';
+ message('180° test: bike faces backward but travels forward through the world. Land and watch it roll backward without reversing travel.');
+}
+function launchRampWallTest(){reset();pos.set(10,.2,-55);yaw=Math.PI/2;speed=10;grounded=true;lastCollision='Debug: ramp side approach';paused=false;stepping=false;if(!showHitboxes)toggleHitboxes();message('Ramp-wall test: bike approaches side of the first ramp.');}
+function launchRockTest(){reset();const o=obstacles.find(o=>o.kind==='rock'&&o.rx<8);if(o){pos.set(o.x+o.rx+5,.15,o.z);yaw=Math.PI/2;speed=10;grounded=true;}lastCollision='Debug: rock approach';paused=false;stepping=false;if(!showHitboxes)toggleHitboxes();message('Rock test: bike approaches a rock with collider wireframes visible.');}
+function launchCrashTest(){
+ reset();pos.set(0,1.1,18);yaw=0;speed=22;grounded=false;vertical=1.8;
+ airTravelHeading=yaw;airYawStart=yaw;paused=false;stepping=false;
+ impact=22*3.6;damage=Math.min(100,damage+32*tuning.damageScale);
+ lastCollision='V3K debug hard impact';handleBikeCrash(22,'Crash test');
+ message('💥 Hard-crash test: ragdoll flings forward, joints bend, bike parts deform/fly, and silent Ow / Oof bubbles appear. Press J to recover here.');
+}
+function launchMoonFallTest(){
+ reset();pos.set(0,.08,MAP_RADIUS-9);yaw=Math.PI;speed=21;lateralSpeed=0;
+ grounded=true;vertical=0;paused=false;stepping=false;cameraHeadingReady=false;
+ lastCollision='Debug: heading toward circular rim';
+ message('🌙 Edge-fall test: ride straight over the round rim; your rider will fall into space and hit the moon.');
+}
+function obstacleTopAt(o,x,z){
+ const u=((x-o.x)/o.rx)**2+((z-o.z)/o.rz)**2;
+ if(u>=1)return 0;
+ return o.kind==='tree'?o.height:o.kind==='hill'?o.height*(1-Math.sqrt(u)):o.height*Math.sqrt(1-u);
+}
+// V3G: height AND normal derive from the same analytic terrain/ramp shapes used for contact.
+// This avoids estimating slope across the sharp edge of a ramp or a neighboring obstacle.
+function surfaceAt(x,z){
+ if(!onIsland(x,z))return {height:OFF_ISLAND_FLOOR,dx:0,dz:0,nx:0,ny:1,nz:0,source:'space / no ground'};
+ let height=0,dx=0,dz=0,source='sand';
+ for(const r of ramps){
+  if(Math.abs(x-r.x)>r.w/2 || Math.abs(z-r.z)>r.len/2)continue;
+  const h=rampHeight(r,z);
+  if(h>height){
+   const t=(z-r.z)/r.len+.5;
+   height=h;dx=0;dz=r.height*Math.PI/r.len*Math.sin(2*Math.PI*t);source='ramp '+(r.id+1);
+  }
+ }
+ for(const o of obstacles){
+  if((o.theme&&o.theme!==activeMap)||o.kind==='tree')continue;
+  if(Math.abs(x-o.x)>=o.rx || Math.abs(z-o.z)>=o.rz)continue;
+  const ux=(x-o.x)/o.rx,uz=(z-o.z)/o.rz,u=ux*ux+uz*uz;
+  if(u>=1)continue;
+  const root=Math.sqrt(Math.max(.0005,u));
+  const shoulder=Math.sqrt(Math.max(.0005,1-u));
+  const h=o.kind==='hill'?o.height*(1-Math.sqrt(u)):o.height*shoulder;
+  if(h<=height)continue;
+  height=h;source=o.kind;
+  const slopeFactor=o.kind==='hill'?-o.height/root:-o.height/shoulder;
+  dx=THREE.MathUtils.clamp(slopeFactor*(x-o.x)/(o.rx*o.rx),-6,6);
+  dz=THREE.MathUtils.clamp(slopeFactor*(z-o.z)/(o.rz*o.rz),-6,6);
+ }
+ // Surface normal points upward; gradients are retained for vertical velocity of terrain under a wheel.
+ const normalLength=Math.hypot(dx,1,dz);
+ return {height,dx,dz,nx:-dx/normalLength,ny:1/normalLength,nz:-dz/normalLength,source};
+}
+function heightAt(x,z){return surfaceAt(x,z).height}
+function sampleWheels(){
+ const sy=Math.sin(yaw),cy=Math.cos(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+ const {x:vx,z:vz}=horizontalVelocity();
+ return WHEEL_Z.map((localZ,i)=>{
+  const rotatedZ=localZ*cp+WHEEL_Y*sp;
+  const x=pos.x+sy*rotatedZ,z=pos.z+cy*rotatedZ;
+  const surfaceData=surfaceAt(x,z),surface=surfaceData.height;
+  const axleY=pos.y+WHEEL_Y*cp-localZ*sp;
+  const clearance=axleY-WHEEL_RADIUS-surface;
+  const wheelVelocity=vertical-(WHEEL_Y*sp+localZ*cp)*pitchVelocity;
+  const terrainVelocity=surfaceData.dx*vx+surfaceData.dz*vz;
+  const relativeVertical=wheelVelocity-terrainVelocity;
+  const compression=THREE.MathUtils.clamp(-clearance,0,tuning.suspensionTravel);
+  // Contact only at tire level, not when the axle is still a full shock-travel above the ground.
+  const contact=clearance<=.025;
+  return {i,x,z,surface,axleY,clearance,contact,compression,relativeVertical,
+   normalX:surfaceData.nx,normalY:surfaceData.ny,normalZ:surfaceData.nz,source:surfaceData.source,force:0};
+ });
+}
+function wheelSpringForce(s){
+ // Precontact bump damping catches a fast-approaching tire; rebound damping resists pogoing.
+ if(s.clearance>.055 || s.normalY<.15)return 0;
+ const spring=s.compression*tuning.shockStiffness;
+ const damper=-s.relativeVertical*tuning.shockDamping*.5;
+ return THREE.MathUtils.clamp(Math.max(0,spring+damper)*s.normalY,0,180);
+}
+// Solid scenery response: collision tests and debug geometry share the same obstacle dimensions.
+// Multi-step time integration below limits tunneling through smaller shapes at stunt speeds.
+function resolveSolidScenery(previousX,previousZ){
+ const sy=Math.sin(yaw),cy=Math.cos(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+ const horizontalTravel=Math.hypot(pos.x-previousX,pos.z-previousZ);
+ let strongest=0,hitName='';
+ const probes=[
+  {offset:-1.1,r:.56,localY:WHEEL_Y},
+  {offset:0,r:.72,localY:1.22},
+  {offset:1.12,r:.56,localY:WHEEL_Y},
+  {offset:0,r:.45,localY:2.2}
+ ];
+ for(const o of obstacles){
+  if(o.theme&&o.theme!==activeMap)continue;
+  // A vertical descent onto a rock/hill is a landing, not a side impact.
+  if(horizontalTravel<.0001)continue;
+  if(Math.abs(pos.x-o.x)>o.rx+3 || Math.abs(pos.z-o.z)>o.rz+3 || pos.y>o.height+3.1)continue;
+  for(const p of probes){
+   const rz=p.offset*cp+p.localY*sp;
+   const cx=pos.x+sy*rz,cz=pos.z+cy*rz;
+   const cyWorld=pos.y+p.localY*cp-p.offset*sp;
+   if(cyWorld-p.r>o.height || cyWorld+p.r<0)continue;
+   const taper=o.kind==='hill'?Math.max(.05,1-Math.max(0,cyWorld-p.r)*.95/o.height):1;
+   const rx=o.rx*taper+p.r,rzr=o.rz*taper+p.r;
+   const dx=cx-o.x,dz=cz-o.z,normalized=Math.hypot(dx/rx,dz/rzr);
+   if(normalized>=1)continue;
+   // Descending onto a solid top belongs to the tire/suspension solver, not a side shove.
+   const deck=obstacleTopAt(o,cx,cz);
+   if(o.kind!=='tree' && deck>.2 && cyWorld-p.r>=deck-tuning.suspensionTravel-WHEEL_RADIUS-.10 && vertical<=0)continue;
+   let nx=dx/(rx*rx),nz=dz/(rzr*rzr),n=Math.hypot(nx,nz);
+   if(n<1e-6){nx=Math.sin(yaw)||1;nz=Math.cos(yaw);n=Math.hypot(nx,nz)}
+   nx/=n;nz/=n;
+   // Project the offending sample fully out of the body, with a small clearance.
+   const toEdge=(1-normalized)*Math.min(rx,rzr)+.018;
+   pos.x+=nx*toEdge;pos.z+=nz*toEdge;
+   if(toEdge>strongest){strongest=toEdge;hitName=o.kind==='hill'?'Hill':o.kind==='tree'?'Tree':'Rock'}
+  }
+ }
+ // Ramp sides are solid up to the curved top. A rider already riding ON top can cross the edge.
+ // Entering a raised ramp from its side at ground level pushes the bike outside.
+ for(const r of ramps){
+  if(Math.abs(pos.z-r.z)>r.len/2+1.7||Math.abs(pos.x-r.x)>r.w/2+2)continue;
+  for(const p of probes.slice(0,3)){
+   const localZ=p.offset*cp+p.localY*sp;
+   const x=pos.x+sy*localZ,z=pos.z+cy*localZ;
+   if(Math.abs(z-r.z)>r.len/2)continue;
+   const deck=rampHeight(r,z);if(deck<.13)continue;
+   const previous=previousX+sy*localZ,half=r.w/2;
+   const side=previous>r.x+half?1:previous<r.x-half?-1:0;
+   if(!side)continue;
+   const edgeX=r.x+side*half;
+   const crossing=(x-edgeX)*side<p.r && (x-edgeX)*side>-p.r-1.5;
+   const axleY=pos.y+p.localY*cp-p.offset*sp;
+   const underDeck=axleY-p.r < deck-tuning.suspensionTravel-.07 && axleY+p.r>.03;
+   if(crossing&&underDeck){
+    const target=edgeX+side*(p.r+.04),shift=target-x;
+    pos.x+=shift;
+    if(Math.abs(shift)>strongest){strongest=Math.abs(shift);hitName='Ramp side '+(r.id+1)}
+   }
+  }
+ }
+ if(strongest>0){
+  if(collisionCooldown<=0 && Math.hypot(speed,lateralSpeed)>1.2){
+   const severity=Math.hypot(speed,lateralSpeed);
+   impact=Math.max(impact,severity*3.6);damage=Math.min(100,damage+Math.max(2,(severity-3)*1.35)*tuning.damageScale);
+   handleBikeCrash(severity,hitName);
+   speed*=-.12;lateralSpeed*=-.12;vertical=Math.max(vertical,severity*.06);pitchVelocity+=severity*.015;
+   collisionCooldown=.24;
+  }
+  lastCollision=hitName+' (solid collider)';
+ }
+}
+const clock=new THREE.Clock();
+function simulateSubstep(dt){
+ const throttle=ragdoll.active?0:Math.max(keys.KeyW||keys.ArrowUp?1:0,controller.throttle);
+ const brake=ragdoll.active?0:Math.max(keys.KeyS||keys.ArrowDown?1:0,controller.brake),lean=wheelieArmed,boost=!ragdoll.active&&(!!(keys.ShiftLeft||keys.ShiftRight)||controller.boost);
+ engineThrottle=throttle;exhaustTime+=dt*(7+Math.min(35,Math.hypot(speed,lateralSpeed)*1.05)+throttle*14);
+ const accelerate=throttle>0,maxSpeed=tuning.maxSpeedKmh/3.6*(boost?tuning.boostMultiplier:1);
+ // The wheel-mounted motor and brake affect speed on dirt, but pitch/angular momentum in the air.
+ if(grounded){
+  // Motor pushes in the direction the BIKE faces. Opposite existing momentum
+  // first slows a backward-rolling landing, then eventually drives forward.
+  speed+=((throttle*tuning.acceleration*(boost?tuning.boostMultiplier:1))-(brake*tuning.braking)-speed*tuning.coastDrag)*dt;
+  // Tire side-scrub gradually reduces lateral slide, without instantly killing velocity.
+  lateralSpeed*=Math.exp(-dt*(tuning.lateralGrip+tuning.coastDrag));
+ }else{
+  const drag=Math.exp(-tuning.airDrag*dt);speed*=drag;lateralSpeed*=drag;
+ }
+ // An airborne 180° can arrive with -20 m/s of signed wheel speed: do NOT
+ // clamp it to the old -10 m/s reverse-drive limit on touchdown.
+ speed=THREE.MathUtils.clamp(speed,-maxSpeed,maxSpeed);
+ if(Math.abs(speed)<.03)speed=0;if(Math.abs(lateralSpeed)<.01)lateralSpeed=0;
+ const keyboardSteer=(keys.KeyA||keys.ArrowLeft?1:0)-(keys.KeyD||keys.ArrowRight?1:0);const steer=ragdoll.active?0:keyboardSteer!==0?keyboardSteer:-controller.steer;
+ // On dirt: steer as before. In the air: apply independent yaw angular momentum for full 360° flat spins.
+ // Flight velocity continues along takeoff heading; bike orientation alone does not steer midair.
+ if(grounded){
+  airYawVelocity=0;
+  const oldYaw=yaw;
+  yaw+=steer*dt*tuning.turnRate*THREE.MathUtils.clamp(Math.hypot(speed,lateralSpeed)/10,0,1)*(speed<0?-1:1);
+  // Steering turns the chassis first; grip then makes momentum follow the tires.
+  // Pure yaw changes must not rotate the existing world velocity instantaneously.
+  projectVelocityBetweenHeadings(oldYaw,yaw);
+ }else{
+  airYawVelocity+=steer*tuning.airYawTorque*dt;
+  airYawVelocity*=Math.exp(-dt*tuning.airYawDamping);
+  airYawVelocity=THREE.MathUtils.clamp(airYawVelocity,-tuning.airYawLimit,tuning.airYawLimit);
+  yaw+=airYawVelocity*dt;
+  airSpinTurns=(yaw-airYawStart)/(Math.PI*2);
+ }
+ const {x:velocityX,z:velocityZ}=horizontalVelocity();
+ const beforeX=pos.x,beforeZ=pos.z;
+ pos.x+=velocityX*dt;pos.z+=velocityZ*dt;
+ collisionCooldown=Math.max(0,collisionCooldown-dt);crashTime=Math.max(0,crashTime-dt);
+ resolveSolidScenery(beforeX,beforeZ);
+ const before=sampleWheels(),wasGrounded=grounded;
+ let acceleration=-tuning.gravity;
+ // Two independent, slope-aware spring/damper loads (normalized to the existing bike-mass model).
+ // The front and rear react to their own height, pitch velocity and terrain ascent/descent.
+ const upright=Math.cos(pitch)>.16;
+ if(upright)for(const s of before){s.force=wheelSpringForce(s);acceleration+=s.force}
+ // Optional mild pitch torque from the load difference; conventional pitch tracking remains stable.
+ if(upright && grounded){
+  const frontLoad=before[0].force,rearLoad=before[1].force;
+  pitchVelocity+=THREE.MathUtils.clamp((frontLoad-rearLoad)*tuning.contactPitchGain,-6,6)*dt;
+ }
+ vertical=THREE.MathUtils.clamp(vertical+acceleration*dt,-60,45);
+ pos.y+=vertical*dt;
+ const downwardBeforeStop=Math.max(0,-vertical);
+ if(upright){
+  const samplesAfter=sampleWheels();let hardStop=-Infinity;
+  for(const s of samplesAfter){
+   const localZ=WHEEL_Z[s.i];
+   const yLimit=s.surface+WHEEL_RADIUS-WHEEL_Y*Math.cos(pitch)+localZ*Math.sin(pitch)-tuning.suspensionTravel;
+   hardStop=Math.max(hardStop,yLimit);
+  }
+  if(pos.y<hardStop){pos.y=hardStop;if(vertical<0)vertical*=-.12}
+ }else{
+  // Rider/frame body-ground collision while inverted: no teleporting the wheel probes to the deck.
+  const floor=heightAt(pos.x,pos.z),bodyClearance=.35+Math.max(0,-Math.cos(pitch))*2.55;
+  if(pos.y<floor+bodyClearance){
+   pos.y=floor+bodyClearance;
+   if(vertical<0)vertical=Math.min(5,-vertical*.12);
+   if(crashTime===0){
+    const severity=Math.max(downwardBeforeStop,Math.hypot(speed,lateralSpeed)*.45);
+    damage=Math.min(100,damage+(8+severity*1.8)*tuning.damageScale);
+    impact=Math.max(impact,severity*3.6);lastCollision='Upside-down body impact';crashTime=.4;
+    handleBikeCrash(severity,'Inverted body');
+    speed*=.65;lateralSpeed*=.65;
+   }
+   pitchVelocity*=.7;
+  }
+ }
+ const samples=sampleWheels();
+ for(const s of samples)if(upright)s.force=wheelSpringForce(s);
+ currentSamples=samples;
+ grounded=upright && samples.some(s=>s.contact);
+ if(wasGrounded&&!grounded){
+  // Takeoff: store the direction of travel once, rather than redirecting each frame as the bike spins.
+  airTravelHeading=yaw;airYawStart=yaw;airYawVelocity=0;airSpinTurns=0;
+ }
+ const slope=Math.atan2(samples[0].surface-samples[1].surface,WHEEL_Z[1]-WHEEL_Z[0]);
+ if(grounded){
+  // Reduce 2π revolutions only after the tires have actually landed, preserving full airborne flips.
+  if(!wasGrounded){
+   const turns=Math.round(pitch/(Math.PI*2));airFlipCount=Math.abs(turns);
+   pitch=Math.atan2(Math.sin(pitch),Math.cos(pitch));
+  }
+  const normalTarget=THREE.MathUtils.clamp(slope+(accelerate?Math.max(0,speed-9)*.009:0),-.65,.45);
+  // Tap to arm a wheelie. Pitch has inertia: releasing W lets the nose drop,
+  // and pressing W again can recover it before it reaches the ground.
+  if(wheelieArmed && speed>.55 && brake<.5){
+   const wheelieTarget=THREE.MathUtils.clamp(slope+throttle*(.20+tuning.wheelieLift*1.25)+Math.max(0,speed-7)*.002,.0,.96);
+   pitchVelocity+=(wheelieTarget-pitch)*dt*tuning.wheelieBalance;
+   pitchVelocity*=Math.exp(-dt*2.25);
+   pitch+=pitchVelocity*dt;
+   if(pitch>1.05){pitch=1.05;pitchVelocity=Math.min(0,pitchVelocity)}
+   if(pitch<normalTarget){pitch=normalTarget;pitchVelocity=Math.max(0,pitchVelocity)}
+  }else{
+   if(wheelieArmed && (speed<-.2||brake>.5))wheelieArmed=false;
+   pitchVelocity+=(normalTarget-pitch)*dt*24;pitchVelocity*=Math.exp(-dt*7.5);pitch+=pitchVelocity*dt;
+   pitch=THREE.MathUtils.clamp(pitch,-1.35,1.35);
+  }
+ }else{
+  // In the air, throttle (W/RT) spins the nose UP/backward, brake (S/LT) spins it DOWN/forward.
+  // Rotation is unbounded until landing so full 360° flips are possible.
+  const pitchInput=throttle-brake;
+  pitchVelocity+=pitchInput*tuning.airFlipTorque*dt;
+  pitchVelocity*=Math.exp(-dt*tuning.airSpinDamping);
+  pitchVelocity=THREE.MathUtils.clamp(pitchVelocity,-tuning.airSpinLimit,tuning.airSpinLimit);
+  pitch+=pitchVelocity*dt;
+  airFlipCount=Math.floor(Math.abs(pitch)/(Math.PI*2));
+ }
+ if(!wasGrounded&&grounded){
+  // Keep the landing orientation, but stop airborne spin torque upon tire contact.
+  lastLandedSpinTurns=airSpinTurns;airYawVelocity=0;
+  // We entered this step with velocity expressed in the TAKEOFF frame.
+  // Reproject to the landed bike yaw without changing world momentum.
+  // E.g. 20 m/s forward at takeoff + 180° facing => speed = -20 m/s.
+  projectVelocityBetweenHeadings(airTravelHeading,yaw);
+  const backwardsLanding=speed< -1 && Math.abs(speed)>Math.abs(lateralSpeed);
+  const landingImpact=downwardBeforeStop;
+  // A wheel-first contact is handled by the tire/suspension solver, NOT as a crash.
+  // Even large clean jumps should not reduce health or wipe horizontal momentum.
+  // Inverted frame impacts and rock/ramp SIDE impacts still cause damage above.
+  impact=Math.max(impact,landingImpact*3.6);
+  pitchVelocity*=.26;
+  lastCollision=(backwardsLanding?'Clean backward wheel landing':'Clean wheel landing')+' '+Math.round(landingImpact*3.6)+' km/h vertical · no damage';
+ }
+ if(damage>35){const drag=Math.exp(-dt*(damage-35)*.003);speed*=drag;lateralSpeed*=drag;yaw+=Math.sin(travel*1.8)*dt*(damage-35)*.0009}
+ impact=Math.max(0,impact-dt*22);travel+=Math.hypot(speed,lateralSpeed)*dt;
+ for(const sample of samples){
+  wheels[sample.i].position.y=WHEEL_Y-THREE.MathUtils.clamp(sample.clearance,-tuning.suspensionTravel,tuning.suspensionTravel);
+  wheels[sample.i].rotation.x-=speed*dt/.61;
+ }
+ // Positive roll banks left for this -Z-forward bike. Left steering input is positive.
+ // This visually leans the model but does not falsely claim per-tire roll collision physics.
+ turnSteer=steer;
+ const maxRadians=tuning.turnLeanDegrees*Math.PI/180;
+ const speedFactor=THREE.MathUtils.clamp(Math.abs(speed)*3.6/tuning.turnLeanSpeed,0,1);
+ turnLeanTarget=grounded ? steer*tuning.turnLeanDirection*maxRadians*speedFactor*(speed<0?-1:1) : 0;
+ turnLeanAngle+= (turnLeanTarget-turnLeanAngle)*(1-Math.exp(-tuning.turnLeanResponse*dt));
+ frame.rotation.z=turnLeanAngle+Math.sin(travel*2)*damage*.0008;
+ if(!spaceFall.active && !onIsland(pos.x,pos.z) && pos.y < -1.5)beginSpaceFall();
+}
+function simulate(dt){
+ const steps=Math.max(1,Math.min(6,Math.ceil(dt/(1/120))));
+ for(let i=0;i<steps;i++){
+  const step=dt/steps;
+  if(spaceFall.active){stepSpaceFall(step);continue}
+  simulateSubstep(step);
+  if(spaceFall.active)stepSpaceFall(step);else stepCrashEffects(step);
+ }
+}
+
+function updateContactMarkers(samples){
+ for(const s of samples){
+  const marker=contactMarkers[s.i];marker.ball.position.set(s.x,s.surface+.10,s.z);
+  marker.ball.material.color.setHex(s.force>.5?0x29ff8e:s.contact?0xffd15f:0xff7c58);
+  const arr=marker.line.geometry.attributes.position.array;
+  // Top of the line is the nominal unsprung axle, bottom is the same actual collision probe.
+  arr[0]=s.x;arr[1]=s.axleY;arr[2]=s.z;arr[3]=s.x;arr[4]=s.surface;arr[5]=s.z;
+  marker.line.geometry.attributes.position.needsUpdate=true;
+ }
+}
+function draw(dt,simDt){
+ if(spaceFall.active){drawSpaceFall(dt);return}
+ // Right stick orbits the external camera (R3 recenters); first-person view stays attached.
+ if(controller.connected&&!(camMode===1&&!ragdoll.active)){
+  cameraOrbitYaw+=controller.lookX*dt*tuning.controllerLookSpeed;
+  cameraOrbitPitch=THREE.MathUtils.clamp(cameraOrbitPitch+(tuning.invertLookY?1:-1)*controller.lookY*dt*tuning.controllerLookSpeed,-.85,.85);
+ }
+ bike.position.set(pos.x,pos.y,pos.z);bike.rotation.order='YXZ';bike.rotation.y=yaw;bike.rotation.x=pitch;
+ // Chase camera watches the flight line instead of whipping around during a 360° bike spin.
+ // While the rider is ejected, follow their airborne body instead of the fallen bike.
+ const focus=ragdoll.active?ragdoll.nodes.chest.p:pos;
+ const viewMode=ragdoll.active?0:camMode;
+ const worldHeading=worldTravelHeading();
+ // World velocity orientation changes by 180° when reverse driving begins; do
+ // not snap the camera. Hysteresis avoids flip-flopping around zero speed.
+ if(grounded){
+  if(!cameraReverseView && speed< -1.6 && Math.abs(speed)>Math.abs(lateralSpeed)*.9)cameraReverseView=true;
+  else if(cameraReverseView && speed>1.6)cameraReverseView=false;
+ }
+ const desiredHeading=grounded && Math.abs(lateralSpeed)<Math.max(2,Math.abs(speed)*.8)
+   ?yaw+(cameraReverseView?Math.PI:0):worldHeading;
+ if(!cameraHeadingReady){cameraHeading=desiredHeading;cameraHeadingReady=true}
+ else{
+  const headingError=Math.atan2(Math.sin(desiredHeading-cameraHeading),Math.cos(desiredHeading-cameraHeading));
+  const eased=headingError*(1-Math.exp(-dt*(cameraReverseView?1.65:3.1)));
+  const capped=THREE.MathUtils.clamp(eased,-dt*tuning.reverseCameraTurnSpeed,dt*tuning.reverseCameraTurnSpeed);
+  cameraHeading+=capped;
+ }
+ const followHeading=cameraHeading;
+ const follow=new THREE.Vector3();
+ if(viewMode===0)follow.set(focus.x+Math.sin(followHeading+cameraOrbitYaw)*tuning.cameraDistance,focus.y+Math.max(1.5,tuning.cameraHeight+Math.sin(cameraOrbitPitch)*tuning.cameraDistance),focus.z+Math.cos(followHeading+cameraOrbitYaw)*tuning.cameraDistance);
+ else if(viewMode===1)follow.set(focus.x-Math.sin(yaw)*.15,focus.y+2.75,focus.z-Math.cos(yaw)*.15);
+ else follow.set(focus.x+Math.sin(followHeading+Math.PI/2+cameraOrbitYaw)*tuning.cameraDistance+Math.sin(followHeading)*8,focus.y+Math.max(1.5,tuning.cameraHeight-1+Math.sin(cameraOrbitPitch)*tuning.cameraDistance),focus.z+Math.cos(followHeading+Math.PI/2+cameraOrbitYaw)*tuning.cameraDistance+Math.cos(followHeading)*8);
+ camera.position.lerp(follow,1-Math.exp(-dt*(viewMode===1?12:tuning.cameraFollow)));
+ const lookHeading=viewMode===1?yaw:followHeading;const look=new THREE.Vector3(focus.x-Math.sin(lookHeading)*(ragdoll.active?0:7),focus.y+(viewMode===1?2.6:ragdoll.active?0:1.5),focus.z-Math.cos(lookHeading)*(ragdoll.active?0:7));camera.lookAt(look);
+ document.getElementById('speed').textContent=Math.round(Math.hypot(speed,lateralSpeed)*3.6)+' km/h';
+ updateRideDial(Math.hypot(speed,lateralSpeed)*3.6);
+ const spinning=!grounded&&Math.abs(airYawVelocity)>.2;
+ document.getElementById('status').textContent=paused&&!stepping?'PAUSED':ragdoll.active?'💥 RIDER EJECTED · J TO REPAIR · R TO RESET':grounded?(speed< -1&&Math.abs(speed)>Math.abs(lateralSpeed)?'ROLLING BACKWARD':Math.abs(lateralSpeed)>Math.abs(speed)&&Math.abs(lateralSpeed)>1?'SIDEWAYS SKID':wheelieArmed?'TAP WHEELIE · W TO BALANCE':pitch>.2?'WHEELIE / RIDING':'Riding'):'AIRBORNE · '+(spinning?(airYawVelocity>0?'SPIN LEFT':'SPIN RIGHT')+' · ':'')+(pitchVelocity>=0?'BACK':'FRONT')+' FLIP';
+ document.getElementById('angle').textContent=(wheelieArmed?'Wheelie ARMED · ':'Wheelie angle: ')+Math.round(THREE.MathUtils.radToDeg(Math.max(0,pitch)))+'° · Camera '+(camMode+1)+'/3 · Damage '+Math.round(damage)+'% · Impact '+Math.round(impact)+' km/h';
+ const crashHud=document.getElementById('crash-hud');if(crashHud)crashHud.textContent=ragdoll.active?'💥 RAGDOLL · 16 joints · '+debris.length+' flying parts · J repair':bikeBend>.02?'Bike bent '+Math.round(bikeBend*100)+'% · '+debris.length+' flying parts · J repair':'Crash system: ready · J repairs, R resets';
+ renderCrashEffects(dt);
+ const leanDegrees=THREE.MathUtils.radToDeg(turnLeanAngle),leanSide=leanDegrees>.15?'LEFT':leanDegrees<-.15?'RIGHT':'UPRIGHT';
+ document.getElementById('lean-angle').textContent='Turn lean: '+Math.abs(leanDegrees).toFixed(1)+'° '+leanSide.toLowerCase()+' · target '+Math.abs(THREE.MathUtils.radToDeg(turnLeanTarget)).toFixed(1)+'°';
+ const spinAngle=THREE.MathUtils.radToDeg(grounded?0:yaw-airYawStart),spinDirection=airYawVelocity>.1?'left':airYawVelocity<-.1?'right':'idle';
+ document.getElementById('air-spin-hud').textContent='Air spin: '+(grounded?'grounded':spinDirection+' '+Math.abs(spinAngle).toFixed(0)+'°')+' · '+Math.abs(airYawVelocity).toFixed(1)+' rad/s';
+ const momentumHud=document.getElementById('momentum-hud');
+ if(momentumHud)momentumHud.textContent='Roll: '+(speed<-1?'BACKWARD':speed>1?'forward':'neutral')+' · slip '+Math.abs(lateralSpeed*3.6).toFixed(0)+' km/h · world travel preserved';
+ const airLive=document.getElementById('air-spin-live');if(airLive)airLive.textContent='LIVE SPIN: '+spinDirection.toUpperCase()+' · '+spinAngle.toFixed(1)+'° ('+airSpinTurns.toFixed(2)+' rev) · '+airYawVelocity.toFixed(2)+' rad/s';
+ const leanLive=document.getElementById('lean-live-label'),leanIndicator=document.getElementById('lean-indicator');
+ if(leanLive)leanLive.textContent=leanSide+' · '+Math.abs(leanDegrees).toFixed(1)+'° | steering '+turnSteer.toFixed(2);
+ if(leanIndicator)leanIndicator.style.left=(50-leanDegrees/65*48)+'%';
+ if(showContactDebug)updateContactMarkers(currentSamples);
+ const padStatus=document.getElementById('gamepad-status'),padMeter=document.getElementById('pad-telemetry');
+ if(padStatus)padStatus.textContent=controller.connected?'Connected: '+controller.name+' (controller '+(controller.index+1)+')':'No standard-mapped controller detected. Connect a wired/Bluetooth pad and press a button. Chrome, Edge and Firefox generally support the Gamepad API.';
+ if(padMeter)padMeter.textContent='Steer: '+controller.steer.toFixed(2)+' | RT throttle: '+controller.throttle.toFixed(2)+' | LT brake: '+controller.brake.toFixed(2)+'\nWheelie: '+(controller.lean?'YES':'no')+' | Boost: '+(controller.boost?'YES':'no')+' | Right X/Y: '+controller.lookX.toFixed(2)+' / '+controller.lookY.toFixed(2);
+ const telemetry=document.getElementById('telemetry');
+ if(telemetry){
+  const front=currentSamples[0],rear=currentSamples[1];
+  const line=s=>s?(s.contact?'CONTACT':'AIR')+' '+s.source+' | gap '+s.clearance.toFixed(2)+'m | comp '+s.compression.toFixed(2)+'m | load '+s.force.toFixed(1)+' | normal Y '+s.normalY.toFixed(2)+' | rel V '+s.relativeVertical.toFixed(1):'Not sampled';
+  telemetry.textContent='State: '+(paused?'PAUSED':'RUNNING')+' | '+(grounded?'GROUNDED':'AIRBORNE')+'\n'+
+   'World speed: '+(Math.hypot(speed,lateralSpeed)*3.6).toFixed(1)+' km/h | wheel forward: '+(speed*3.6).toFixed(1)+' km/h | sideways: '+(lateralSpeed*3.6).toFixed(1)+' km/h\n'+
+   'World motion X/Z: '+horizontalVelocity().x.toFixed(2)+' / '+horizontalVelocity().z.toFixed(2)+' m/s | vertical '+vertical.toFixed(2)+' m/s\n'+
+   'Pitch: '+THREE.MathUtils.radToDeg(pitch).toFixed(1)+'° | yaw '+THREE.MathUtils.radToDeg(yaw).toFixed(1)+'°\n'+
+   'Turn lean: '+leanDegrees.toFixed(1)+'° ('+leanSide+') | target '+THREE.MathUtils.radToDeg(turnLeanTarget).toFixed(1)+'° | steer '+turnSteer.toFixed(2)+'\n'+
+   'Air yaw spin: '+spinAngle.toFixed(1)+'° | '+airYawVelocity.toFixed(2)+' rad/s | full spins '+Math.floor(Math.abs(airSpinTurns))+' | last landing '+lastLandedSpinTurns.toFixed(2)+' rev\n'+
+   'Flight takeoff heading: '+THREE.MathUtils.radToDeg(airTravelHeading).toFixed(1)+'° | actual travel: '+THREE.MathUtils.radToDeg(worldTravelHeading()).toFixed(1)+'°\n'+
+   'Front wheel: '+line(front)+'\nRear wheel:  '+line(rear)+'\n'+
+   'Gravity: '+tuning.gravity.toFixed(1)+' | spring: '+tuning.shockStiffness+' | damper: '+tuning.shockDamping+' | pitch load gain: '+tuning.contactPitchGain.toFixed(3)+'\n'+
+   'Damage: '+damage.toFixed(1)+'% | last: '+lastCollision+' | ragdoll: '+(ragdoll.active?'EJECTED':'mounted')+' | bend '+(bikeBend*100).toFixed(0)+'% | debris '+debris.length+'\n'+
+   'Flip: '+airFlipCount+' full turns | angular speed: '+pitchVelocity.toFixed(2)+' rad/s\n'+
+   'World colliders: '+obstacles.length+' rocks/hills, '+ramps.length+' solid ramps\n'+
+   'Frame dt: '+(lastDt*1000).toFixed(1)+' ms | sim frames: '+frameCount;
+ }
+ if(simDt)updateExhaust(simDt);
+ renderer.render(scene,camera);
+}
+function loop(){
+ requestAnimationFrame(loop);
+ const dt=Math.min(clock.getDelta(),.025);lastDt=dt;readController();
+ if(menuStage!=='riding'){
+  bike.position.set(0,.08,25);bike.rotation.order='YXZ';bike.rotation.y=-.65+Math.sin(clock.elapsedTime*.42)*.12;bike.rotation.x=0;
+  camera.position.set(menuStage==='lobby'?9.5:8.5,menuStage==='lobby'?4.4:5,38);camera.lookAt(menuStage==='lobby'?5.6:0,1.35,25);
+  updateMultiplayer(dt);renderer.render(scene,camera);return;
+ }
+ const simDt=(!paused||stepping)?(stepping?1/60:dt):0;
+ if(simDt){simulate(simDt);frameCount++;stepping=false}
+ updateMultiplayer(dt);draw(dt,simDt);
+}
+
+// V3O main-menu selection intentionally uses its own key. V3N physics autosave
+// (STORAGE_KEY dirtbike_v3a_tuning_v1) and launcher bridge stay unchanged.
+const MENU_STORAGE_KEY='dirtbike_v3o_menu_v1';
+const BIKE_PAINTS=[
+ {name:'Orange',hex:0xf06d22},{name:'Red',hex:0xd72c2c},{name:'Blue',hex:0x2582f5},
+ {name:'Green',hex:0x39aa4c},{name:'Yellow',hex:0xf7d332},{name:'Black',hex:0x20232c},
+ {name:'White',hex:0xeef1ec},{name:'Purple',hex:0x8a48d2},{name:'Pink',hex:0xf36aa8},{name:'Teal',hex:0x10b8ab}
+];
+const THEMES={
+ desert:{label:'DESERT STUNT PARK',ground:0xc9a36c,side:0x99724b,rock:0x9c7054,sky:0x9fc5dd,fog:0xc5b99d,density:.0024,rim:0xe7ba7c,ramp:0x8e6540},
+ forest:{label:'PINE FOREST',ground:0x54734a,side:0x344d39,rock:0x626d5f,sky:0x9fc4c3,fog:0x8caaa1,density:.0027,rim:0x9b875d,ramp:0x806746},
+ hillside:{label:'GREEN HILLSIDE',ground:0x87a653,side:0x516c3b,rock:0x798366,sky:0xa8d3eb,fog:0xb7c7a0,density:.0022,rim:0xb6a46f,ramp:0x8e7651}
+};
+let menuStage='bikes',selectedPaint=0,selectedMap='desert';
+try{const v=JSON.parse(localStorage.getItem(MENU_STORAGE_KEY)||'null');if(v&&typeof v==='object'){
+ if(Number.isInteger(v.paint)&&v.paint>=0&&v.paint<BIKE_PAINTS.length)selectedPaint=v.paint;
+ if(Object.hasOwn(THEMES,v.map))selectedMap=v.map;
+}}catch(e){}
+function rememberMenu(){try{localStorage.setItem(MENU_STORAGE_KEY,JSON.stringify({paint:selectedPaint,map:selectedMap}))}catch(e){}}
+function applyPaint(){const paintHex='#'+BIKE_PAINTS[selectedPaint].hex.toString(16).padStart(6,'0');document.getElementById('paint-tank').setAttribute('fill',paintHex);document.getElementById('paint-fender').setAttribute('stroke',paintHex);orange.color.setHex(BIKE_PAINTS[selectedPaint].hex);document.getElementById('selected-bike-name').textContent=BIKE_PAINTS[selectedPaint].name;
+ document.querySelectorAll('.bike-swatch').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.paint)===selectedPaint)));document.getElementById('lobby-paint-name').textContent=BIKE_PAINTS[selectedPaint].name.toUpperCase()+' GAS BIKE';rememberMenu();if(typeof announceIdentity==='function')announceIdentity();}
+const swatchGrid=document.getElementById('bike-swatch-grid');
+for(const [i,paint] of BIKE_PAINTS.entries()){
+ const button=document.createElement('button');button.type='button';button.className='bike-swatch';button.dataset.paint=String(i);button.setAttribute('aria-label',paint.name+' gas dirt bike');
+ const dot=document.createElement('span');dot.className='paint-dot';dot.style.backgroundColor='#'+paint.hex.toString(16).padStart(6,'0');
+ const name=document.createElement('span');name.textContent=paint.name;button.append(dot,name);
+ button.addEventListener('click',()=>{selectedPaint=i;applyPaint()});swatchGrid.append(button);
+}
+function applyMapTheme(name){
+ if(!Object.hasOwn(THEMES,name))name='desert';activeMap=name;selectedMap=name;
+ const t=THEMES[name];sand.color.setHex(t.ground);darkSand.color.setHex(t.side);rock.color.setHex(t.rock);
+ rampWallMat.dirt.color.setHex(t.ramp);rim.material.color.setHex(t.rim);
+ stockSky.setHex(t.sky);stockFog.color.setHex(t.fog);stockFog.density=t.density;
+ if(!spaceFall.active){scene.background.copy(stockSky);scene.fog=stockFog;}
+ forestScenery.visible=name==='forest';hillsideScenery.visible=name==='hillside';
+ for(const v of solidHitboxVisuals)v.visible=showHitboxes&&(!v.userData.theme||v.userData.theme===name);
+ document.getElementById('map-hud-name').textContent=t.label;
+ document.querySelectorAll('.map-card').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.map===name)));
+ rememberMenu();
+}
+function changeMenuChoice(direction){
+ if(menuStage==='lobby')return;
+ if(menuStage==='bikes'){selectedPaint=(selectedPaint+direction+BIKE_PAINTS.length)%BIKE_PAINTS.length;applyPaint()}
+ else if(menuStage==='maps'){if(multiplayer.role==='guest')return;const maps=['desert','forest','hillside'];applyMapTheme(maps[(maps.indexOf(selectedMap)+direction+maps.length)%maps.length]);broadcastRoomMap()}
+}
+function showMenuStage(stage){
+ menuStage=stage;mountRoomPanel(stage);document.body.classList.toggle('menu-open',stage!=='riding');document.body.classList.toggle('stage-lobby',stage==='lobby');document.body.classList.toggle('stage-maps',stage==='maps');if(typeof announceIdentity==='function')announceIdentity();
+ if(stage==='riding')document.activeElement?.blur?.();
+ document.getElementById('menu-lobby').hidden=stage!=='lobby';document.getElementById('menu-bikes').hidden=stage!=='bikes';document.getElementById('menu-maps').hidden=stage!=='maps';
+ if(stage!=='riding')for(const k of Object.keys(keys))keys[k]=false;
+}
+function mountRoomPanel(stage){
+ const panel=document.querySelector('.room-panel');
+ const dest=document.getElementById(stage==='lobby'?'lobby-room-slot':'map-room-slot');
+ if(panel&&dest&&panel.parentElement!==dest)dest.appendChild(panel);
+}
+function openMainMenu(){reset();showMenuStage('lobby');}
+document.getElementById('lobby-start').addEventListener('click',()=>showMenuStage('bikes'));
+document.getElementById('bike-back-lobby').addEventListener('click',()=>showMenuStage('lobby'));
+document.getElementById('menu-play').addEventListener('click',()=>showMenuStage('maps'));
+document.getElementById('menu-back').addEventListener('click',()=>showMenuStage('bikes'));
+document.querySelectorAll('.map-card').forEach(b=>b.addEventListener('click',()=>{if(multiplayer.role==='guest'){setRoomStatus('The room host chooses the shared map. Leave this room to choose another.');return}applyMapTheme(b.dataset.map);broadcastRoomMap()}));
+document.getElementById('menu-start').addEventListener('click',()=>{if(multiplayer.role==='hosting'||multiplayer.role==='joining'){setRoomStatus('Wait for the room to finish connecting, or cancel to play solo.');return}applyMapTheme(selectedMap);reset();if(multiplayer.role==='host')pos.x=-7;else if(multiplayer.role==='guest'&&multiplayer.joined)pos.x=multiplayer.spawnSlot*4-7;paused=false;stepping=false;showMenuStage('riding');broadcastRoomMap();announceIdentity();});
+document.getElementById('open-main-menu').addEventListener('click',openMainMenu);
+
+// V3Y: Simple hosted multiplayer. Direct Supabase Realtime WebSocket protocol v1.
+// One persistent hosted connection per client. Does NOT use PeerJS, Trystero or WebRTC.
+// Configuration is a public URL + publishable key. Never use a secret or service-role key.
+const ROOM_PREFIX='dirtbike-v3y-',ROOM_MAX_PLAYERS=4,ROOM_JOIN_TIMEOUT=24000;
+const roomDom={code:document.getElementById('room-code'),codeState:document.getElementById('room-code-state'),input:document.getElementById('room-input'),host:document.getElementById('room-host'),join:document.getElementById('room-join'),copy:document.getElementById('room-copy'),leave:document.getElementById('room-leave'),status:document.getElementById('room-status'),roster:document.getElementById('room-roster'),hud:document.getElementById('room-hud'),name:document.getElementById('player-name'),stage:document.getElementById('room-stage'),networkLog:document.getElementById('room-network-log'),url:document.getElementById('room-project-url'),key:document.getElementById('room-public-key'),save:document.getElementById('room-save-config'),serverTest:document.getElementById('room-test-server'),copyDiagnostics:document.getElementById('room-copy-diagnostics'),advanced:document.getElementById('room-advanced')};
+const playerId=Array.from(crypto.getRandomValues(new Uint8Array(12)),n=>n.toString(16).padStart(2,'0')).join('');
+const multiplayer={role:'solo',peer:{id:playerId},room:'',hostConnection:null,clients:new Map(),peers:new Map(),seen:new Map(),lastSent:0,connectionTimer:null,generation:0,joined:false,ready:false,connected:false,spawnSlot:0,socket:null,topic:'',joinRef:null,seq:0,heartbeat:null,beaconTimer:null,reconnectTimer:null,retries:0,lastHostSeen:0,config:null};
+const roomDebugEvents=[];
+function logRoom(stage,details=''){
+ const msg=new Date().toLocaleTimeString()+' | '+stage+(details?' | '+String(details).slice(0,165):'');roomDebugEvents.push(msg);
+ if(roomDebugEvents.length>28)roomDebugEvents.shift();roomDom.networkLog.textContent=roomDebugEvents.join('\n');roomDom.stage.textContent='Connection: '+stage;
+ console.info('Dirtbike V3Y room:',msg);
+}
+function riderName(){return roomDom.name.value.replace(/[<>]/g,'').trim().slice(0,18)||'Rider'}
+try{const n=localStorage.getItem('dirtbike_v3p_rider_name');if(n)roomDom.name.value=n.slice(0,18)}catch(_){}
+roomDom.name.addEventListener('input',()=>{try{localStorage.setItem('dirtbike_v3p_rider_name',riderName())}catch(_){}announceIdentity();renderRoom()});
+function setRoomStatus(s){roomDom.status.textContent=s}
+const CONFIG_URL_KEY='dirtbike_v3y_realtime_url',CONFIG_PUBLIC_KEY='dirtbike_v3y_realtime_publishable';
+try{roomDom.url.value=localStorage.getItem(CONFIG_URL_KEY)||'';roomDom.key.value=localStorage.getItem(CONFIG_PUBLIC_KEY)||''}catch(_){}
+function getRoomConfig(){
+ const url=roomDom.url.value.trim().replace(/\/+$/,''),key=roomDom.key.value.trim();let u;
+ try{u=new URL(url)}catch(_){throw Error('Enter the Supabase project URL (https://...supabase.co).')}
+ if(u.protocol!=='https:'||!/^[-a-z0-9]+\.supabase\.co$/i.test(u.hostname)||u.pathname!=='/' )throw Error('Use a normal https://PROJECT.supabase.co project URL.');
+ if(!/^(sb_publishable_[a-zA-Z0-9_-]+|eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+)$/.test(key))throw Error('Use your publishable key (sb_publishable_...), never a secret key.');
+ return {url:u.origin,key};
+}
+function saveRoomConfig(){
+ if(multiplayer.role!=='solo'){setRoomStatus('Leave the current room before changing the connection setup.');return false}
+ try{const cfg=getRoomConfig();localStorage.setItem(CONFIG_URL_KEY,cfg.url);localStorage.setItem(CONFIG_PUBLIC_KEY,cfg.key);setRoomStatus('Saved! Now press Create Room or Join Room. Each friend must use the same project.');logRoom('One-time setup saved',new URL(cfg.url).hostname);return true}
+ catch(e){roomDom.advanced.open=true;setRoomStatus('Setup: '+e.message);return false}
+}
+roomDom.save.addEventListener('click',saveRoomConfig);
+function diagnosticText(){return ['Dirt Bike V3Y Supabase Realtime diagnostics','Time: '+new Date().toISOString(),'Browser: '+navigator.userAgent,'Page: '+location.protocol,'Project host: '+(roomDom.url.value.trim()||'not configured'),'Key present: '+Boolean(roomDom.key.value.trim()),'Role: '+multiplayer.role,'Room: '+(multiplayer.room||'none'),'Joined server: '+multiplayer.connected,'Status: '+roomDom.status.textContent,'Events:',...roomDebugEvents].join('\n')}
+roomDom.copyDiagnostics.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(diagnosticText());setRoomStatus('Connection details copied; the key is not included.')}catch(_){setRoomStatus('Select and copy connection history manually.')}});
+function clearRoomTimer(){if(multiplayer.connectionTimer){clearTimeout(multiplayer.connectionTimer);multiplayer.connectionTimer=null}}
+function roomRandomCode(){const b=new Uint32Array(1);crypto.getRandomValues(b);return String(100+(b[0]%900))}
+function roomSafeName(v){return typeof v==='string'?v.replace(/[<>]/g,'').trim().slice(0,18)||'Rider':'Rider'}
+function roomSafePaint(v){return Number.isInteger(v)&&v>=0&&v<BIKE_PAINTS.length?v:0}
+function roomSafeMap(v){return typeof v==='string'&&Object.hasOwn(THEMES,v)?v:'desert'}
+function roomLocalMeta(){return {name:riderName(),paint:selectedPaint,stage:menuStage,host:multiplayer.role==='host'}}
+function connectedRiders(){return multiplayer.role==='host'?multiplayer.clients.size+1:multiplayer.role==='guest'&&multiplayer.joined?Math.max(2,multiplayer.peers.size+1):1}
+function renderRoom(){
+ const online=multiplayer.connected&&((multiplayer.role==='host'&&multiplayer.ready)||(multiplayer.role==='guest'&&multiplayer.joined));
+ document.body.classList.toggle('room-active',online);
+ roomDom.code.textContent=multiplayer.role==='host'||multiplayer.role==='hosting'?multiplayer.room:'— — —';
+ roomDom.codeState.className='room-code-state'+(online?' ready':multiplayer.role!=='solo'?' wait':'');
+ roomDom.codeState.textContent=!multiplayer.connected&&multiplayer.role!=='solo'?'CONNECTING TO GAME SERVER…':multiplayer.role==='host'?'READY · SHARE ROOM CODE':multiplayer.role==='guest'&&multiplayer.joined?'JOINED · FRIEND CONNECTED':multiplayer.role==='joining'?'LOOKING FOR FRIEND…':'OFFLINE · SOLO';
+ roomDom.host.disabled=multiplayer.role!=='solo';roomDom.join.disabled=multiplayer.role!=='solo';roomDom.copy.disabled=multiplayer.role!=='host'||!multiplayer.ready||!multiplayer.connected;roomDom.leave.disabled=multiplayer.role==='solo';
+ roomDom.url.disabled=multiplayer.role!=='solo';roomDom.key.disabled=multiplayer.role!=='solo';roomDom.save.disabled=multiplayer.role!=='solo';roomDom.serverTest.disabled=multiplayer.role!=='solo';
+ roomDom.hud.textContent=online?'🏍️ Room '+multiplayer.room+' · '+connectedRiders()+'/'+ROOM_MAX_PLAYERS+' riders':'';
+ roomDom.roster.replaceChildren();document.querySelectorAll('.map-card').forEach(card=>{card.disabled=multiplayer.role==='guest'&&multiplayer.joined});
+ const own=document.createElement('li');own.textContent='🟢 '+riderName()+' (you'+(multiplayer.role==='host'?' · host':'')+') · '+BIKE_PAINTS[selectedPaint].name;roomDom.roster.append(own);
+ for(const [id,data] of multiplayer.peers){const li=document.createElement('li');li.textContent='🟢 '+data.name+(data.host?' · host':'')+' · '+BIKE_PAINTS[data.paint]?.name;roomDom.roster.append(li)}
+}
+function removeRemote(id){const previous=multiplayer.seen.get(id);if(previous){scene.remove(previous.obj);previous.obj.traverse(o=>{if(o.isMesh&&o.material&&o.userData.roomMaterial)o.material.dispose();if(o.isSprite){o.material.map?.dispose();o.material.dispose()}});multiplayer.seen.delete(id)}}
+function removeAllRemote(){for(const id of [...multiplayer.seen.keys()])removeRemote(id)}
+function stopRoomConnection(){
+ clearRoomTimer();clearInterval(multiplayer.heartbeat);clearInterval(multiplayer.beaconTimer);clearTimeout(multiplayer.reconnectTimer);
+ multiplayer.heartbeat=null;multiplayer.beaconTimer=null;multiplayer.reconnectTimer=null;
+ const ws=multiplayer.socket;multiplayer.socket=null;multiplayer.connected=false;
+ if(ws){try{ws.onclose=null;ws.onmessage=null;ws.onerror=null;ws.close(1000,'left room')}catch(_){}}
+}
+function closeRoom(note='Solo mode is ready.'){
+ if(multiplayer.connected)sendRoom(null,{t:'bye'});
+ multiplayer.generation++;stopRoomConnection();multiplayer.role='solo';multiplayer.room='';multiplayer.ready=false;multiplayer.joined=false;multiplayer.hostConnection=null;
+ multiplayer.clients.clear();multiplayer.peers.clear();removeAllRemote();setRoomStatus(note);renderRoom();
+}
+roomDom.leave.addEventListener('click',()=>closeRoom('You left the room. Solo riding is still available.'));
+function realtimeWSUrl(cfg){const u=new URL(cfg.url);u.protocol='wss:';u.pathname='/realtime/v1/websocket';u.search='?apikey='+encodeURIComponent(cfg.key)+'&vsn=1.0.0';return u.toString()}
+function socketPush(ws,topic,event,payload,joinRef=null){
+ if(!ws||ws.readyState!==WebSocket.OPEN)return null;
+ const ref=String(++multiplayer.seq);
+ ws.send(JSON.stringify({topic,event,payload,ref,join_ref:joinRef||(event==='phx_join'?ref:null)}));return ref;
+}
+function sendRoom(target,msg){
+ if(!multiplayer.connected||!multiplayer.socket)return false;
+ return !!socketPush(multiplayer.socket,multiplayer.topic,'broadcast',{event:'bike-msg',type:'broadcast',payload:{...msg,_from:playerId,...(target?{_to:target}:{})}},multiplayer.joinRef);
+}
+function broadcastRoom(msg,exceptId){if(multiplayer.role==='host')sendRoom(null,exceptId?{...msg,_except:exceptId}:msg)}
+function hostAnnouncement(target){if(multiplayer.role==='host'&&multiplayer.ready)sendRoom(target,{t:'host',room:multiplayer.room,version:'v3y'})}
+function onRealtimeMessage(msg){
+ if(!msg||typeof msg!=='object')return;
+ const source=msg._from;if(typeof source!=='string'||!/^[a-f0-9]{24}$/.test(source)||source===playerId)return;
+ if(msg._to&&msg._to!==playerId||msg._except===playerId)return;
+ if(multiplayer.role==='host'){
+  if(msg.t==='host'&&msg.room===multiplayer.room){if(source<playerId){logRoom('Room-code collision',multiplayer.room);closeRoom('That room code is already in use. Create Room again.')}return}
+  if(msg.t==='discover'){hostAnnouncement(source);return}
+  if(msg.t==='bye'){removeClient(source);return}
+  if(msg.t==='hello'){
+   if(!multiplayer.clients.has(source)&&multiplayer.clients.size>=ROOM_MAX_PLAYERS-1){sendRoom(source,{t:'reject',reason:'Room is full (4 riders).'});return}
+   if(!multiplayer.clients.has(source)){const used=new Set(Array.from(multiplayer.clients.values(),x=>x.slot));const slot=[1,2,3].find(x=>!used.has(x));multiplayer.clients.set(source,{slot,lastSeen:performance.now()});logRoom('Friend joined',source.slice(0,8))}
+   else multiplayer.clients.get(source).lastSeen=performance.now();
+   const meta={name:roomSafeName(msg.name),paint:roomSafePaint(msg.paint),stage:msg.stage==='riding'?'riding':'menu',host:false};
+   multiplayer.peers.set(source,meta);
+   sendRoom(source,{t:'welcome',room:multiplayer.room,map:activeMap,slot:multiplayer.clients.get(source).slot,players:[{id:playerId,...roomLocalMeta()},...Array.from(multiplayer.peers,([id,p])=>({id,...p}))]});
+   broadcastRoom({t:'peer',id:source,info:meta},source);
+   setRoomStatus('Friend joined room '+multiplayer.room+'! '+connectedRiders()+'/'+ROOM_MAX_PLAYERS+' riders connected.');renderRoom();return;
+  }
+  if(!multiplayer.clients.has(source))return;
+  multiplayer.clients.get(source).lastSeen=performance.now();
+  if(msg.t==='pose'){const state=validatePose(msg.state);if(state){receivePose(source,state);broadcastRoom({t:'pose',id:source,state},source)}}
+  else if(msg.t==='alive'){/* keepalive from a guest */}
+ }else if(multiplayer.role==='joining'||multiplayer.role==='guest'){
+  if(msg.t==='host'&&msg.room===multiplayer.room){
+   if(!multiplayer.hostConnection){multiplayer.hostConnection=source;logRoom('Host found',source.slice(0,8));setRoomStatus('Found the host! Joining room…')}
+   if(multiplayer.hostConnection===source){multiplayer.lastHostSeen=performance.now();if(multiplayer.role==='joining')sendRoom(source,{t:'hello',...roomLocalMeta()})}return;
+  }
+  if(source!==multiplayer.hostConnection)return;
+  multiplayer.lastHostSeen=performance.now();
+  if(msg.t==='welcome'&&multiplayer.role==='joining'&&msg.room===multiplayer.room){
+   multiplayer.role='guest';multiplayer.joined=true;multiplayer.ready=true;multiplayer.spawnSlot=Math.max(1,Math.min(3,Number(msg.slot)||1));clearRoomTimer();
+   multiplayer.peers.clear();for(const p of Array.isArray(msg.players)?msg.players:[])if(typeof p?.id==='string'&&p.id!==playerId)multiplayer.peers.set(p.id,{name:roomSafeName(p.name),paint:roomSafePaint(p.paint),stage:p.stage==='riding'?'riding':'menu',host:!!p.host});
+   applyMapTheme(roomSafeMap(msg.map));setRoomStatus('JOINED room '+multiplayer.room+'! Both devices are connected. Select a bike and START RIDING.');logRoom('JOINED friend room',multiplayer.room);renderRoom();announceIdentity();return;
+  }
+  if(msg.t==='reject'){closeRoom('Cannot join room '+multiplayer.room+': '+String(msg.reason||'Unavailable').slice(0,100));return}
+  if(msg.t==='bye'){closeRoom('Host left the room. Back to solo mode.');return}
+  if(multiplayer.role!=='guest')return;
+  if(msg.t==='peer'&&typeof msg.id==='string'&&msg.id!==playerId){const p=msg.info||{};multiplayer.peers.set(msg.id,{name:roomSafeName(p.name),paint:roomSafePaint(p.paint),stage:p.stage||'menu',host:!!p.host});renderRoom()}
+  else if(msg.t==='gone'&&typeof msg.id==='string'){multiplayer.peers.delete(msg.id);removeRemote(msg.id);renderRoom()}
+  else if(msg.t==='map'){const map=roomSafeMap(msg.map);if(map!==activeMap){applyMapTheme(map);if(menuStage==='riding')reset()}setRoomStatus('Shared map: '+THEMES[map].label+' (host chooses map).')}
+  else if(msg.t==='pose'&&typeof msg.id==='string'&&msg.id!==playerId){const state=validatePose(msg.state);if(state)receivePose(msg.id,state)}
+ }
+}
+function removeClient(source){
+ if(multiplayer.clients.delete(source)){multiplayer.peers.delete(source);removeRemote(source);broadcastRoom({t:'gone',id:source});renderRoom();setRoomStatus('Room '+multiplayer.room+' · '+connectedRiders()+' riders connected.')}
+}
+function onServerJoined(){
+ multiplayer.connected=true;multiplayer.retries=0;clearRoomTimer();
+ logRoom('Connected to Supabase Realtime',multiplayer.room);
+ if(multiplayer.role==='hosting'||multiplayer.role==='host'){
+  multiplayer.role='host';multiplayer.ready=true;multiplayer.joined=true;setRoomStatus('Server connected. Give your friend code '+multiplayer.room+'. Waiting for a friend to join.');
+  hostAnnouncement();
+ }else{
+  multiplayer.role='joining';multiplayer.joined=false;multiplayer.ready=false;multiplayer.hostConnection=null;multiplayer.peers.clear();removeAllRemote();
+  setRoomStatus('Connected to game server. Searching for friend room '+multiplayer.room+'…');sendRoom(null,{t:'discover',room:multiplayer.room});
+  multiplayer.connectionTimer=setTimeout(()=>{if(multiplayer.role==='joining')closeRoom('No friend found for '+multiplayer.room+'. Check both devices use the same project and V3Y game.')},ROOM_JOIN_TIMEOUT);
+ }
+ clearInterval(multiplayer.beaconTimer);
+ multiplayer.beaconTimer=setInterval(()=>{
+  if(!multiplayer.connected)return;
+  if(multiplayer.role==='host'){
+   hostAnnouncement();const now=performance.now();for(const [id,c] of multiplayer.clients)if(now-c.lastSeen>17000)removeClient(id);
+  }else if(multiplayer.role==='joining')sendRoom(null,{t:'discover',room:multiplayer.room});
+  else if(multiplayer.role==='guest'){
+   sendRoom(multiplayer.hostConnection,{t:'alive'});
+   if(performance.now()-multiplayer.lastHostSeen>16000)closeRoom('Host disconnected. Back to solo mode.');
+  }
+ },2400);
+ renderRoom();
+}
+function connectSocket(token){
+ if(token!==multiplayer.generation)return;
+ let ws;try{ws=new WebSocket(realtimeWSUrl(multiplayer.config))}catch(e){logRoom('WebSocket could not open',e.message);closeRoom('Cannot connect to game server: '+e.message);return}
+ multiplayer.socket=ws;multiplayer.connected=false;multiplayer.joinRef=null;
+ let joined=false;
+ const timeout=setTimeout(()=>{if(token===multiplayer.generation&&!joined&&ws.readyState!==WebSocket.CLOSED){logRoom('Connection timeout');try{ws.close()}catch(_){}}},14000);
+ ws.onopen=()=>{if(token!==multiplayer.generation)return;logRoom('Server socket opened');const ref=socketPush(ws,multiplayer.topic,'phx_join',{config:{broadcast:{ack:false,self:false},presence:{enabled:false},private:false}});multiplayer.joinRef=ref};
+ ws.onmessage=e=>{
+  if(token!==multiplayer.generation)return;
+  let data;try{data=JSON.parse(e.data)}catch(_){return}
+  if(data.event==='phx_reply'&&data.ref===multiplayer.joinRef){
+   if(data.payload?.status==='ok'&&!joined){joined=true;clearTimeout(timeout);onServerJoined()}
+   else if(data.payload?.status==='error'){logRoom('Game server rejected join',JSON.stringify(data.payload.response||{}).slice(0,170));closeRoom('Server rejected room. Check Supabase Realtime Settings → Allow public access to channels.')}return;
+  }
+  if(data.event==='broadcast'&&data.topic===multiplayer.topic&&data.payload?.event==='bike-msg'&&joined)onRealtimeMessage(data.payload.payload);
+  if(data.event==='phx_error'||data.event==='phx_close'){logRoom('Realtime channel lost',data.event);ws.close()}
+ };
+ ws.onerror=()=>{if(token===multiplayer.generation)logRoom('WebSocket error','Check network or Supabase project URL/key')};
+ ws.onclose=e=>{
+  clearTimeout(timeout);if(token!==multiplayer.generation||multiplayer.socket!==ws)return;
+  multiplayer.socket=null;multiplayer.connected=false;clearInterval(multiplayer.heartbeat);multiplayer.heartbeat=null;clearRoomTimer();
+  logRoom('Server connection closed','code '+e.code);setRoomStatus('Game server disconnected. Reconnecting automatically…');renderRoom();
+  const delay=Math.min(10000,800*Math.pow(2,Math.min(4,multiplayer.retries++)));
+  multiplayer.reconnectTimer=setTimeout(()=>connectSocket(token),delay);
+ };
+ clearInterval(multiplayer.heartbeat);multiplayer.heartbeat=setInterval(()=>{if(ws.readyState===WebSocket.OPEN)socketPush(ws,'phoenix','heartbeat',{},null)},20000);
+}
+function startRoom(role,code){
+ if(multiplayer.role!=='solo')return;
+ let cfg;try{cfg=getRoomConfig();localStorage.setItem(CONFIG_URL_KEY,cfg.url);localStorage.setItem(CONFIG_PUBLIC_KEY,cfg.key)}catch(e){roomDom.advanced.open=true;setRoomStatus('One-time setup needed: '+e.message);return}
+ multiplayer.generation++;multiplayer.config=cfg;multiplayer.role=role;multiplayer.room=code;multiplayer.topic='realtime:'+ROOM_PREFIX+code;multiplayer.connected=false;multiplayer.ready=false;multiplayer.joined=false;multiplayer.clients.clear();multiplayer.peers.clear();multiplayer.retries=0;multiplayer.lastHostSeen=performance.now();
+ logRoom('Connecting to hosted multiplayer',role+' · '+code);setRoomStatus('Connecting to your Supabase room server…');renderRoom();connectSocket(multiplayer.generation);
+}
+function hostRoom(){startRoom('hosting',roomRandomCode())}
+function guestJoin(){const code=roomDom.input.value.replace(/\D/g,'').slice(0,3);if(!/^[1-9][0-9]{2}$/.test(code)){setRoomStatus('Enter your friend’s 3-digit room code (100–999).');return}startRoom('joining',code)}
+roomDom.host.addEventListener('click',hostRoom);roomDom.join.addEventListener('click',guestJoin);
+roomDom.input.addEventListener('input',()=>{roomDom.input.value=roomDom.input.value.replace(/\D/g,'').slice(0,3)});
+roomDom.input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();guestJoin()}});
+roomDom.copy.addEventListener('click',async()=>{if(multiplayer.role!=='host'||!multiplayer.ready)return;try{await navigator.clipboard.writeText(multiplayer.room);setRoomStatus('Copied code '+multiplayer.room+'. Friend should enter it in V3Y.')}catch(_){setRoomStatus('Your room code is '+multiplayer.room+'.')}});
+function broadcastRoomMap(){if(multiplayer.role==='host'&&multiplayer.ready)broadcastRoom({t:'map',map:activeMap})}
+function announceIdentity(){
+ if(multiplayer.role==='host'&&multiplayer.ready){broadcastRoom({t:'peer',id:playerId,info:roomLocalMeta()});renderRoom()}
+ else if(multiplayer.role==='guest'&&multiplayer.joined&&multiplayer.hostConnection)sendRoom(multiplayer.hostConnection,{t:'hello',...roomLocalMeta()});
+}
+roomDom.serverTest.addEventListener('click',()=>{
+ let cfg;try{cfg=getRoomConfig()}catch(e){setRoomStatus('Setup: '+e.message);roomDom.advanced.open=true;return}
+ setRoomStatus('Checking Supabase connection…');logRoom('Test connection started',new URL(cfg.url).hostname);
+ const ws=new WebSocket(realtimeWSUrl(cfg));let finished=false;
+ const timer=setTimeout(()=>done('Connection test timed out. Check your URL, publishable key and network.'),14000);
+ function done(result){if(finished)return;finished=true;clearTimeout(timer);try{ws.close()}catch(_){}setRoomStatus(result);logRoom('Test complete',result)}
+ ws.onopen=()=>ws.send(JSON.stringify({topic:'realtime:dirtbike-v3y-test-'+roomRandomCode(),event:'phx_join',payload:{config:{broadcast:{ack:false,self:false},presence:{enabled:false},private:false}},ref:'1',join_ref:'1'}));
+ ws.onmessage=e=>{try{const d=JSON.parse(e.data);if(d.event==='phx_reply'&&d.ref==='1')done(d.payload?.status==='ok'?'SUCCESS: Your Supabase multiplayer server accepts rooms. Try Create Room.':'Server rejected the room. Enable Realtime public channels and check your key.')}catch(_){}};
+ ws.onerror=()=>done('Could not reach server. Check the Supabase project URL and your network.');ws.onclose=()=>{if(!finished)done('Server closed connection before room was confirmed.')};
+});
+function validatePose(p){
+ if(!p||typeof p!=='object'||p.stage!=='riding'&&p.stage!=='menu')return null;
+ if(!Array.isArray(p.p)||p.p.length!==3||!p.p.every(n=>typeof n==='number'&&Number.isFinite(n)&&Math.abs(n)<1e5))return null;
+ if(!['yaw','pitch','roll'].every(k=>typeof p[k]==='number'&&Number.isFinite(p[k])&&Math.abs(p[k])<1e5))return null;
+ return {p:p.p.map(n=>THREE.MathUtils.clamp(n,-2e3,2e3)),yaw:p.yaw,pitch:p.pitch,roll:p.roll,paint:roomSafePaint(p.paint),stage:p.stage,ragdoll:!!p.ragdoll,space:!!p.space};
+}
+function snapshotRoomState(){return {stage:menuStage==='riding'?'riding':'menu',p:[bike.position.x,bike.position.y,bike.position.z],yaw:bike.rotation.y,pitch:bike.rotation.x,roll:frame.rotation.z,paint:selectedPaint,ragdoll:ragdoll.active,space:spaceFall.active}}
+function makeRiderLabel(name,paint){
+ const c=document.createElement('canvas');c.width=384;c.height=84;const ctx=c.getContext('2d');ctx.fillStyle='#142831e8';ctx.fillRect(6,6,372,65);ctx.strokeStyle='#ffc67d';ctx.lineWidth=4;ctx.strokeRect(6,6,372,65);
+ ctx.font='bold 30px system-ui';ctx.fillStyle='#fff5db';ctx.textAlign='center';ctx.fillText(roomSafeName(name)+' • '+BIKE_PAINTS[roomSafePaint(paint)].name,192,50,354);
+ const texture=new THREE.CanvasTexture(c);const material=new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false,depthTest:false});const obj=new THREE.Sprite(material);obj.scale.set(4.5,.985,1);obj.position.set(0,3.5,0);return obj;
+}
+function makeRemoteBike(id,paint,name){
+ const obj=bike.clone(true);obj.name='Friend rider '+id;
+ obj.traverse(o=>{
+  if(o.isMesh){o.material=o.material.clone();o.userData.roomMaterial=true;
+   if(o.material.color&&o.material.color.getHex()===orange.color.getHex())o.material.color.setHex(BIKE_PAINTS[paint].hex)}
+ });
+ obj.add(makeRiderLabel(name,paint));scene.add(obj);
+ const entry={obj,target:null,paint,name};multiplayer.seen.set(id,entry);return entry;
+}
+function receivePose(id,state){
+ if(!multiplayer.peers.has(id))multiplayer.peers.set(id,{name:'Rider',paint:state.paint,stage:state.stage,host:false});
+ const meta=multiplayer.peers.get(id);
+ if(meta.paint!==state.paint){meta.paint=state.paint;renderRoom()}
+ let entry=multiplayer.seen.get(id);
+ if(!entry)entry=makeRemoteBike(id,state.paint,meta.name);
+ if(entry.paint!==state.paint||entry.name!==meta.name){
+  for(const label of entry.obj.children.filter(o=>o.isSprite)){label.material.map?.dispose();label.material.dispose();entry.obj.remove(label)}
+  entry.obj.add(makeRiderLabel(meta.name,state.paint));
+  // Paint only cloned gas-bike parts; do not change your real bike or its physics.
+  entry.obj.traverse(o=>{if(o.isMesh&&o.material?.color&&o.material.color.getHex()===BIKE_PAINTS[entry.paint].hex)o.material.color.setHex(BIKE_PAINTS[state.paint].hex)});
+  entry.paint=state.paint;entry.name=meta.name;
+ }
+ entry.target=state;entry.lastSeen=performance.now();
+ if(!entry.initialized){entry.obj.position.fromArray(state.p);entry.obj.rotation.order='YXZ';entry.obj.rotation.set(state.pitch,state.yaw,0,'YXZ');entry.initialized=true}
+}
+function updateRemoteRiders(dt){
+ for(const [id,entry] of multiplayer.seen){
+  const p=entry.target;
+  if(!p)continue;
+  const stale=performance.now()-entry.lastSeen>8000;
+  entry.obj.visible=!stale&&menuStage==='riding'&&p.stage==='riding'&&!p.space&&!p.ragdoll&&!spaceFall.active;
+  if(!entry.obj.visible)continue;
+  const target=new THREE.Vector3(...p.p);
+  if(entry.obj.position.distanceToSquared(target)>2500)entry.obj.position.copy(target);
+  else entry.obj.position.lerp(target,1-Math.exp(-dt*15));
+  let delta=Math.atan2(Math.sin(p.yaw-entry.obj.rotation.y),Math.cos(p.yaw-entry.obj.rotation.y));
+  entry.obj.rotation.y+=delta*(1-Math.exp(-dt*15));
+  entry.obj.rotation.x+=(p.pitch-entry.obj.rotation.x)*(1-Math.exp(-dt*15));
+  entry.obj.children[0].rotation.z+=(p.roll-entry.obj.children[0].rotation.z)*(1-Math.exp(-dt*15));
+ }
+}
+function updateMultiplayer(dt){
+ updateRemoteRiders(dt);
+ if((multiplayer.role!=='host'&&multiplayer.role!=='guest')||!multiplayer.joined)return;
+ const now=performance.now();if(now-multiplayer.lastSent<85)return;
+ multiplayer.lastSent=now;
+ const msg={t:'pose',state:snapshotRoomState()};
+ if(multiplayer.role==='host')broadcastRoom({t:'pose',id:multiplayer.peer.id,state:msg.state});
+ else sendRoom(multiplayer.hostConnection,msg);
+}
+addEventListener('beforeunload',()=>{if(multiplayer.connected)sendRoom(null,{t:'bye'});try{multiplayer.socket?.close()}catch(_){}});
+renderRoom();
+
+applyPaint();applyMapTheme(selectedMap);showMenuStage('lobby');
+
+currentSamples=sampleWheels();loop();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+
+</script></body></html>

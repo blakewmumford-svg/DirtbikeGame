@@ -1,0 +1,505 @@
+{
+  "scope": "Real browser WebAudio buffers and game reaction hooks; test-only controlled game state.",
+  "results": [
+    {
+      "name": "Only seven user-provided recordings decode; generated clips are absent",
+      "status": "passed",
+      "evidence": [
+        {
+          "key": "recorded_wallace",
+          "text": "AAAAAAAH!",
+          "duration": 8.966708333333333,
+          "kind": "scream",
+          "decodedDuration": 8.966689342403628,
+          "rms": 0.15986840518032505,
+          "peak": 0.3731621503829956
+        },
+        {
+          "key": "recorded_woody",
+          "text": "AAAAH!",
+          "duration": 1.98,
+          "kind": "scream",
+          "decodedDuration": 1.9799773242630385,
+          "rms": 0.15771194910125155,
+          "peak": 0.4428025186061859
+        },
+        {
+          "key": "recorded_mike",
+          "text": "Aaaah!",
+          "duration": 1.9,
+          "kind": "scream",
+          "decodedDuration": 1.8999773242630384,
+          "rms": 0.15903477305662383,
+          "peak": 0.2868826389312744
+        },
+        {
+          "key": "recorded_squeal",
+          "text": "AAAH!",
+          "duration": 1.0393333333333334,
+          "kind": "reaction",
+          "decodedDuration": 1.0393197278911566,
+          "rms": 0.14773416882778115,
+          "peak": 0.7020576000213623
+        },
+        {
+          "key": "recorded_peter_ow",
+          "text": "Ow!",
+          "duration": 0.54,
+          "kind": "reaction",
+          "decodedDuration": 0.5399773242630386,
+          "rms": 0.11072780389891623,
+          "peak": 0.6982643604278564
+        },
+        {
+          "key": "recorded_wilhelm",
+          "text": "AAAH!",
+          "duration": 1.22,
+          "kind": "scream",
+          "decodedDuration": 1.2199773242630385,
+          "rms": 0.15998461827183907,
+          "peak": 0.6759154200553894
+        },
+        {
+          "key": "AAAAAH!",
+          "text": "AAAAAH!",
+          "duration": 7,
+          "kind": "scream",
+          "decodedDuration": 7,
+          "rms": 0.20458942903058283,
+          "peak": 0.49437183141708374
+        }
+      ]
+    },
+    {
+      "name": "Each recording has the correct bubble and natural-speed playback; chatter cannot interrupt",
+      "status": "passed",
+      "evidence": [
+        {
+          "ctx": "running",
+          "voice": "AAAAAAAH!",
+          "key": "recorded_wallace",
+          "rate": 1,
+          "voiceEnd": 9.277256235827664,
+          "now": 0.31056689342403626,
+          "voiceDuration": 8.966689342403628,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": false,
+          "armed": false,
+          "grounded": true,
+          "speed": 0,
+          "bubbles": [
+            {
+              "text": "AAAAAAAH!",
+              "age": 0,
+              "life": 8.966689342403628
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "AAAAH!",
+          "key": "recorded_woody",
+          "rate": 1,
+          "voiceEnd": 2.3108616780045352,
+          "now": 0.3308843537414966,
+          "voiceDuration": 1.9799773242630385,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": false,
+          "armed": false,
+          "grounded": true,
+          "speed": 0,
+          "bubbles": [
+            {
+              "text": "AAAAH!",
+              "age": 0,
+              "life": 1.9799773242630385
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "Aaaah!",
+          "key": "recorded_mike",
+          "rate": 1,
+          "voiceEnd": 2.242471655328798,
+          "now": 0.34249433106575966,
+          "voiceDuration": 1.8999773242630384,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": false,
+          "armed": false,
+          "grounded": true,
+          "speed": 0,
+          "bubbles": [
+            {
+              "text": "Aaaah!",
+              "age": 0,
+              "life": 1.8999773242630384
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "AAAH!",
+          "key": "recorded_squeal",
+          "rate": 1,
+          "voiceEnd": 1.3818140589569161,
+          "now": 0.34249433106575966,
+          "voiceDuration": 1.0393197278911566,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": false,
+          "armed": false,
+          "grounded": true,
+          "speed": 0,
+          "bubbles": [
+            {
+              "text": "AAAH!",
+              "age": 0,
+              "life": 1.0393197278911566
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "Ow!",
+          "key": "recorded_peter_ow",
+          "rate": 1,
+          "voiceEnd": 0.8824716553287982,
+          "now": 0.34249433106575966,
+          "voiceDuration": 0.5399773242630386,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": false,
+          "armed": false,
+          "grounded": true,
+          "speed": 0,
+          "bubbles": [
+            {
+              "text": "Ow!",
+              "age": 0,
+              "life": 0.5399773242630386
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "AAAH!",
+          "key": "recorded_wilhelm",
+          "rate": 1,
+          "voiceEnd": 1.5711791383219955,
+          "now": 0.3512018140589569,
+          "voiceDuration": 1.2199773242630385,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": false,
+          "armed": false,
+          "grounded": true,
+          "speed": 0,
+          "bubbles": [
+            {
+              "text": "AAAH!",
+              "age": 0,
+              "life": 1.2199773242630385
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "AAAAAH!",
+          "key": "AAAAAH!",
+          "rate": 1,
+          "voiceEnd": 7.351201814058957,
+          "now": 0.3512018140589569,
+          "voiceDuration": 7,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": false,
+          "armed": false,
+          "grounded": true,
+          "speed": 0,
+          "bubbles": [
+            {
+              "text": "AAAAAH!",
+              "age": 0,
+              "life": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Real hard-crash hook rotates the new screams and retains the earlier seven-second scream",
+      "status": "passed",
+      "evidence": [
+        {
+          "ctx": "running",
+          "voice": "AAAAAAAH!",
+          "key": "recorded_wallace",
+          "rate": 1,
+          "voiceEnd": 9.329501133786847,
+          "now": 0.39183673469387753,
+          "voiceDuration": 8.966689342403628,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": true,
+          "armed": false,
+          "grounded": true,
+          "speed": 10,
+          "bubbles": [
+            {
+              "text": "AAAAAAAH!",
+              "age": 0,
+              "life": 8.966689342403628
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "AAAH!",
+          "key": "recorded_wilhelm",
+          "rate": 1,
+          "voiceEnd": 1.6205215419501133,
+          "now": 0.42086167800453517,
+          "voiceDuration": 1.2199773242630385,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": true,
+          "armed": false,
+          "grounded": true,
+          "speed": 10,
+          "bubbles": [
+            {
+              "text": "AAAH!",
+              "age": 0,
+              "life": 1.2199773242630385
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "AAAAH!",
+          "key": "recorded_woody",
+          "rate": 1,
+          "voiceEnd": 2.4124489795918365,
+          "now": 0.4527891156462585,
+          "voiceDuration": 1.9799773242630385,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": true,
+          "armed": false,
+          "grounded": true,
+          "speed": 10,
+          "bubbles": [
+            {
+              "text": "AAAAH!",
+              "age": 0,
+              "life": 1.9799773242630385
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "Aaaah!",
+          "key": "recorded_mike",
+          "rate": 1,
+          "voiceEnd": 2.352766439909297,
+          "now": 0.4818140589569161,
+          "voiceDuration": 1.8999773242630384,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": true,
+          "armed": false,
+          "grounded": true,
+          "speed": 10,
+          "bubbles": [
+            {
+              "text": "Aaaah!",
+              "age": 0,
+              "life": 1.8999773242630384
+            }
+          ]
+        },
+        {
+          "ctx": "running",
+          "voice": "AAAAAH!",
+          "key": "AAAAAH!",
+          "rate": 1,
+          "voiceEnd": 7.481814058956916,
+          "now": 0.5021315192743764,
+          "voiceDuration": 7,
+          "gear": 1,
+          "rpm": 1450,
+          "throttle": 0,
+          "enabled": true,
+          "stage": "riding",
+          "paused": false,
+          "space": false,
+          "moonHit": false,
+          "ragdoll": true,
+          "armed": false,
+          "grounded": true,
+          "speed": 10,
+          "bubbles": [
+            {
+              "text": "AAAAAH!",
+              "age": 0,
+              "life": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Regular collision bubbles use only the recorded reactions",
+      "status": "passed",
+      "evidence": {
+        "ctx": "running",
+        "voice": "Ow!",
+        "key": "recorded_peter_ow",
+        "rate": 1,
+        "voiceEnd": 1.0711337868480726,
+        "now": 0.531156462585034,
+        "voiceDuration": 0.5399773242630386,
+        "gear": 1,
+        "rpm": 1450,
+        "throttle": 0,
+        "enabled": true,
+        "stage": "riding",
+        "paused": false,
+        "space": false,
+        "moonHit": false,
+        "ragdoll": false,
+        "armed": false,
+        "grounded": true,
+        "speed": 0,
+        "bubbles": [
+          {
+            "text": "Ow!",
+            "age": 0,
+            "life": 0.5399773242630386
+          }
+        ]
+      }
+    },
+    {
+      "name": "Full Mickey scream stays active beyond the old trim and finishes naturally",
+      "status": "passed",
+      "evidence": {
+        "ctx": "running",
+        "voiceEnd": 0,
+        "now": 9.511473922902494,
+        "gear": 1,
+        "rpm": 1450,
+        "throttle": 0,
+        "enabled": true,
+        "stage": "riding",
+        "paused": false,
+        "space": false,
+        "moonHit": false,
+        "ragdoll": false,
+        "armed": false,
+        "grounded": true,
+        "speed": 0,
+        "bubbles": [
+          {
+            "text": "AAAAAAAH!",
+            "age": 0,
+            "life": 8.966689342403628
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reset cancels the uploaded reaction and removes its bubble",
+      "status": "passed",
+      "evidence": {
+        "ctx": "running",
+        "voiceEnd": 0,
+        "now": 9.520181405895691,
+        "gear": 1,
+        "rpm": 1450,
+        "throttle": 0,
+        "enabled": true,
+        "stage": "riding",
+        "paused": false,
+        "space": false,
+        "moonHit": false,
+        "ragdoll": false,
+        "armed": false,
+        "grounded": true,
+        "speed": 0,
+        "bubbles": []
+      }
+    }
+  ],
+  "errors": []
+}

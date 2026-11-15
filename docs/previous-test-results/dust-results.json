@@ -1,0 +1,42 @@
+{
+  "scope": "Browser rear-tire particle behavior with controlled contact states; visual-only effect.",
+  "results": [
+    {
+      "name": "Grounded rear wheel emits pooled dust and dirt behind the bike",
+      "status": "passed",
+      "evidence": {
+        "dust": 13,
+        "chips": 2,
+        "behind": true
+      }
+    },
+    {
+      "name": "Stationary, airborne and rear-tire-off-ground states do not emit",
+      "status": "passed",
+      "evidence": [
+        {
+          "kind": "stopped",
+          "count": 0
+        },
+        {
+          "kind": "air",
+          "count": 0
+        },
+        {
+          "kind": "rearOff",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "name": "Menus and reset clear the trail; particle counts stay bounded",
+      "status": "passed",
+      "evidence": {
+        "total": 58,
+        "menu": false,
+        "reset": false
+      }
+    }
+  ],
+  "errors": []
+}

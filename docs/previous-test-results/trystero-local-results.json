@@ -1,0 +1,277 @@
+{
+  "scope": "Actual Trystero MQTT + actual browser WebRTC via a local test relay, same machine; public relays and physical devices are separate tests.",
+  "results": [
+    "Trystero reaches actual local MQTT relay and creates a room",
+    {
+      "error": "TimeoutError: page.waitForFunction: Timeout 60000ms exceeded.",
+      "stack": "page.waitForFunction: Timeout 60000ms exceeded.\n    at /workspace/work/browser-tests/test-trystero-local.mjs:46:15\n    at async step (/workspace/work/browser-tests/test-trystero-local.mjs:34:30)\n    at async file:///workspace/work/browser-tests/test-trystero-local.mjs:44:2"
+    }
+  ],
+  "errors": [],
+  "brokerEvents": [
+    {
+      "event": "client",
+      "id": "mqttjs_1ae70e88"
+    },
+    {
+      "event": "subscribe",
+      "count": 1
+    },
+    {
+      "event": "subscribe",
+      "count": 1
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "client",
+      "id": "mqttjs_07a823ff"
+    },
+    {
+      "event": "subscribe",
+      "count": 1
+    },
+    {
+      "event": "subscribe",
+      "count": 1
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    },
+    {
+      "event": "publish",
+      "kind": "answer"
+    },
+    {
+      "event": "publish",
+      "kind": "announce"
+    },
+    {
+      "event": "publish",
+      "kind": "offer"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+[
+  {
+    "step": "host",
+    "state": {
+      "role": "solo",
+      "ready": false,
+      "connected": false,
+      "room": "",
+      "peers": [],
+      "clients": [],
+      "map": "desert",
+      "seen": []
+    },
+    "status": "Could not reach a Trystero relay. Try another network; open Connection details and copy the log to share.",
+    "stage": "2:07:17 PM | Starting Trystero | hosting · 584\n2:07:17 PM | Loading Trystero\n2:07:19 PM | Relay status | test.mosquitto.org/mqtt:closed, broker.emqx.io/mqtt:closed, broker.hivemq.com/mqtt:closed\n2:07:48 PM | No relay reachable | Try another network and copy connection details"
+  },
+  {
+    "step": "logs",
+    "host": [
+      "Dirtbike V3Z room: 2:07:17 PM | Starting Trystero | hosting · 584",
+      "Dirtbike V3Z room: 2:07:17 PM | Loading Trystero",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://test.mosquitto.org:8081/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "Dirtbike V3Z room: 2:07:19 PM | Relay status | test.mosquitto.org/mqtt:closed, broker.emqx.io/mqtt:closed, broker.hivemq.com/mqtt:closed",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://test.mosquitto.org:8081/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://test.mosquitto.org:8081/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://test.mosquitto.org:8081/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://test.mosquitto.org:8081/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://test.mosquitto.org:8081/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://test.mosquitto.org:8081/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://test.mosquitto.org:8081/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://test.mosquitto.org:8081/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.emqx.io:8084/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "WebSocket connection to 'wss://broker.hivemq.com:8884/mqtt' failed: Error in connection establishment: net::ERR_CERT_AUTHORITY_INVALID",
+      "Dirtbike V3Z room: 2:07:48 PM | No relay reachable | Try another network and copy connection details"
+    ],
+    "guest": []
+  }
+]

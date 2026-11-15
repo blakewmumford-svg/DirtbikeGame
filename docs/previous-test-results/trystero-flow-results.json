@@ -1,0 +1,10 @@
+{
+  "scope": "Simulated Trystero peer delivery; verifies game integration, not real network connections.",
+  "results": [
+    "Default system is Trystero; host creates a room without Supabase setup",
+    "Guest joins by code and names sync",
+    "Map and rider positions sync through Trystero action callbacks",
+    "Leaving removes guest from roster"
+  ],
+  "errors": []
+}

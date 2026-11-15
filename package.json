@@ -1,0 +1,17 @@
+{
+  "name": "dirtbike-game",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node scripts/test.mjs",
+    "diagnose:trystero": "node scripts/diagnose.mjs",
+    "extract:audio": "node scripts/extract-audio.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1",
+    "ws": "8.23.0"
+  }
+}

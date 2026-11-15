@@ -1,0 +1,7 @@
+node_modules/
+reports/
+assets/extracted-audio/
+.env
+.env.*
+*.log
+.DS_Store

@@ -1,0 +1,74 @@
+{
+  "scope": "Actual WebAudio music buffers, output analyser and menu/riding transitions.",
+  "results": [
+    {
+      "name": "Music waits for user interaction, then plays only menu loop",
+      "status": "passed",
+      "evidence": {
+        "menu": 0.22747884690761566,
+        "ride": 0,
+        "sources": 2,
+        "tracks": [
+          {
+            "name": "menu",
+            "duration": 11.162789115646259,
+            "nonzero": true
+          },
+          {
+            "name": "ride",
+            "duration": 44.651156462585035,
+            "nonzero": true
+          }
+        ],
+        "engine": 0
+      }
+    },
+    {
+      "name": "Riding switches off menu tune and plays full DnB loop",
+      "status": "passed",
+      "evidence": {
+        "menu": 0,
+        "ride": 0.34995314478874207
+      }
+    },
+    {
+      "name": "Music volume is independent, saved, and can silence music",
+      "status": "passed",
+      "evidence": {
+        "music": 0.00004689082925324328,
+        "bike": 0.6,
+        "voice": 0.6,
+        "saved": {
+          "enabled": true,
+          "volume": 1,
+          "bikeVolume": 0.6,
+          "voiceVolume": 0.6,
+          "musicVolume": 0
+        }
+      }
+    },
+    {
+      "name": "Pause, background, and global mute silence the music",
+      "status": "passed",
+      "evidence": {
+        "passed": true
+      }
+    },
+    {
+      "name": "Returning to menu restores light tune without creating extra sources; controls fit mobile",
+      "status": "passed",
+      "evidence": {
+        "menu": 0.4549390375614166,
+        "ride": 0.0000937541262828745,
+        "sources": 2,
+        "rect": {
+          "x": 115.265625,
+          "y": 642.703125,
+          "width": 159.46875,
+          "height": 149
+        }
+      }
+    }
+  ],
+  "errors": []
+}

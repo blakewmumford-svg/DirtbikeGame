@@ -1,0 +1,225 @@
+{
+  "project": "Dirtbike Game",
+  "snapshot_date": "2026-11-14",
+  "timezone": "America/Vancouver",
+  "current_game": "dirtbike_wheelie_landing_fixed.html",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 137,
+      "sha256": "e394507d1d4e9f681150d8f6900f38b773dced52c6bef338d12b66645782cc37"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 75,
+      "sha256": "ec363835f6e5116c32b0a441057b6c268d8575b75834a99dbaf7dcbc026bf58e"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 2600,
+      "sha256": "8b3fa49a4395caa9c1659972e87422469a181250839a788095e14203a458df3b"
+    },
+    {
+      "path": "IMPORT_TO_GITHUB.md",
+      "bytes": 2232,
+      "sha256": "41bf564ef09ba040732fabd35ec66fffe6da1dfbe14cfe21d341c9e274383a70"
+    },
+    {
+      "path": "NEW_CHAT_PROMPT.txt",
+      "bytes": 922,
+      "sha256": "3c5e755f32ff44d8b07e04f7ac367f53977327e7361fdc6a462aba68dda337a1"
+    },
+    {
+      "path": "README.md",
+      "bytes": 5352,
+      "sha256": "3564b75d36174d98fdf062081140d9daebc0fb9f564498edc2d68ef5a61b7ffe"
+    },
+    {
+      "path": "SESSION_HANDOFF.md",
+      "bytes": 5225,
+      "sha256": "01eba5a2b9ec49c71a649c20b23b6e4fa0530d36e249dd521340f939d3754cfe"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "bytes": 883,
+      "sha256": "e490fe26327190d82c7693822c4bbc5374c030c6d081da2dd934e2704cf1a6fe"
+    },
+    {
+      "path": "archive/README.md",
+      "bytes": 289,
+      "sha256": "dd821a119831494df8aaaeb161212611c2356d952f91078b435ca6d42f97e112"
+    },
+    {
+      "path": "archive/original_V3Y.html",
+      "bytes": 168738,
+      "sha256": "5a266856a98f23d0b60d2b3d2c9ce15b53a685ed886b45a3ff77c94b6d540feb"
+    },
+    {
+      "path": "assets/README.md",
+      "bytes": 553,
+      "sha256": "10cbfcb5cd14cbd35fca28b725776e54d1a37b3dbda3f94c979c2978fb058661"
+    },
+    {
+      "path": "assets/source-recordings.json",
+      "bytes": 1000,
+      "sha256": "72b4420b726542c466963935d53a7f960bb06db49b5718eeb6e089c4517ccd34"
+    },
+    {
+      "path": "dirtbike_wheelie_landing_fixed.html",
+      "bytes": 2701988,
+      "sha256": "50c1fdaf31fc972b74cccea399d645411e0edb66acc1dfd35203de1bc6bbe041"
+    },
+    {
+      "path": "docs/CHAT_HISTORY_HANDOFF.md",
+      "bytes": 15704,
+      "sha256": "c35ccdc2f7c0c5435c8fdc3849d27c3eaeb7ef5ed199851e49a4e515f7b5d334"
+    },
+    {
+      "path": "docs/PORT_VALIDATION.md",
+      "bytes": 1186,
+      "sha256": "9e12b01c187b503d98cf2891d182bb1704858836206d8d4b55292b6ab64418ae"
+    },
+    {
+      "path": "docs/previous-test-results/dust-results.json",
+      "bytes": 919,
+      "sha256": "62400abd0aa38809c3af18e50c34af9de8716ce6edc89ba42720838ccff4e5a0"
+    },
+    {
+      "path": "docs/previous-test-results/music-results.json",
+      "bytes": 1800,
+      "sha256": "9e9a20b2f875c6b01264cf5abc0b0227bf42d1c19b3f5450b6b3e7cfd7e7e53c"
+    },
+    {
+      "path": "docs/previous-test-results/recorded-only-results.json",
+      "bytes": 13189,
+      "sha256": "4fddebf9882db2dcad7500f2453de85731973374b23700d25a392d49f6c0f103"
+    },
+    {
+      "path": "docs/previous-test-results/supabase-quick-results.json",
+      "bytes": 1423,
+      "sha256": "829d7c53f1b6714a3aa5f38fcdb481eb7086209cd411d34856f52fbad1e1ce8b"
+    },
+    {
+      "path": "docs/previous-test-results/trystero-flow-results.json",
+      "bytes": 373,
+      "sha256": "b21b8036f7cdcd5b36931017e0a047865bff43eb4ac017620b2827eea706ecb4"
+    },
+    {
+      "path": "docs/previous-test-results/trystero-live-results.json",
+      "bytes": 5538,
+      "sha256": "15a3d3d17f7f23fe6eeaea64b7258ba5ccadfc3c677ee82f1b17f51beb5f3118"
+    },
+    {
+      "path": "docs/previous-test-results/trystero-local-results.json",
+      "bytes": 4782,
+      "sha256": "55a4f5fde64a9457f215f16b6d8fd4d96bbfcbf012480fcdb1375c3faccf9c87"
+    },
+    {
+      "path": "docs/previous-test-results/wheelie-results.json",
+      "bytes": 10306,
+      "sha256": "650af2778bf633c3465bfe8534529fbdef035b22c34fc35519eab09b91c307f2"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 2373,
+      "sha256": "9e97bb68d5b8ac5fbffec008ef4bdb3ac4ead8bca347055adf5525aefdd881b4"
+    },
+    {
+      "path": "package.json",
+      "bytes": 409,
+      "sha256": "df7f1b2b2356e00e06ceaa65d6370a9a9970fa46b86aceedc3885b32fe15fb3e"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "bytes": 1681,
+      "sha256": "c0f4b5a9a75058cbb3ebc4af239aadb5338f787ad5a003e05870164599c0c222"
+    },
+    {
+      "path": "scripts/diagnose.mjs",
+      "bytes": 498,
+      "sha256": "c6d1b306cd11ef9bbdde55adc3bec7acb41fd25d3dffd81c31fa8662e3b5cf22"
+    },
+    {
+      "path": "scripts/extract-audio.mjs",
+      "bytes": 887,
+      "sha256": "7b78e3e6d54a7119e03700e94e2c4d23311415f0568bdc0313bccfb70ccc4000"
+    },
+    {
+      "path": "scripts/serve.mjs",
+      "bytes": 1137,
+      "sha256": "49456611a7caac57d6c05abee713d6464d9571216acad8aa31e6e555fa3a4327"
+    },
+    {
+      "path": "scripts/test.mjs",
+      "bytes": 606,
+      "sha256": "dde34c1f0b97629bfe04f3045b3fdb3f9bcc865cb9a12b8e88c5db8a69a81703"
+    },
+    {
+      "path": "tests/browser-options.mjs",
+      "bytes": 338,
+      "sha256": "8f0b4b521b701ab3c6ffb84c9635024811123e684bbf60e01a3dc97152ed8dc0"
+    },
+    {
+      "path": "tests/fixtures/licenses/MQTT-LICENSE.txt",
+      "bytes": 1271,
+      "sha256": "81b51ef8ac2a8ac8f111ed34ab1a32d63e7f4f7de586bd65f5510fb1ba3a89eb"
+    },
+    {
+      "path": "tests/fixtures/licenses/THREE-LICENSE.txt",
+      "bytes": 1081,
+      "sha256": "4c40a1ef62450b857c3b2aaf294936304cd552d965fbcd9d32d4c5bcf4ba4454"
+    },
+    {
+      "path": "tests/fixtures/licenses/TRYSTERO-LICENSE.txt",
+      "bytes": 1060,
+      "sha256": "bbf91fd979faac0def9551c570e2e9f92b4e02d22f38ca5d98860b6284e1ea25"
+    },
+    {
+      "path": "tests/fixtures/three.module.js",
+      "bytes": 1314681,
+      "sha256": "ce1fa418de16a19495a9f72495580e3015d7745c296d3ce0485897f902ddedfb"
+    },
+    {
+      "path": "tests/fixtures/trystero-mqtt.bundle.mjs",
+      "bytes": 378312,
+      "sha256": "1b2c6e1f12f91993c1fab59e546c62873700964ecfb7e56a6864b25c51a48dd4"
+    },
+    {
+      "path": "tests/test-dust.mjs",
+      "bytes": 5597,
+      "sha256": "26c59536cc1ac84ca3263ebf2e1939df80410b2d35f08d0fbc2edccc6d73359e"
+    },
+    {
+      "path": "tests/test-music.mjs",
+      "bytes": 7314,
+      "sha256": "1376633c52b4b5a50a21d0cf1042979cda9d802a76e9edac62d33325efdbaf3b"
+    },
+    {
+      "path": "tests/test-recorded-only.mjs",
+      "bytes": 7502,
+      "sha256": "af7842b5ad44fe98345b59204bdfb269d324c320a977e8a234a68659a7e5dd77"
+    },
+    {
+      "path": "tests/test-split-volume.mjs",
+      "bytes": 4593,
+      "sha256": "47cf2a755d7cd52a3fd80f798b67a854b99fc5625f5928f119735a4945d8a552"
+    },
+    {
+      "path": "tests/test-trystero-flow.mjs",
+      "bytes": 6128,
+      "sha256": "39d1b1cd02a9897e5bdbb294b6f93dc0e7f3448cbba47dc0b553f4ab845ec83b"
+    },
+    {
+      "path": "tests/test-trystero-live.mjs",
+      "bytes": 3379,
+      "sha256": "0b51fe2f933704f6de851120e1ed1aad2332267c57805223c490cbf4cc8406ad"
+    },
+    {
+      "path": "tests/test-wheelie.mjs",
+      "bytes": 5523,
+      "sha256": "a7452553a8b86b1d1d70d11b0b4eb8f5cf6747c3c7f2b3282734a948fc8de840"
+    }
+  ],
+  "repository": "blakewmumford-svg/DirtbikeGame",
+  "branch": "main"
+}

@@ -1,0 +1,407 @@
+{
+  "target": "/workspace/output/dirtbike_multiplayer_fixed.html",
+  "scope": "Actual game physics in Chromium; manual substeps and test-only state setup, no mocked tire contacts.",
+  "results": [
+    {
+      "name": "Freshly armed wheelie does not cancel before front tire lifts",
+      "status": "passed",
+      "evidence": {
+        "before": {
+          "armed": true,
+          "liftTime": 0,
+          "grounded": true,
+          "p": [
+            0,
+            0.08,
+            25
+          ],
+          "pitch": 0,
+          "pitchVelocity": 1.9505,
+          "speed": 8,
+          "vertical": 0,
+          "samples": [
+            {
+              "i": 0,
+              "contact": true,
+              "clearance": -0.040000000000000036
+            },
+            {
+              "i": 1,
+              "contact": true,
+              "clearance": -0.040000000000000036
+            }
+          ]
+        },
+        "after": {
+          "armed": true,
+          "liftTime": 0,
+          "grounded": true,
+          "p": [
+            0,
+            0.08122324444444445,
+            24.93375
+          ],
+          "pitch": 0.01590609342042701,
+          "pitchVelocity": 1.908731210451241,
+          "speed": 7.95,
+          "vertical": 0.14678933333333344,
+          "samples": [
+            {
+              "i": 0,
+              "contact": true,
+              "clearance": -0.021364280068811303
+            },
+            {
+              "i": 1,
+              "contact": true,
+              "clearance": -0.05667431848917959
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Front tire lowering onto ground cancels wheelie while rear stays grounded",
+      "status": "passed",
+      "evidence": {
+        "before": {
+          "armed": true,
+          "liftTime": 0,
+          "grounded": true,
+          "p": [
+            0,
+            0.9123934673819875,
+            25
+          ],
+          "pitch": 0.65,
+          "pitchVelocity": 0,
+          "speed": 8,
+          "vertical": 0,
+          "samples": [
+            {
+              "i": 0,
+              "contact": false,
+              "clearance": 1.3235138207340078
+            },
+            {
+              "i": 1,
+              "contact": true,
+              "clearance": -0.020000000000000018
+            }
+          ]
+        },
+        "first": {
+          "armed": true,
+          "liftTime": 0.008333333333333333,
+          "grounded": true,
+          "p": [
+            0,
+            0.9115045784930985,
+            24.93375
+          ],
+          "pitch": 0.6496409076114719,
+          "pitchVelocity": -0.043091086623379064,
+          "speed": 7.95,
+          "vertical": -0.10666666666666665,
+          "samples": [
+            {
+              "i": 0,
+              "contact": false,
+              "clearance": 1.3224538304260147
+            },
+            {
+              "i": 1,
+              "contact": true,
+              "clearance": -0.02042527755579293
+            }
+          ]
+        },
+        "steps": [
+          {
+            "i": 10,
+            "armed": true,
+            "liftTime": 0.09166666666666666,
+            "grounded": true,
+            "p": [
+              0,
+              0.6519774217629223,
+              24.27125
+            ],
+            "pitch": 0.4497499547989994,
+            "pitchVelocity": -0.03000542412007537,
+            "speed": 7.95,
+            "vertical": -0.10666666666666665,
+            "samples": [
+              {
+                "i": 0,
+                "contact": false,
+                "clearance": 0.9445586778690294
+              },
+              {
+                "i": 1,
+                "contact": true,
+                "clearance": -0.020564939178193686
+              }
+            ]
+          },
+          {
+            "i": 20,
+            "armed": true,
+            "liftTime": 0.175,
+            "grounded": true,
+            "p": [
+              0,
+              0.3967213471471513,
+              23.608749999999997
+            ],
+            "pitch": 0.2498590019865269,
+            "pitchVelocity": -0.016919761616771684,
+            "speed": 7.95,
+            "vertical": -0.10666666666666644,
+            "samples": [
+              {
+                "i": 0,
+                "contact": false,
+                "clearance": 0.5282206384835206
+              },
+              {
+                "i": 1,
+                "contact": true,
+                "clearance": -0.020712860909737563
+              }
+            ]
+          },
+          {
+            "i": 30,
+            "armed": true,
+            "liftTime": 0.2583333333333333,
+            "grounded": true,
+            "p": [
+              0,
+              0.15591260883359317,
+              22.946249999999996
+            ],
+            "pitch": 0.04996804917405448,
+            "pitchVelocity": -0.0038340991134679864,
+            "speed": 7.95,
+            "vertical": -0.10666666666666665,
+            "samples": [
+              {
+                "i": 0,
+                "contact": false,
+                "clearance": 0.0900308184801808
+              },
+              {
+                "i": 1,
+                "contact": true,
+                "clearance": -0.02085209505557617
+              }
+            ]
+          },
+          {
+            "i": 32,
+            "armed": false,
+            "liftTime": 0,
+            "grounded": true,
+            "p": [
+              0,
+              0.11034392417037871,
+              22.813749999999995
+            ],
+            "pitch": 0.009978863206086706,
+            "pitchVelocity": -0.0025364152695963866,
+            "speed": 7.95,
+            "vertical": -0.10666666666666665,
+            "samples": [
+              {
+                "i": 0,
+                "contact": true,
+                "clearance": 0.0012876311528051687
+              },
+              {
+                "i": 1,
+                "contact": true,
+                "clearance": -0.02086507750776645
+              }
+            ]
+          }
+        ],
+        "after": {
+          "armed": false,
+          "liftTime": 0,
+          "grounded": true,
+          "p": [
+            0,
+            0.11034392417037871,
+            22.813749999999995
+          ],
+          "pitch": 0.009978863206086706,
+          "pitchVelocity": -0.0025364152695963866,
+          "speed": 7.95,
+          "vertical": -0.10666666666666665,
+          "samples": [
+            {
+              "i": 0,
+              "contact": true,
+              "clearance": 0.0012876311528051687
+            },
+            {
+              "i": 1,
+              "contact": true,
+              "clearance": -0.02086507750776645
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Airborne landing cancels wheelie before ground throttle can lift again",
+      "status": "passed",
+      "evidence": {
+        "before": {
+          "armed": true,
+          "liftTime": 0,
+          "grounded": false,
+          "p": [
+            0,
+            1.5,
+            25
+          ],
+          "pitch": 0,
+          "pitchVelocity": 0,
+          "speed": 8,
+          "vertical": -2,
+          "samples": [
+            {
+              "i": 0,
+              "contact": false,
+              "clearance": 1.3800000000000001
+            },
+            {
+              "i": 1,
+              "contact": false,
+              "clearance": 1.3800000000000001
+            }
+          ]
+        },
+        "landing": {
+          "i": 35,
+          "armed": false,
+          "liftTime": 0,
+          "grounded": true,
+          "p": [
+            0,
+            0.12534722222222258,
+            22.60922659831557
+          ],
+          "pitch": 0,
+          "pitchVelocity": 0,
+          "speed": 7.940224438553119,
+          "vertical": -5.708333333333332,
+          "samples": [
+            {
+              "i": 0,
+              "contact": true,
+              "clearance": 0.005347222222222614
+            },
+            {
+              "i": 1,
+              "contact": true,
+              "clearance": 0.005347222222222614
+            }
+          ]
+        },
+        "after": {
+          "armed": false,
+          "liftTime": 0,
+          "grounded": true,
+          "p": [
+            0,
+            0.12534722222222258,
+            22.60922659831557
+          ],
+          "pitch": 0,
+          "pitchVelocity": 0,
+          "speed": 7.940224438553119,
+          "vertical": -5.708333333333332,
+          "samples": [
+            {
+              "i": 0,
+              "contact": true,
+              "clearance": 0.005347222222222614
+            },
+            {
+              "i": 1,
+              "contact": true,
+              "clearance": 0.005347222222222614
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Continuing to accelerate after touchdown does not rearm wheelie",
+      "status": "passed",
+      "evidence": {
+        "rearmed": false,
+        "after": {
+          "armed": false,
+          "liftTime": 0,
+          "grounded": true,
+          "p": [
+            0,
+            0.2592572843822733,
+            -35.175059274931215
+          ],
+          "pitch": 0.1292649874577883,
+          "pitchVelocity": 0.1947614929697814,
+          "speed": 24.7068011379895,
+          "vertical": 2.5249677853441233,
+          "samples": [
+            {
+              "i": 0,
+              "contact": true,
+              "clearance": -0.07933758097010363
+            },
+            {
+              "i": 1,
+              "contact": true,
+              "clearance": -0.04479262793378163
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "An explicit new wheelie input can arm again",
+      "status": "passed",
+      "evidence": {
+        "armed": true,
+        "liftTime": 0,
+        "grounded": true,
+        "p": [
+          0,
+          0.2592572843822733,
+          -35.175059274931215
+        ],
+        "pitch": 0.1292649874577883,
+        "pitchVelocity": 1.9505,
+        "speed": 24.7068011379895,
+        "vertical": 2.5249677853441233,
+        "samples": [
+          {
+            "i": 0,
+            "contact": true,
+            "clearance": -0.07933758097010363
+          },
+          {
+            "i": 1,
+            "contact": true,
+            "clearance": -0.04479262793378163
+          }
+        ]
+      }
+    }
+  ],
+  "errors": []
+}
