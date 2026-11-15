@@ -57,7 +57,7 @@ try{
  await check('Mobile wheelie, tabletop and trick controls are usable without keyboard keys',async()=>{
   await page.getByRole('button',{name:'Wheelie',exact:true}).tap();assert.equal((await inputs()).wheelie,true);
   await page.evaluate(()=>__screamTest.set({air:true}));const tilt=await point('Tilt →',1);await touch('touchStart',[tilt]);assert.equal((await inputs()).roll,-1);await touch('touchEnd',[]);
-  await page.getByRole('button',{name:'Tricks',exact:true}).tap();await page.getByRole('button',{name:'Superman',exact:true}).tap();await page.evaluate(()=>__screamTest.pose());assert.equal(await page.evaluate(()=>__screamTest.stuntPose.name),'Superman');return{wheelie:true,tabletop:true,trick:true};
+  await page.evaluate(()=>__screamTest.pose());await page.getByRole('button',{name:'Random trick',exact:true}).tap();await page.evaluate(()=>__screamTest.pose());assert.ok(['No-hander','Superman','Can-can'].includes(await page.evaluate(()=>__screamTest.stuntPose.name)));return{wheelie:true,tabletop:true,trick:true};
  });
  await check('Connected controller works on mobile, has air tricks/tabletops, and disconnect releases input',async()=>{
   await page.evaluate(()=>{

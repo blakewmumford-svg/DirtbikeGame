@@ -184,6 +184,7 @@ body.touch-mode:not(.menu-open) #touch-controls{display:block}
 #touch-controls .touch-pad:first-child{left:max(8px,env(safe-area-inset-left))}
 #touch-controls .touch-pad:nth-child(2){right:max(8px,env(safe-area-inset-right))}
 #touch-controls button{position:static;touch-action:none;min-height:54px;border:1px solid #ffffff75;border-radius:14px;background:#142d3be8;color:white;font:700 12px system-ui;padding:7px 5px;box-shadow:0 3px 10px #0005}
+#touch-controls button:disabled{opacity:.45}
 #touch-controls button[aria-pressed=true]{background:#dba55b;color:#14212b}
 #touch-controls .touch-gas{background:#278451ed}
 #touch-controls .touch-tools{position:absolute;bottom:0;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));display:flex;gap:5px;pointer-events:auto}
@@ -610,7 +611,7 @@ function updateExhaust(dt){
 }
 // Riding suit, boots, helmet and articulated throttle arm.
 const rider=new THREE.Group();frame.add(rider);
-const upperBody=new THREE.Group();rider.add(upperBody);upperBody.position.set(0,2.26,.35);
+const upperBody=new THREE.Group();upperBody.name='Rider upper body';rider.add(upperBody);upperBody.position.set(0,2.26,.35);
 mesh(new THREE.BoxGeometry(.66,.82,.37),black,upperBody).rotation.x=-.23;
 mesh(new THREE.BoxGeometry(.44,.32,.055),white,upperBody,0,.14,-.23).rotation.x=-.23;
 mesh(new THREE.SphereGeometry(.29,20,16),orange,upperBody,0,.61,-.19);
@@ -631,26 +632,38 @@ for(const side of [-1,1]){
  riderLegs.push({side,hip,knee,foot,thigh,shin,boot,thighLength:hip.distanceTo(knee),shinLength:knee.distanceTo(foot)});
 }
 let visualThrottle=0;
+const riderBalance={lean:0,feet:0,walk:0};
+const riderFootWorld=new THREE.Vector3();
 const armMid=new THREE.Vector3(),armDirection=new THREE.Vector3(),armUp=new THREE.Vector3(0,1,0);
 function poseArmSegment(obj,a,b,length){obj.position.copy(armMid.copy(a).add(b).multiplyScalar(.5));armDirection.copy(b).sub(a);obj.scale.y=armDirection.length()/length;obj.quaternion.setFromUnitVectors(armUp,armDirection.normalize())}
 function updateBikeVisuals(dt,time){
+ upperBody.visible=!(menuStage==='riding'&&camMode===1&&!ragdoll.active&&!spaceFall.active);
  const target=menuStage==='riding'&&!paused&&!ragdoll.active&&!spaceFall.active?throttleInput():0;
  visualThrottle+=(target-visualThrottle)*(1-Math.exp(-dt*14));
  throttleGrip.rotation.x=-visualThrottle*.65;
  const canTrick=menuStage==='riding'&&!paused&&!grounded&&!ragdoll.active&&!spaceFall.active;
  stuntPose.hold=Math.max(0,stuntPose.hold-dt);
- const requested=canTrick?(keys.ControlLeft||keys.ControlRight||controller.connected&&controller.previousButtons[4]?'Superman':keys.AltLeft||keys.AltRight||controller.connected&&controller.previousButtons[1]?'Can-can':boostInput()?'No-hander':stuntPose.hold>0?stuntPose.queued:''):'';
+ const requested=canTrick?(keys.ControlLeft||keys.ControlRight||controller.connected&&controller.previousButtons[4]?'Superman':keys.AltLeft||keys.AltRight||controller.connected&&controller.previousButtons[1]?'Can-can':keys.ShiftLeft||keys.ShiftRight||controller.boost?'No-hander':stuntPose.hold>0?stuntPose.queued:''):'';
  if(requested)stuntPose.name=requested;
  if(!canTrick){stuntPose.amount=0;stuntPose.name='';stuntPose.hold=0;stuntPose.queued=''}
  else {stuntPose.amount+=((requested?1:0)-stuntPose.amount)*(1-Math.exp(-dt*12));if(stuntPose.amount<.001)stuntPose.name=''}
  const superman=stuntPose.name==='Superman'?stuntPose.amount:0,noHands=stuntPose.name==='No-hander'?stuntPose.amount:0,canCan=stuntPose.name==='Can-can'?stuntPose.amount:0;
- upperBody.rotation.x=superman*1.2;upperBody.position.set(0,2.26-superman*.12,.35+superman*.30);
+ const mounted=menuStage==='riding'&&!ragdoll.active&&!spaceFall.active;
+ const leanTarget=mounted&&grounded?THREE.MathUtils.clamp(target*.8+Math.max(0,Math.min(speed/25,.2))-(speed>.25?brakeInput()*1.2:0),-1,1):0;
+ const feetTarget=mounted&&grounded&&speed<.8?1:0;
+ riderBalance.lean+=(leanTarget-riderBalance.lean)*(1-Math.exp(-dt*8));
+ riderBalance.feet+=(feetTarget-riderBalance.feet)*(1-Math.exp(-dt*10));
+ if(mounted&&grounded&&speed<-.15&&!paused)riderBalance.walk+=dt*Math.min(8,Math.abs(speed)*4);
+ const lean=riderBalance.lean,feet=riderBalance.feet;
+ upperBody.rotation.x=superman*1.2-lean*.34;upperBody.position.set(0,2.26-superman*.12-Math.abs(lean)*.06-feet*.12,.35+superman*.30-lean*.25);
+ if(feet>.001){bike.position.copy(pos);bike.rotation.set(pitch,yaw,0,'YXZ');frame.updateWorldMatrix(true,false)}
+ const randomButton=document.querySelector('#touch-controls [data-random-trick]');if(randomButton)randomButton.disabled=!canTrick;
  for(const a of riderArms){
   // Right wrist rolls over the grip; the elbow dips naturally with the twist.
   const twist=a.side===1?visualThrottle:0;
-  a.elbow.set(a.side*.48,2.24-twist*.12,.06+twist*.045);
+  a.elbow.set(a.side*.48,2.24-twist*.12-Math.abs(lean)*.04-feet*.06,.06+twist*.045-lean*.13);
   a.glove.rotation.x=-twist*.65;
-  a.shoulder.set(a.side*.28,2.50-superman*.30,.30+superman*.45);
+  a.shoulder.set(a.side*.28,2.50-superman*.30-Math.abs(lean)*.06-feet*.12,.30+superman*.45-lean*.35);
   a.hand.set(a.side*(.51+noHands*.42),2.08+noHands*.83,-.26+noHands*.45);
   a.elbow.lerp(new THREE.Vector3(a.side*.70,2.65,.25),noHands);a.glove.position.copy(a.hand);
   poseArmSegment(a.upper,a.shoulder,a.elbow,a.upperLength);poseArmSegment(a.lower,a.elbow,a.hand,a.lowerLength);
@@ -660,6 +673,12 @@ function updateBikeVisuals(dt,time){
   leg.hip.set(side*.23,1.98+superman*.12,.5+superman*.48);
   leg.knee.set(side*.35-canCan*.90,1.32+superman*.78+canCan*.48,.77+superman*.90);
   leg.foot.set(side*.28-canCan*1.35,1.15+superman*.88+canCan*.43,.18+superman*2.12);
+  if(feet>.001){
+   const walking=speed<-.15&&!paused,phase=riderBalance.walk+(side>0?Math.PI:0),stride=walking?Math.cos(phase)*.28:0,lift=walking?Math.max(0,Math.sin(phase))*.18:0;
+   riderFootWorld.set(side*.55,.16,.40+stride);frame.localToWorld(riderFootWorld);
+   riderFootWorld.y=surfaceAt(riderFootWorld.x,riderFootWorld.z).height+.16+lift;frame.worldToLocal(riderFootWorld);
+   leg.hip.y-=feet*.14;leg.knee.lerp(new THREE.Vector3(side*.52,.92,.55+stride*.5),feet);leg.foot.lerp(riderFootWorld,feet);
+  }
   poseArmSegment(leg.thigh,leg.hip,leg.knee,leg.thighLength);poseArmSegment(leg.shin,leg.knee,leg.foot,leg.shinLength);
   leg.boot.position.copy(leg.foot);leg.boot.rotation.x=superman*1.1;leg.boot.rotation.z=canCan*.7;
  }
@@ -726,6 +745,7 @@ function updateDisasters(dt){
  }
  for(let i=0;i<stormClouds.length;i++){const p=stormClouds[i],quake=disaster.type==='quake';p.visible=disaster.type==='dust'||quake;if(p.visible){p.scale.setScalar(quake?1.7+i%3:5+i%5);p.position.set(((i*13.7+disaster.time*(quake?.4:3))%65)-32,quake?.15+(i%3)*.2:1+(i*3.13)%9,((i*21.1)%65)-32)}}
  // A low thunder rumble, spaced well apart; no flashing lights or damage.
+ updatePlayerIndicators();
  if(disaster.type==='quake'&&dt>0&&Math.floor(disaster.time/12)!==Math.floor((disaster.time-dt)/12))playSoundNoise(1.8,100,.10);
  if(rain.visible&&dt>0&&Math.floor(disaster.time/18)!==Math.floor((disaster.time-dt)/18))playSoundNoise(1.2,180,.14);
 }
@@ -1014,21 +1034,20 @@ function updateTouchVisibility(){
 }
 function setupTouchControls(){
  const root=document.createElement('div');root.id='touch-controls';root.setAttribute('role','group');root.setAttribute('aria-label','Touch riding controls');
- const left=document.createElement('div'),right=document.createElement('div'),tools=document.createElement('div'),tricks=document.createElement('div');left.className=right.className='touch-pad';left.setAttribute('aria-label','Steering and tabletop');right.setAttribute('aria-label','Throttle and brake');tools.className='touch-tools';tricks.className='touch-tricks';tricks.hidden=true;
+ const left=document.createElement('div'),right=document.createElement('div'),tools=document.createElement('div');left.className=right.className='touch-pad';left.setAttribute('aria-label','Steering and tabletop');right.setAttribute('aria-label','Throttle and brake');tools.className='touch-tools';
  function button(parent,label,action,hold=false){
   const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',label);
   if(hold){b.dataset.hold=action;b.setAttribute('aria-pressed','false')}
-  const perform=()=>{if(menuStage!=='riding')return;if(action==='wheelie')toggleWheelie();if(action==='camera')camMode=(camMode+1)%3;if(action==='pause')togglePause();if(action==='repair')repairHere();if(action==='garage')toggleTuner();if(action==='tricks'){tricks.hidden=!tricks.hidden;b.setAttribute('aria-expanded',String(!tricks.hidden))}if(['No-hander','Superman','Can-can'].includes(action))triggerTrick(action)};
+  const perform=()=>{if(menuStage!=='riding')return;if(action==='wheelie')toggleWheelie();if(action==='camera')camMode=(camMode+1)%3;if(action==='pause')togglePause();if(action==='repair')repairHere();if(action==='garage')toggleTuner();if(action==='random'&&!grounded&&!paused&&!ragdoll.active&&!spaceFall.active)triggerTrick(['No-hander','Superman','Can-can'][Math.floor(Math.random()*3)]);if(['No-hander','Superman','Can-can'].includes(action))triggerTrick(action)};
   b.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();document.activeElement?.blur?.();if(hold&&!paused){touchPointers.set(e.pointerId,action);b.setPointerCapture(e.pointerId);syncTouchInput()}else if(!hold)perform()});
   const release=e=>{if(touchPointers.delete(e.pointerId))syncTouchInput()};for(const name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,release);
   b.addEventListener('click',e=>{if(e.detail===0&&!hold)perform()});
   parent.append(b);return b;
  }
  button(left,'← Steer','left',true);button(left,'Steer →','right',true);button(left,'Tilt ←','rollLeft',true);button(left,'Tilt →','rollRight',true);
- button(right,'Gas / backflip','throttle',true).classList.add('touch-gas');button(right,'Brake / frontflip','brake',true);button(right,'Wheelie','wheelie');button(right,'Boost / no-hands','boost',true);
- button(tools,'Camera','camera');button(tools,'Pause','pause');button(tools,'Repair','repair');button(tools,'Garage','garage');const showTricks=button(tools,'Tricks','tricks');showTricks.setAttribute('aria-expanded','false');
- for(const name of ['No-hander','Superman','Can-can'])button(tricks,name,name);
- root.append(left,right,tools,tricks);document.body.append(root);
+ button(right,'Gas / backflip','throttle',true).classList.add('touch-gas');button(right,'Brake / frontflip','brake',true);button(right,'Wheelie','wheelie');button(right,'Boost','boost',true);
+ button(tools,'Camera','camera');button(tools,'Pause','pause');button(tools,'Repair','repair');button(tools,'Garage','garage');const randomTrick=button(tools,'Random trick','random');randomTrick.dataset.randomTrick='true';randomTrick.disabled=true;
+ root.append(left,right,tools);document.body.append(root);
  const label=document.createElement('label');label.textContent='Touch controls: ';const preference=document.createElement('select');preference.id='touch-preference';preference.setAttribute('aria-label','Touch controls visibility');for(const value of ['auto','on','off'])preference.add(new Option(value==='auto'?'Automatic':value==='on'?'Show':'Hide',value));preference.value=touchPreference;preference.onchange=()=>{touchPreference=preference.value;try{localStorage.setItem('dirtbike_touch_v1',touchPreference)}catch{}updateTouchVisibility()};label.append(preference);document.getElementById('hud').append(label);
  updateTouchVisibility();if(document.body.classList.contains('touch-mode')&&!tuner.classList.contains('collapsed'))toggleTuner();
  matchMedia('(any-pointer: coarse)').addEventListener('change',updateTouchVisibility);
@@ -1617,7 +1636,7 @@ function renderCrashEffects(dt){
  }
 }
 
-function reset(){clearTouchInput();stuntPose.hold=0;stuntPose.queued='';stuntPose.amount=0;stuntPose.name='';clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
+function reset(){riderBalance.lean=0;riderBalance.feet=0;riderBalance.walk=0;clearTouchInput();stuntPose.hold=0;stuntPose.queued='';stuntPose.amount=0;stuntPose.name='';clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
 // J is a field repair: no move to spawn. Only an overturned bike is righted.
 function repairHere(){
  if(spaceFall.active||!onIsland(pos.x,pos.z)){reset();message('Rescued to the island spawn: no ground exists at this location.');return}
@@ -1992,7 +2011,7 @@ const firstPersonEye=new THREE.Vector3(0,2.5,-.30),firstPersonAim=new THREE.Vect
 const firstPersonRotation=new THREE.Quaternion();
 function draw(dt,simDt){
  camera.up.set(0,1,0);
- if(spaceFall.active){drawSpaceFall(dt);return}
+ if(spaceFall.active){updatePlayerIndicators();drawSpaceFall(dt);return}
  // Right stick orbits the external camera (R3 recenters); first-person view stays attached.
  if(controller.connected&&grounded&&!(camMode===1&&!ragdoll.active)){
   cameraOrbitYaw+=controller.lookX*dt*tuning.controllerLookSpeed;
@@ -2067,6 +2086,7 @@ function draw(dt,simDt){
    'Frame dt: '+(lastDt*1000).toFixed(1)+' ms | sim frames: '+frameCount;
  }
  if(simDt){updateExhaust(simDt);updateTireDust(simDt);}
+ updatePlayerIndicators();
  if(disaster.type==='quake'&&disaster.root.visible&&viewMode!==1){camera.position.x+=Math.sin(disaster.time*28)*.055;camera.position.y+=Math.sin(disaster.time*37)*.035;}
  renderer.render(scene,camera);
 }
@@ -2076,7 +2096,7 @@ function loop(){
  if(menuStage!=='riding'){
   updateDisasters(0);bike.position.set(0,.08,25);bike.rotation.order='YXZ';bike.rotation.y=-.65+Math.sin(clock.elapsedTime*.42)*.12;bike.rotation.x=0;
   camera.up.set(0,1,0);camera.position.set(menuStage==='lobby'?9.5:8.5,menuStage==='lobby'?4.4:5,38);camera.lookAt(menuStage==='lobby'?5.6:0,1.35,25);
-  updateMultiplayer(dt);renderer.render(scene,camera);return;
+  updateMultiplayer(dt);updatePlayerIndicators();renderer.render(scene,camera);return;
  }
  const simDt=(!paused||stepping)?(stepping?1/60:dt):0;
  if(simDt){simulate(simDt);frameCount++;stepping=false}
@@ -2235,7 +2255,7 @@ function renderRoom(){
  const own=document.createElement('li');own.textContent='🟢 '+riderName()+' (you'+(multiplayer.role==='host'?' · host':'')+') · '+BIKE_PAINTS[selectedPaint].name;roomDom.roster.append(own);
  for(const [id,data] of multiplayer.peers){const li=document.createElement('li');li.textContent=(online?'🟢 ':'🟠 ')+data.name+(data.host?' · host':'')+' · '+BIKE_PAINTS[data.paint]?.name;roomDom.roster.append(li)}
 }
-function removeRemote(id){const previous=multiplayer.seen.get(id);if(previous){scene.remove(previous.obj);previous.obj.traverse(o=>{if(o.isMesh&&o.material&&o.userData.roomMaterial)o.material.dispose();if(o.isSprite){o.material.map?.dispose();o.material.dispose()}});multiplayer.seen.delete(id)}}
+function removeRemote(id){multiplayer.seen.get(id)?.indicator?.remove();const previous=multiplayer.seen.get(id);if(previous){scene.remove(previous.obj);previous.obj.traverse(o=>{if(o.isMesh&&o.material&&o.userData.roomMaterial)o.material.dispose();if(o.isSprite){o.material.map?.dispose();o.material.dispose()}});multiplayer.seen.delete(id)}}
 function removeAllRemote(){for(const id of [...multiplayer.seen.keys()])removeRemote(id)}
 function stopRoomConnection(){
  clearRoomTimer();clearInterval(multiplayer.heartbeat);clearInterval(multiplayer.beaconTimer);clearTimeout(multiplayer.reconnectTimer);clearTimeout(multiplayer.claimTimer);
@@ -2534,9 +2554,46 @@ function makeRiderLabel(name,paint){
  ctx.font='bold 30px system-ui';ctx.fillStyle='#fff5db';ctx.textAlign='center';ctx.fillText(roomSafeName(name)+' • '+BIKE_PAINTS[roomSafePaint(paint)].name,192,50,354);
  const texture=new THREE.CanvasTexture(c);const material=new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false,depthTest:false});const obj=new THREE.Sprite(material);obj.scale.set(4.5,.985,1);obj.position.set(0,3.5,0);return obj;
 }
+const playerIndicatorRoot=document.createElement('div');playerIndicatorRoot.id='player-indicators';playerIndicatorRoot.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:5';document.body.append(playerIndicatorRoot);
+const playerIndicatorPoint=new THREE.Vector3(),playerIndicatorLocal=new THREE.Vector3(),playerIndicatorColor=new THREE.Color();
+function updatePlayerIndicators(){
+ camera.updateMatrixWorld();const placed=[];
+ for(const entry of multiplayer.seen.values()){
+  if(!entry.indicator){
+   const marker=document.createElement('div');marker.style.cssText='position:absolute;width:110px;margin-left:-55px;text-align:center;font:600 11px system-ui;text-shadow:0 1px 3px black';
+   marker.innerHTML='<svg width="25" height="25" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L22 21L12 16L2 21Z" fill="currentColor" stroke="white" stroke-width="1.5"/></svg><span style="display:block;background:#10212cce;border-radius:6px;padding:3px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:white"></span>';
+   marker.setAttribute('role','img');playerIndicatorRoot.append(marker);entry.indicator=marker;
+  }
+  const show=menuStage==='riding'&&!spaceFall.active&&multiplayer.connected&&multiplayer.joined&&entry.obj.visible&&entry.target?.stage==='riding'&&performance.now()-entry.lastSeen<=8000;
+  entry.indicator.hidden=!show;if(!show)continue;
+  playerIndicatorPoint.copy(entry.obj.position);playerIndicatorPoint.y+=1.5;
+  playerIndicatorLocal.copy(playerIndicatorPoint).applyMatrix4(camera.matrixWorldInverse);
+  playerIndicatorPoint.project(camera);
+  const behind=playerIndicatorLocal.z>=0;
+  let dx=playerIndicatorPoint.x*(behind?-1:1),dy=-playerIndicatorPoint.y*(behind?-1:1);
+  if(behind&&Math.abs(dx)<.02){dx=0;dy=1}
+  if(!Number.isFinite(dx)||!Number.isFinite(dy)){dx=Math.sign(playerIndicatorLocal.x)||1;dy=0}
+  const top=document.body.classList.contains('touch-mode')?135:90,bottom=Math.max(top+40,innerHeight-(document.body.classList.contains('touch-mode')?205:75));
+  const cx=innerWidth/2,cy=(top+bottom)/2,rx=Math.max(30,cx-62),ry=(bottom-top)/2;
+  const onscreen=!behind&&Math.abs(dx)<.85&&Math.abs(dy)<.8;
+  let x,y,angle;
+  if(onscreen){x=THREE.MathUtils.clamp((playerIndicatorPoint.x+1)*innerWidth/2,62,innerWidth-62);y=THREE.MathUtils.clamp((1-playerIndicatorPoint.y)*innerHeight/2-60,top,bottom);angle=180}
+  else{const scale=1/Math.max(Math.abs(dx)||.0001,Math.abs(dy)||.0001);x=cx+dx*scale*rx;y=cy+dy*scale*ry;angle=Math.atan2(dy,dx)*180/Math.PI+90}
+  const originX=x,originY=y;
+  for(const offset of [0,1,-1,2,-2]){
+   const candidateX=THREE.MathUtils.clamp(originX+(Math.abs(dx)<=Math.abs(dy)?offset*116:0),62,innerWidth-62),candidateY=THREE.MathUtils.clamp(originY+(Math.abs(dx)>Math.abs(dy)?offset*54:0),top,bottom);
+   if(placed.every(p=>Math.abs(p.x-candidateX)>110||Math.abs(p.y-candidateY)>48)){x=candidateX;y=candidateY;break}
+  }
+  placed.push({x,y});
+  const paint=BIKE_PAINTS[roomSafePaint(entry.paint)];if(paint.rainbow)playerIndicatorColor.setHSL((clock.elapsedTime/4)%1,.88,.53);else playerIndicatorColor.setHex(paint.hex);
+  const name=roomSafeName(entry.name),distance=Math.round(entry.obj.position.distanceTo(bike.position));
+  entry.indicator.style.left=x+'px';entry.indicator.style.top=y+'px';entry.indicator.style.color='#'+playerIndicatorColor.getHexString();entry.indicator.querySelector('svg').style.transform='rotate('+angle+'deg)';entry.indicator.querySelector('span').textContent=name+' · '+distance+' m';entry.indicator.setAttribute('aria-label',name+', '+paint.name+', '+distance+' meters away');
+ }
+}
 function makeRemoteBike(id,paint,name){
  const obj=bike.clone(true);obj.name='Friend rider '+id;
  obj.traverse(o=>{
+  if(o.name==='Rider upper body')o.visible=true;
   if(o.isMesh){o.material=o.material.clone();o.userData.roomMaterial=true;
    if(o.material.color&&o.material.color.getHex()===orange.color.getHex()){o.userData.bikePaint=true;o.material.color.setHex(BIKE_PAINTS[paint].hex)}}
  });

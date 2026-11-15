@@ -34,8 +34,8 @@ try{
   const counts=await page.evaluate(()=>__visualTest.wheels.map(w=>w.getObjectByName('Knobby tire tread').count));assert.deepEqual(counts,[96,96]);return counts;
  });
  await check('W twists the right grip and wrist, dips the elbow, and release returns to rest',async()=>{
-  const state=await page.evaluate(()=>{const t=__visualTest;t.setThrottle(true);t.update(0);const right=t.riderArms[1],left=t.riderArms[0];const on={grip:t.throttleGrip.rotation.x,wrist:right.glove.rotation.x,elbow:right.elbow.y,left:left.glove.rotation.x};t.setThrottle(false);t.update(0);return{on,off:{grip:t.throttleGrip.rotation.x,elbow:right.elbow.y}}});
-  assert.ok(state.on.grip<-.6&&state.on.wrist<-.6&&state.on.elbow<2.13);assert.ok(Math.abs(state.on.left)<.001);assert.ok(Math.abs(state.off.grip)<.001&&Math.abs(state.off.elbow-2.24)<.001);return state;
+  const state=await page.evaluate(()=>{const t=__visualTest;t.setThrottle(true);t.update(0);const right=t.riderArms[1],left=t.riderArms[0];const on={grip:t.throttleGrip.rotation.x,wrist:right.glove.rotation.x,elbow:right.elbow.y,elbowDip:right.elbow.y-left.elbow.y,left:left.glove.rotation.x};t.setThrottle(false);t.update(0);return{on,off:{grip:t.throttleGrip.rotation.x,elbow:right.elbow.y,elbowDip:right.elbow.y-left.elbow.y}}});
+  assert.ok(state.on.grip<-.6&&state.on.wrist<-.6&&state.on.elbowDip<-.11);assert.ok(Math.abs(state.on.left)<.001);assert.ok(Math.abs(state.off.grip)<.001&&Math.abs(state.off.elbowDip)<.001);return state;
  });
  await check('Rainbow paint cycles, persists, and switching to a solid color stops the cycling',async()=>{
   await page.getByRole('button',{name:'Rainbow gas dirt bike',includeHidden:true}).evaluate(el=>el.click());

@@ -103,8 +103,15 @@ For immediate testing: **G → Debug → Natural disasters**, choose an event an
 
 ## Touch, keyboard and connected controllers
 
-Phones/tablets automatically show multi-touch controls in portrait or landscape. Steer and hold Gas with separate fingers; Gas/Brake also control airborne flips. Tilt buttons control tabletops, Wheelie is a tap, and Boost becomes no-hands in the air. Open Tricks for Superman, Can-can or No-hander. Camera/Pause/Repair are pinned to the bottom-left edge; Garage/Tricks are at the bottom-right edge, with the center kept clear. Use **Info → Touch controls** to choose Automatic, Show or Hide. Sound sliders are inside Info on touch devices.
+Phones/tablets automatically show multi-touch controls in portrait or landscape. Steer and hold Gas with separate fingers; Gas/Brake also control airborne flips. Tilt buttons control tabletops, Wheelie is a tap, and Boost remains the ground boost control. The single Random trick button picks Superman, Can-can or No-hander while airborne. Camera/Pause/Repair are pinned to the bottom-left edge; Garage/Random trick are at the bottom-right edge, with the center kept clear. Use **Info → Touch controls** to choose Automatic, Show or Hide. Sound sliders are inside Info on touch devices.
 
 Keyboard controls remain available at the same time. Standard Bluetooth/USB controllers work through the browser's Gamepad API: RT/R2 throttle, LT/L2 brake, left stick steering/air yaw, A/Cross wheelie, Y/Triangle camera, X/Square reset. RB/R1 is ground boost/air no-hander; LB/L1 is ground pause/air superman; B/Circle is ground contact probes/air can-can. Right stick orbits the camera on dirt and tilts tabletops in air. L3 pauses anywhere. D-pad left repairs; Start/Options opens the garage. Press a controller button after connecting so the browser can discover it.
 
 Touch holds release on pointer cancellation, menu entry, pause, reset, tab hiding, lost focus or orientation change. Releasing touch does not release a physical keyboard key; disconnecting a controller clears its analog input. Touch preference saves separately on each device. Browser emulation and a mocked standard Gamepad API have been tested; physical Android/Chromebook/controller combinations still need player testing.
+
+
+## Rider poses and finding friends
+
+The rider automatically crouches forward under throttle and leans back while braking forward travel. At a stop, both boots lower to the terrain. Reversing alternates walking steps with hands still on the handlebars; the feet return to the pegs when riding forward or airborne. These poses are visual and preserve existing steering, physics and deliberate wheelie controls.
+
+Active multiplayer riders have paint-colored direction arrows with names and distances. Off-screen/behind-camera friends get edge arrows; visible friends get a marker pointing down toward them. Rainbow riders get cycling arrow colors. Indicators hide for stale/non-riding peers and clear on leave. This uses existing peer-position messages and does not establish that real cross-device connectivity is working.
