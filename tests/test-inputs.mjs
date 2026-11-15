@@ -27,7 +27,7 @@ await page.route('https://esm.sh/three@0.170.0',r=>r.fulfill({status:200,content
 async function check(name,fn){const evidence=await fn();results.push({name,status:'passed',evidence});console.log('PASS '+name+' '+JSON.stringify(evidence))}
 const cdp=await page.context().newCDPSession(page);
 async function point(label,id){const box=await page.getByRole('button',{name:label,exact:true}).boundingBox();assert.ok(box,label+' visible');return{x:box.x+box.width/2,y:box.y+box.height/2,id,radiusX:4,radiusY:4,force:1}}
-async function touch(type,points){await cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points})}
+async function touch(type,points){await cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points});await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)))}
 async function inputs(){return page.evaluate(()=>__screamTest.inputs)}
 let code=0;
 try{

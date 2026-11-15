@@ -46,11 +46,11 @@ try{
  await check('Key repeat does not cancel a trick; landing clears the toggle',async()=>{
   await page.evaluate(()=>__screamTest.set(true));await page.keyboard.down('Alt');await page.keyboard.down('Alt');await page.evaluate(()=>__screamTest.pose());assert.equal(await page.evaluate(()=>__screamTest.stuntPose.latched),'Can-can');await page.keyboard.up('Alt');await page.evaluate(()=>{__screamTest.set();__screamTest.pose()});assert.equal(await page.evaluate(()=>__screamTest.stuntPose.latched),'');return{repeatSafe:true,landingClears:true};
  });
- await check('Wheelie turns bank the entire bike and build yaw from lean with a bounded angle',async()=>{
+ await check('Wheelie turns bank the entire bike and combine responsive steering with lean with a bounded angle',async()=>{
   const results=[];
   for(const [key,sign] of [['a',1],['d',-1]]){
-   await page.evaluate(()=>__screamTest.wheelie());await page.keyboard.down(key);await page.evaluate(()=>__screamTest.step(1));const first=await page.evaluate(()=>__screamTest.state);assert.ok(Math.abs(first.yaw)<1e-8);
-   await page.evaluate(()=>__screamTest.step(35));const turning=await page.evaluate(()=>__screamTest.state);await page.keyboard.up(key);assert.ok(turning.bank*sign>.15);assert.ok(turning.yaw*sign>0);assert.ok(Math.abs(turning.bank)<.43);assert.equal(turning.frameBank,turning.bank);assert.equal(turning.ragdoll,false);results.push({key,first,turning});
+   await page.evaluate(()=>__screamTest.wheelie());await page.keyboard.down(key);await page.evaluate(()=>__screamTest.step(1));const first=await page.evaluate(()=>__screamTest.state);assert.ok(first.yaw*sign>.001);
+   await page.evaluate(()=>__screamTest.step(35));const turning=await page.evaluate(()=>__screamTest.state);await page.keyboard.up(key);assert.ok(turning.bank*sign>.15);assert.ok(turning.yaw*sign>.18);assert.ok(Math.abs(turning.bank)<.43);assert.equal(turning.frameBank,turning.bank);assert.equal(turning.ragdoll,false);results.push({key,first,turning});
   }return results;
  });
  assert.deepEqual(errors,[]);

@@ -816,17 +816,20 @@ function receiveDisaster(event){
  if(!event||!(event.type===null||Object.hasOwn(EVENT_NAMES,event.type))||!['remaining','untilNext','time','id'].every(k=>Number.isFinite(event[k])&&event[k]>=0)||event.remaining>120||event.untilNext>600||typeof event.automatic!=='boolean')return;
  const fresh=disaster.id!==event.id||disaster.type!==event.type;
  Object.assign(disaster,event);
+ if(fresh)clearEventHazards();
  if(fresh&&event.type==='storm')playSoundNoise(1.2,180,.14);
  const automatic=document.querySelector('[aria-label="Automatic natural disasters"]');if(automatic)automatic.checked=disaster.automatic;
 }
 function updateWorldEvents(visible){
  const eventTime=disaster.time+eventClockOffset();
+ if(!visible){splashMesh.visible=false;for(const r of waterRipples)r.obj.visible=false}
  floodWater.visible=visible&&disaster.type==='flood';firePatches.visible=visible&&disaster.type==='fire';confetti.visible=visible&&disaster.type==='party';tornadoRoot.visible=visible&&disaster.type==='tornado';volcanoRoot.visible=visible&&disaster.type==='volcano';
+ moveTornado(eventTime);
  if(tornadoRoot.visible)for(let i=0;i<tornadoRoot.children.length;i++){const ring=tornadoRoot.children[i];if(ring.userData.funnel){ring.rotation.y=eventTime*1.4;continue}ring.position.x=Math.sin(eventTime*1.8+i*.5)*i*.07;ring.position.z=Math.cos(eventTime*1.5+i*.4)*i*.07;ring.rotation.z=eventTime*1.8+i*.2;}
  if(volcanoRoot.visible){for(let i=0;i<18;i++){const t=(eventTime*.2+i*.137)%1,a=i*2.399;confettiDummy.position.set(Math.sin(a)*t*65,24+Math.sin(Math.PI*t)*45-t*24,Math.cos(a)*t*65);confettiDummy.rotation.set(t*10,0,0);confettiDummy.updateMatrix();lava.setMatrixAt(i,confettiDummy.matrix)}lava.instanceMatrix.needsUpdate=true}meteorHeads.visible=meteorTrails.visible=visible&&disaster.type==='meteor';
- if(meteorHeads.visible){for(let i=0;i<18;i++){const phase=(eventTime*.22+i*.137)%1,x=(i*47.3)%220-110+phase*35,y=90-phase*87,z=(i*71.7)%240-160;confettiDummy.position.set(x,y,z);confettiDummy.rotation.set(0,0,0);confettiDummy.updateMatrix();meteorHeads.setMatrixAt(i,confettiDummy.matrix);meteorPositions.set([x,y,z,x-5,y+12,z+2],i*6)}meteorHeads.instanceMatrix.needsUpdate=true;meteorGeometry.attributes.position.needsUpdate=true}
+ updateFallingRocks(eventTime,visible);
  if(floodWater.visible)floodWater.position.y=.4+Math.sin(eventTime*.6)*.12;
- if(firePatches.visible)for(const patch of firePatches.children)for(const flame of patch.children){flame.scale.y=.8+Math.sin(eventTime*4+flame.userData.phase)*.22;flame.position.y=2*flame.scale.y}
+ if(firePatches.visible)for(const patch of firePatches.children){patch.position.y=surfaceAt(patch.position.x,patch.position.z).height;for(const flame of patch.children){flame.scale.y=.8+Math.sin(eventTime*4+flame.userData.phase)*.22;flame.position.y=2*flame.scale.y}}
  if(confetti.visible){for(let i=0;i<120;i++){confettiDummy.position.set((i*13.7)%35-17.5,((i*.71-eventTime*2)%16+16)%16,(i*23.1)%35-17.5);confettiDummy.rotation.set(eventTime+i,i*.8,eventTime*1.6);confettiDummy.updateMatrix();confetti.setMatrixAt(i,confettiDummy.matrix)}confetti.instanceMatrix.needsUpdate=true}
 }
 const tornadoRoot=new THREE.Group();tornadoRoot.position.set(0,0,-15);scene.add(tornadoRoot);tornadoRoot.visible=false;
@@ -836,15 +839,107 @@ for(let i=0;i<15;i++){const ring=mesh(new THREE.TorusGeometry(.8+i*.43,.5+i*.05,
 const volcanoRoot=new THREE.Group();volcanoRoot.position.set(250,0,-180);scene.add(volcanoRoot);volcanoRoot.visible=false;
 mesh(new THREE.CylinderGeometry(6,18,25,24,1,true),mat(0x413a36),volcanoRoot,0,12,0);const crater=mesh(new THREE.TorusGeometry(6,.8,7,24),new THREE.MeshBasicMaterial({color:0xff6d16}),volcanoRoot,0,24.5,0);crater.rotation.x=Math.PI/2;
 const lava=new THREE.InstancedMesh(new THREE.SphereGeometry(.7,7,5),new THREE.MeshBasicMaterial({color:0xff8033}),18);lava.frustumCulled=false;volcanoRoot.add(lava);
+const tornadoRide={captured:false,angle:0,turns:0,cooldown:0};
+function moveTornado(time){tornadoRoot.position.set(Math.sin(time*.035)*150,0,-15+Math.sin(time*.052)*105)}
 function applyTornadoForces(dt){
- if(disaster.type!=='tornado'||menuStage!=='riding'||spaceFall.active)return;
- if(ragdoll.active){for(const joint of Object.values(ragdoll.nodes)){const dx=joint.p.x,dz=joint.p.z+15,d=Math.hypot(dx,dz);if(d>55)continue;const f=(1-d/55)*dt*dt,den=Math.max(1,d);joint.old.x-=( -dx/den*20-dz/den*25)*f;joint.old.z-=( -dz/den*20+dx/den*25)*f;joint.old.y-=(tuning.gravity+20)*f;}return;}
- const dx=pos.x,dz=pos.z+15,d=Math.hypot(dx,dz);if(d>55||pos.y>45)return;const f=1-d/55,den=Math.max(1,d),v=horizontalVelocity();
- v.x+=(-dx/den*24-dz/den*30)*f*dt;v.z+=(-dz/den*24+dx/den*30)*f*dt;
- if(grounded&&d<27){grounded=false;airTravelHeading=yaw;wheelieArmed=false;vertical=Math.max(5,vertical)}
- const h=grounded?yaw:airTravelHeading;speed=-Math.sin(h)*v.x-Math.cos(h)*v.z;lateralSpeed=Math.cos(h)*v.x-Math.sin(h)*v.z;vertical+=(tuning.gravity+24)*f*dt;
+ if(disaster.type!=='tornado'||menuStage!=='riding'||spaceFall.active){tornadoRide.captured=false;return}
+ moveTornado(disaster.time+eventClockOffset());tornadoRide.cooldown=Math.max(0,tornadoRide.cooldown-dt);
+ const focus=ragdoll.active?ragdoll.nodes.chest.p:pos,dx=focus.x-tornadoRoot.position.x,dz=focus.z-tornadoRoot.position.z,d=Math.hypot(dx,dz);
+ if(tornadoRide.cooldown>0)return;
+ if(!tornadoRide.captured&&d<27&&focus.y<40){tornadoRide.captured=true;tornadoRide.angle=Math.atan2(dz,dx);tornadoRide.turns=0;wheelieArmed=false}
+ if(tornadoRide.captured){
+  tornadoRide.angle+=dt*2.1;tornadoRide.turns+=dt*2.1;
+  const a=tornadoRide.angle,tx=tornadoRoot.position.x+Math.cos(a)*13,tz=tornadoRoot.position.z+Math.sin(a)*13;
+  const vx=(tx-focus.x)*8-Math.sin(a)*27,vz=(tz-focus.z)*8+Math.cos(a)*27,vy=Math.max(3,(6+tornadoRide.turns*1.7-focus.y)*4);
+  const release=tornadoRide.turns>=Math.PI*4;
+  if(ragdoll.active){for(const joint of Object.values(ragdoll.nodes)){joint.old.copy(joint.p).addScaledVector(new THREE.Vector3(release?Math.cos(a)*48:vx,release?22:vy,release?Math.sin(a)*48:vz),-dt)}}
+  else {grounded=false;airTravelHeading=yaw;const h=airTravelHeading;speed=-Math.sin(h)*(release?Math.cos(a)*48:vx)-Math.cos(h)*(release?Math.sin(a)*48:vz);lateralSpeed=Math.cos(h)*(release?Math.cos(a)*48:vx)-Math.sin(h)*(release?Math.sin(a)*48:vz);vertical=release?22:vy;airRollVelocity=release?2:1.2}
+  if(release){tornadoRide.captured=false;tornadoRide.cooldown=10;message('Tornado threw you clear!')}
+  return;
+ }
+ if(d>60||focus.y>45)return;const den=Math.max(1,d),f=(1-d/60)*dt;
+ if(ragdoll.active){for(const joint of Object.values(ragdoll.nodes)){joint.old.x+=dx/den*18*f*dt;joint.old.z+=dz/den*18*f*dt}return}
+ const v=horizontalVelocity();v.x+=(-dx/den*24-dz/den*30)*f;v.z+=(-dz/den*24+dx/den*30)*f;
+ const h=grounded?yaw:airTravelHeading;speed=-Math.sin(h)*v.x-Math.cos(h)*v.z;lateralSpeed=Math.cos(h)*v.x-Math.sin(h)*v.z;
 }
-const meteorHeads=new THREE.InstancedMesh(new THREE.SphereGeometry(.55,7,5),new THREE.MeshBasicMaterial({color:0xffad4f}),18),meteorPositions=new Float32Array(18*6),meteorGeometry=new THREE.BufferGeometry();meteorGeometry.setAttribute('position',new THREE.BufferAttribute(meteorPositions,3));const meteorTrails=new THREE.LineSegments(meteorGeometry,new THREE.LineBasicMaterial({color:0xffe0a3,transparent:true,opacity:.85}));meteorHeads.frustumCulled=meteorTrails.frustumCulled=false;disaster.root.add(meteorHeads,meteorTrails);
+const meteorHeads=new THREE.Group(),meteorPositions=new Float32Array(18*6),meteorGeometry=new THREE.BufferGeometry();meteorGeometry.setAttribute('position',new THREE.BufferAttribute(meteorPositions,3));const meteorTrails=new THREE.LineSegments(meteorGeometry,new THREE.LineBasicMaterial({color:0xffe0a3,transparent:true,opacity:.85}));meteorHeads.frustumCulled=meteorTrails.frustumCulled=false;scene.add(meteorHeads,meteorTrails);
+// World-space, bounded event hazards. Rock paths derive from shared event id/time,
+// never the local rider position, so late joins and host snapshots reconstruct them.
+const eventRocksRoot=meteorHeads;
+const eventRockMaterial=mat(0x50413b),hotRockMaterial=new THREE.MeshStandardMaterial({color:0x5b3021,emissive:0xff5011,emissiveIntensity:.5,roughness:1});
+const eventRockGeo=new THREE.IcosahedronGeometry(1,1);
+const eventRocks=Array.from({length:18},(_,i)=>{const obj=new THREE.Mesh(eventRockGeo,eventRockMaterial);obj.visible=false;eventRocksRoot.add(obj);return{i,obj,p:new THREE.Vector3(),previous:new THREE.Vector3(),radius:2,active:false,landed:false,key:'',seen:'',impactAge:99}});
+const impactRings=Array.from({length:18},()=>{const obj=new THREE.Mesh(new THREE.RingGeometry(.8,1,24),new THREE.MeshBasicMaterial({color:0xd4b090,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));obj.rotation.x=-Math.PI/2;obj.visible=false;scene.add(obj);return obj});
+const volcanoSmoke=Array.from({length:16},()=>{const obj=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTexture,color:0x55504e,transparent:true,opacity:.4,depthWrite:false}));scene.add(obj);obj.visible=false;return obj});
+const splashDrops=Array.from({length:64},()=>({p:new THREE.Vector3(),v:new THREE.Vector3(),life:0}));
+const splashMesh=new THREE.InstancedMesh(new THREE.SphereGeometry(.08,5,4),new THREE.MeshBasicMaterial({color:0xb8f4ff,transparent:true,opacity:.8}),64);splashMesh.frustumCulled=false;splashMesh.visible=false;scene.add(splashMesh);
+const waterRipples=Array.from({length:12},()=>{const obj=new THREE.Mesh(new THREE.RingGeometry(.8,1,18),new THREE.MeshBasicMaterial({color:0xc2f5ff,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));obj.rotation.x=-Math.PI/2;obj.visible=false;scene.add(obj);return{obj,age:2}});
+let splashCursor=0,rippleCursor=0,splashBudget=0,eventHurtCooldown=0,eventImpactShake=0,eventHazardTime=0;
+const hazardLastBike=new THREE.Vector3(0,.08,25);
+function eventRandom(n){const v=Math.sin(n*127.1+(disaster.id||0)*311.7)*43758.5453;return v-Math.floor(v)}
+function clearEventHazards(){
+ for(const r of eventRocks){r.active=false;r.obj.visible=false;r.key='';r.seen='';r.impactAge=99}
+ for(const ring of impactRings)ring.visible=false;for(const smoke of volcanoSmoke)smoke.visible=false;
+ for(const p of splashDrops)p.life=0;for(const r of waterRipples){r.age=2;r.obj.visible=false}splashMesh.visible=false;splashBudget=0;eventHurtCooldown=0;eventImpactShake=0;eventHazardTime=0;
+ tornadoRide.captured=false;tornadoRide.cooldown=0;tornadoRide.turns=0;hazardLastBike.copy(pos);
+}
+function updateFallingRocks(time,visible){
+ const type=disaster.type,active=type==='meteor'||type==='volcano',volcanic=type==='volcano';
+ eventRocksRoot.visible=visible&&active;meteorTrails.visible=visible&&type==='meteor';
+ for(const r of eventRocks){
+  const period=volcanic?12:16,offset=r.i*.65,cycle=Math.floor((time-offset)/period),age=time-offset-cycle*period,fall=volcanic?5:3.2;
+  r.active=active&&cycle>=0;r.obj.visible=visible&&r.active;r.previous.copy(r.p);
+  if(!r.active){impactRings[r.i].visible=false;continue}
+  const seed=r.i+cycle*37,a=eventRandom(seed+1)*Math.PI*2,range=25+eventRandom(seed+2)*85;
+  const x=volcanic?volcanoRoot.position.x+Math.sin(a)*range:(eventRandom(seed+3)-.5)*360;
+  const z=volcanic?volcanoRoot.position.z+Math.cos(a)*range:(eventRandom(seed+4)-.5)*360-25;
+  r.radius=volcanic?1.5+eventRandom(seed+5)*1.5:1.8+eventRandom(seed+5)*1.7;
+  const floor=surfaceAt(x,z).height+r.radius*.8,t=Math.min(1,age/fall);r.landed=age>=fall;r.impactAge=age-fall;
+  r.p.set(volcanic?THREE.MathUtils.lerp(volcanoRoot.position.x,x,t):x-(1-t)*42,volcanic?THREE.MathUtils.lerp(25,floor,t)+Math.sin(t*Math.PI)*48:floor+(1-t)*100,volcanic?THREE.MathUtils.lerp(volcanoRoot.position.z,z,t):z+(1-t)*15);
+  const nextKey=type+':'+(disaster.id||0)+':'+r.i+':'+cycle;if(r.key!==nextKey)r.previous.copy(r.p);r.key=nextKey;r.obj.position.copy(r.p);r.obj.scale.set(r.radius,r.radius*.8,r.radius);r.obj.material=volcanic?hotRockMaterial:eventRockMaterial;r.obj.rotation.set(r.landed?seed:age*2,seed+age*(r.landed?0:1.4),seed*.7);
+  if(r.landed){if(r.seen!==r.key){r.seen=r.key;if(visible&&r.impactAge<.35){playSoundNoise(1.8,90,.24);eventImpactShake=Math.max(eventImpactShake,1)}}}
+  const ring=impactRings[r.i];ring.visible=visible&&r.landed&&r.impactAge<1.4;
+  if(ring.visible){ring.position.set(x,floor-r.radius*.8+.06,z);ring.scale.setScalar(2+r.impactAge*14);ring.material.opacity=.55*(1-r.impactAge/1.4)}
+  if(!volcanic)meteorPositions.set([r.p.x,r.p.y,r.p.z,r.p.x-5*(r.landed?0:1),r.p.y+12*(r.landed?0:1),r.p.z+2*(r.landed?0:1)],r.i*6);
+ }
+ meteorGeometry.attributes.position.needsUpdate=true;
+ for(let i=0;i<volcanoSmoke.length;i++){const smoke=volcanoSmoke[i];smoke.visible=visible&&volcanic;if(smoke.visible){const t=(time*.10+i/16)%1;smoke.position.set(volcanoRoot.position.x+t*22+Math.sin(i*4)*t*8,25+t*72,volcanoRoot.position.z+Math.cos(i)*t*12);smoke.scale.setScalar(6+t*28);smoke.material.opacity=.48*(1-t)}}
+}
+function eventHit(amount,severity,name,eject=false){
+ if(eventHurtCooldown>0||ragdoll.active)return;eventHurtCooldown=1.2;damage=Math.min(100,damage+amount*tuning.damageScale);impact=Math.max(impact,severity*3.6);lastCollision=name;handleBikeCrash(severity,name);if(eject&&!ragdoll.active)makeRagdoll(severity);
+}
+function updateEventHazards(dt){
+ if(dt<=0)return;eventHurtCooldown=Math.max(0,eventHurtCooldown-dt);eventImpactShake=Math.max(0,eventImpactShake-dt*1.15);eventHazardTime+=dt;
+ const visible=menuStage==='riding'&&!spaceFall.active,point=ragdoll.active?ragdoll.nodes.chest.p:pos;
+ if(visible&&disaster.type==='fire'&&!ragdoll.active){for(const patch of firePatches.children){if(Math.hypot(pos.x-patch.position.x,pos.z-patch.position.z)<4.5&&pos.y<patch.position.y+6){eventHit(18,9,'Wildfire burns');break}}}
+ if(visible&&disaster.type==='volcano'&&Math.hypot(pos.x-volcanoRoot.position.x,pos.z-volcanoRoot.position.z)<14&&pos.y<29)eventHit(24,12,'Volcano heat');
+ for(const r of eventRocks){
+  if(!visible||!r.active)continue;
+  if(r.landed&&r.impactAge>=0&&r.impactAge<.18&&point.distanceTo(r.p)<r.radius+6)eventHit(45,25,'Falling '+disaster.type+' impact',true);
+  // Swept rider-to-rock volume test catches fast approaches between render frames.
+  if(ragdoll.active)continue;
+  const start=hazardLastBike.clone().add(new THREE.Vector3(0,1,0)).sub(r.previous),end=pos.clone().add(new THREE.Vector3(0,1,0)).sub(r.p),delta=end.clone().sub(start),u=THREE.MathUtils.clamp(-start.dot(delta)/Math.max(.0001,delta.lengthSq()),0,1);
+  if(start.addScaledVector(delta,u).length()<r.radius+1){
+   const pace=Math.hypot(speed,lateralSpeed),falling=!r.landed;eventHit(falling?45:28,falling?26:Math.max(12,pace),'Solid '+disaster.type+' rock',falling||pace>1.5);
+   if(r.landed){const dx=pos.x-r.p.x||.001,dz=pos.z-r.p.z,d=Math.hypot(dx,dz)||1,push=r.radius+1.1;pos.x=r.p.x+dx/d*push;pos.z=r.p.z+dz/d*push;speed*=-.2;lateralSpeed*=-.2}
+  }
+ }
+ hazardLastBike.copy(pos);updateFloodSplashes(dt,visible);
+}
+function updateFloodSplashes(dt,visible){
+ const pace=Math.hypot(speed,lateralSpeed),wet=visible&&disaster.type==='flood',water=floodWater.position.y;
+ if(wet&&!ragdoll.active&&pace>1&&pos.y<water+.55&&surfaceAt(pos.x,pos.z).height<water){
+  splashBudget+=dt*Math.min(65,pace*4);
+  while(splashBudget>=1){splashBudget--;const drop=splashDrops[splashCursor++%64],side=splashCursor%2?1:-1,axle=splashCursor%3?1:-1;
+   drop.life=.45+Math.random()*.3;drop.p.set(pos.x+Math.sin(yaw)*axle*1.1,water+.08,pos.z+Math.cos(yaw)*axle*1.1);drop.v.set(Math.cos(yaw)*side*(2+pace*.13)+Math.sin(yaw)*pace*.15,1.7+Math.random()*2.5,-Math.sin(yaw)*side*(2+pace*.13)+Math.cos(yaw)*pace*.15);
+   if(splashCursor%5===0){const ripple=waterRipples[rippleCursor++%12];ripple.age=0;ripple.obj.position.copy(drop.p);ripple.obj.position.y=water+.025}
+  }
+ }else splashBudget=0;
+ splashMesh.visible=wet;
+ for(let i=0;i<64;i++){const p=splashDrops[i];p.life=Math.max(0,p.life-dt);if(!wet)p.life=0;if(p.life>0){p.v.y-=9*dt;p.p.addScaledVector(p.v,dt)}confettiDummy.position.copy(p.p);confettiDummy.scale.setScalar(p.life>0?Math.min(1,p.life*5):0);confettiDummy.rotation.set(0,0,0);confettiDummy.updateMatrix();splashMesh.setMatrixAt(i,confettiDummy.matrix)}splashMesh.instanceMatrix.needsUpdate=true;confettiDummy.scale.setScalar(1);
+ for(const r of waterRipples){r.age+=dt;r.obj.visible=wet&&r.age<.85;if(r.obj.visible){r.obj.scale.setScalar(.2+r.age*2.5);r.obj.material.opacity=.5*(1-r.age/.85)}}
+}
+
 const disasterHud=document.createElement('div');disasterHud.id='disaster-hud';disasterHud.style.cssText='position:fixed;top:65px;left:50%;transform:translateX(-50%);z-index:4;pointer-events:none;background:#14212bcc;color:white;padding:8px 14px;border-radius:10px;font:600 13px system-ui;display:none';document.body.append(disasterHud);
 function disasterControls(){
  const box=document.createElement('div');box.className='legend';
@@ -864,7 +959,7 @@ function disasterControls(){
 function startDisaster(type){
  if(!canEditTuning())return;
  if(!Object.hasOwn(EVENT_NAMES,type))return;
- disaster.type=type;disaster.remaining=120;disaster.untilNext=600;disaster.time=0;if(roomRole==='host')roomEventClock=performance.now();disaster.id=(disaster.id||0)+1;publishDisaster();
+ clearEventHazards();disaster.type=type;disaster.remaining=120;disaster.untilNext=600;disaster.time=0;if(roomRole==='host')roomEventClock=performance.now();disaster.id=(disaster.id||0)+1;publishDisaster();
  if(type==='storm')playSoundNoise(1.2,180,.14);
  message(EVENT_NAMES[type]+' started: lasts two minutes. Keep riding, or stop it in Debug.');
 }
@@ -872,7 +967,7 @@ function stopDisaster(){
  if(!canEditTuning())return;
  disaster.type=null;disaster.remaining=0;disaster.untilNext=600;disaster.root.visible=false;
  if(!spaceFall.active){scene.background.copy(stockSky);stockFog.density=THEMES[selectedMap].density;}
- disasterHud.style.display='none';updateWorldEvents(false);publishDisaster();
+ disasterHud.style.display='none';updateWorldEvents(false);clearEventHazards();publishDisaster();
 }
 function advanceDisasterTime(dt){
  let left=dt;
@@ -1734,6 +1829,7 @@ function collideRagdollJoint(joint,name,dt,announce){
   }
   break;
  }
+ for(const r of eventRocks){if(!r.active)continue;const delta=p.clone().sub(r.p),len=delta.length(),radius=r.radius+rad;if(len<radius){delta.multiplyScalar(1/Math.max(.001,len));p.copy(r.p).addScaledVector(delta,radius);old.copy(p).addScaledVector(delta,-.025)}}
  const terrain=surfaceAt(p.x,p.z);
  if(p.y-rad < terrain.height){
   const downVelocity=(p.y-old.y)/dt;
@@ -1811,7 +1907,7 @@ function renderCrashEffects(dt){
  }
 }
 
-function reset(){wildlifeLastBikePosition.set(0,.08,25);riderBalance.lean=0;riderBalance.feet=0;riderBalance.walk=0;clearTouchInput();stuntPose.hold=0;stuntPose.queued='';stuntPose.latched='';stuntPose.amount=0;stuntPose.name='';clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
+function reset(){clearEventHazards();wildlifeLastBikePosition.set(0,.08,25);riderBalance.lean=0;riderBalance.feet=0;riderBalance.walk=0;clearTouchInput();stuntPose.hold=0;stuntPose.queued='';stuntPose.latched='';stuntPose.amount=0;stuntPose.name='';clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y;hazardLastBike.copy(pos)}
 // J is a field repair: no move to spawn. Only an overturned bike is righted.
 function repairHere(){
  if(spaceFall.active||!onIsland(pos.x,pos.z)){reset();message('Rescued to the island spawn: no ground exists at this location.');return}
@@ -2026,7 +2122,7 @@ function simulateSubstep(dt){
   airYawVelocity=0;
   const oldYaw=yaw;
   const wheelieTurning=wheelieArmed&&pitch>.12&&speed>.55;
-  if(wheelieTurning){const rate=THREE.MathUtils.clamp(9.81*Math.tan(turnLeanAngle)/Math.max(3,Math.abs(speed)),-.9,.9);yaw+=rate*dt;}
+  if(wheelieTurning){const direct=steer*tuning.turnRate*THREE.MathUtils.clamp(Math.abs(speed)/8,.15,1)*.78,bank=THREE.MathUtils.clamp(9.81*Math.tan(turnLeanAngle)/Math.max(3,Math.abs(speed)),-.9,.9);yaw+=(direct+bank*.35)*dt;}
   else yaw+=steer*dt*tuning.turnRate*THREE.MathUtils.clamp(Math.hypot(speed,lateralSpeed)/10,0,1)*(speed<0?-1:1);
   // Steering turns the chassis first; grip then makes momentum follow the tires.
   // Pure yaw changes must not rotate the existing world velocity instantaneously.
@@ -2262,6 +2358,7 @@ function draw(dt,simDt){
  }
  if(simDt){updateExhaust(simDt);updateTireDust(simDt);}
  updatePlayerIndicators();
+ if(eventImpactShake>0&&disaster.root.visible){const t=disaster.time+eventClockOffset();camera.position.x+=Math.sin(t*63)*eventImpactShake*.24;camera.position.y+=Math.cos(t*79)*eventImpactShake*.18;}
  if(disaster.type==='quake'&&disaster.root.visible&&viewMode!==1){camera.position.x+=Math.sin(disaster.time*28)*.055;camera.position.y+=Math.sin(disaster.time*37)*.035;}
  renderer.render(scene,camera);
 }
@@ -2275,7 +2372,7 @@ function loop(){
  }
  const simDt=(!paused||stepping)?(stepping?1/60:dt):0;
  if(simDt){simulate(simDt);frameCount++;stepping=false}
- updateWildlife(simDt);updateDisasters(simDt);updateMultiplayer(dt);draw(dt,simDt);
+ updateWildlife(simDt);updateDisasters(simDt);updateEventHazards(simDt);updateMultiplayer(dt);draw(dt,simDt);
 }
 
 // V3O main-menu selection intentionally uses its own key. V3N physics autosave
@@ -3023,17 +3120,25 @@ function mountMusicControls(stage){
 }
 function musicPlayable(){return rideAudio.enabled&&rideAudio.volume>0&&rideAudio.focused&&!document.hidden&&(menuStage!=='riding'||!paused)}
 function makePartyLoop(ctx){
- const rate=ctx.sampleRate,length=rate*8,buffer=ctx.createBuffer(1,length,rate),data=buffer.getChannelData(0),roots=[48,45,41,43],lead=[76,79,83,79,76,74,72,74,76,79,81,79,76,74,72,71];let seed=8471;
+ // Original 8-bar, 132 BPM electro-pop hook: minor-key chords, bright layered
+ // synths, syncopated bass and punchy dance drums. No sampled song or vocals.
+ const rate=ctx.sampleRate,bpm=132,seconds=32*60/bpm,length=Math.round(rate*seconds),buffer=ctx.createBuffer(2,length,rate),left=buffer.getChannelData(0),right=buffer.getChannelData(1);
+ const roots=[45,41,48,43,45,41,48,43],hook=[81,0,84,88,86,84,81,79,81,84,88,91,88,86,84,79,77,0,81,84,86,84,81,77,79,83,86,88,86,83,79,76];let seed=8471;
  for(let i=0;i<length;i++){
-  const t=i/rate,beat=t*2,step=Math.floor(beat*2),phase=(beat%1)*.5,root=roots[Math.floor(t/2)%4],hz=440*2**((root-69)/12),note=440*2**((lead[step%16]-69)/12),pl=(beat*2%1)*.25;
+  const t=i/rate,beat=t*bpm/60,bar=Math.floor(beat/4),step=Math.floor(beat*4),pulse=beat%1,p= pulse*60/bpm,eighth=(beat*2%1)*30/bpm,sixteenth=(beat*4%1)*15/bpm,root=roots[bar%8],hz=440*2**((root-69)/12);
   seed=(Math.imul(seed,1664525)+1013904223)>>>0;const noise=seed/4294967296*2-1;
-  const kick=Math.sin(2*Math.PI*(48*phase+7*(1-Math.exp(-phase*35))))*Math.exp(-phase*20)*.28;
-  const snare=Math.floor(beat)%2?noise*Math.exp(-phase*34)*.13:0;
-  const hats=noise*Math.exp(-((beat*2)%1)*35)*.035;
-  const bass=Math.sin(2*Math.PI*hz*t)*(.75+.25*Math.sin(2*Math.PI*hz*2*t))*.10;
-  const hook=(Math.sin(2*Math.PI*note*t)+.22*Math.sin(2*Math.PI*note*2*t))*(1-Math.exp(-pl*350))*Math.exp(-pl*12)*.10;
-  const pad=[0,4,7].reduce((sum,n)=>sum+Math.sin(2*Math.PI*hz*2**(n/12)*t),0)*.018;
-  const edge=Math.min(1,t/.012,(8-t)/.012);data[i]=Math.tanh((kick+snare+hats+bass+hook+pad)*1.4)*edge;
+  const kick=Math.sin(2*Math.PI*(46*p+9*(1-Math.exp(-p*40))))*Math.exp(-p*22)*.38;
+  const clap=Math.floor(beat)%2?(noise*.15+Math.sin(t*2*Math.PI*185)*.045)*Math.exp(-p*32):0;
+  const hats=noise*(.025*Math.exp(-eighth*85)+((step%4===2)?.025:0)*Math.exp(-sixteenth*25));
+  const fill=bar%4===3&&beat%4>3?noise*.065*Math.exp(-sixteenth*45):0;
+  const off=[0,0,7,0,12,7,0,7][Math.floor(beat*2)%8],bassHz=hz*2**(off/12),bass=(Math.sin(t*2*Math.PI*bassHz)+.3*Math.sin(t*4*Math.PI*bassHz))*.12*(.3+.7*(1-Math.exp(-pulse*10)))*Math.exp(-eighth*4);
+  const n=hook[Math.floor(beat*2)%32],note=440*2**((n-69)/12),env=n?(1-Math.exp(-eighth*300))*Math.exp(-eighth*8):0;
+  const lead=(Math.sin(t*2*Math.PI*note)+.28*Math.sin(t*4*Math.PI*note)+.12*Math.sin(t*6*Math.PI*note))*env*.11;
+  const wide=Math.sin(t*2*Math.PI*note*1.004)*env*.045;
+  const chord=[0,3,7,10].reduce((sum,n)=>sum+Math.sin(t*2*Math.PI*hz*2**((n+12)/12)),0)*.018*(.3+.7*(1-Math.exp(-pulse*8)));
+  const bell=Math.sin(t*2*Math.PI*hz*8)*Math.exp(-(beat%4)*3)*.055;
+  const riser=bar%4===3?noise*.018*(beat%4)/4:0,edge=Math.min(1,t/.008,(seconds-t)/.008),mix=kick+clap+hats+fill+bass+lead+chord+bell+riser;
+  left[i]=Math.tanh((mix+wide)*1.35)*edge;right[i]=Math.tanh((mix-wide)*1.35)*edge;
  }return buffer;
 }
 function initRideMusic(ctx,master){
@@ -3076,7 +3181,7 @@ function clearTireDust(){
 function updateTireDust(dt){
  const rear=currentSamples[1],motion=horizontalVelocity(),pace=Math.hypot(speed,lateralSpeed);
  const dustSize=tuning.dustSize,dustLift=Math.sqrt(dustSize);
- const emitting=menuStage==='riding'&&grounded&&rear?.contact&&!ragdoll.active&&!spaceFall.active&&pace>1;
+ const emitting=!(disaster.type==='flood'&&rear?.surface<floodWater.position.y)&&menuStage==='riding'&&grounded&&rear?.contact&&!ragdoll.active&&!spaceFall.active&&pace>1;
  if(emitting){
   const throttle=throttleInput();
   dustBudget+=dt*Math.min(32,6+pace*.65+throttle*10);chipBudget+=dt*Math.min(10,1+pace*.15+throttle*3);
