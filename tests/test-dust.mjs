@@ -41,6 +41,26 @@ async function level(){return page.evaluate(async()=>{const a=__screamTest.rideA
 let code=0;
 try{
  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>!!window.__screamTest);
+ await check('Debug dust slider keeps the current minimum, makes huge clouds, and survives reload',async()=>{
+  await page.evaluate(()=>document.querySelector('[data-tab="Debug"]').click());
+  const slider=page.getByRole('slider',{name:'Rear-tire dust size',includeHidden:true});
+  assert.equal(await slider.getAttribute('min'),'1');assert.equal(await slider.getAttribute('max'),'12');
+  async function sample(value){
+   await slider.evaluate((el,value)=>{el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}))},String(value));
+   return page.evaluate(()=>{
+    const t=__screamTest,random=Math.random;Math.random=()=>.5;
+    try{t.reset();t.set({stage:'riding',speed:8,grounded:true,throttle:true});t.contacts();for(let i=0;i<45;i++)t.updateTireDust(1/60);
+     const p=t.tireDust.find(p=>p.obj.visible);return{size:p.obj.scale.x,height:p.obj.position.y,count:t.tireDust.length+t.tireChips.length};
+    }finally{Math.random=random}
+   });
+  }
+  const small=await sample(1),huge=await sample(12);
+  assert.ok(Math.abs(huge.size/small.size-12)<.001);assert.ok(huge.height>small.height);assert.equal(huge.count,58);
+  await page.reload();await page.waitForFunction(()=>!!window.__screamTest);
+  assert.equal(await slider.inputValue(),'12');
+  await slider.evaluate(el=>{el.value='1';el.dispatchEvent(new Event('input',{bubbles:true}))});
+  return{small,huge,restored:12};
+ });
  await check('Grounded rear wheel emits pooled dust and dirt behind the bike',async()=>{const s=await page.evaluate(()=>{const t=__screamTest;t.reset();t.set({stage:'riding',speed:8,grounded:true,throttle:true});t.contacts();for(let i=0;i<45;i++)t.updateTireDust(1/60);return{dust:t.tireDust.filter(p=>p.obj.visible).length,chips:t.tireChips.filter(p=>p.obj.visible).length,behind:t.tireDust.filter(p=>p.obj.visible).every(p=>p.obj.position.z>26)}});assert.ok(s.dust>0&&s.chips>0&&s.behind);return s});
  await check('Stationary, airborne and rear-tire-off-ground states do not emit',async()=>{const values=await page.evaluate(()=>{const t=__screamTest;const out=[];for(const kind of ['stopped','air','rearOff']){t.reset();t.set({stage:'riding',speed:kind==='stopped'?0:8,grounded:kind!=='air',throttle:true});t.contacts();if(kind==='rearOff')t.rearOff();for(let i=0;i<90;i++)t.updateTireDust(1/60);out.push({kind,count:[...t.tireDust,...t.tireChips].filter(p=>p.obj.visible).length})}return out});assert.ok(values.every(v=>v.count===0));return values});
  await check('Menus and reset clear the trail; particle counts stay bounded',async()=>{const s=await page.evaluate(()=>{const t=__screamTest;t.reset();t.set({stage:'riding',speed:20,grounded:true,throttle:true});t.contacts();for(let i=0;i<1000;i++)t.updateTireDust(1/120);const total=t.tireDust.length+t.tireChips.length;t.set({stage:'lobby'});const menu=[...t.tireDust,...t.tireChips].some(p=>p.obj.visible);t.reset();return{total,menu,reset:[...t.tireDust,...t.tireChips].some(p=>p.obj.visible)}});assert.equal(s.total,58);assert.equal(s.menu,false);assert.equal(s.reset,false);return s});assert.deepEqual(errors,[]);

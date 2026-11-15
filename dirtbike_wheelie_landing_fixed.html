@@ -425,7 +425,28 @@ forestScenery.visible=false;hillsideScenery.visible=false;
 
 // Bike local forward = -Z. Wheels roll around local X.
 const bike=new THREE.Group();scene.add(bike);const frame=new THREE.Group();bike.add(frame);
-const wheels=[];function wheel(z){const g=new THREE.Group();g.position.set(0,.66,z);frame.add(g);const tire=mesh(new THREE.TorusGeometry(.61,.17,12,28),rubber,g);tire.rotation.y=Math.PI/2;const rim=mesh(new THREE.CylinderGeometry(.44,.44,.13,24),metal,g);rim.rotation.z=Math.PI/2;const hub=mesh(new THREE.CylinderGeometry(.13,.13,.24,12),white,g);hub.rotation.z=Math.PI/2;for(let a=0;a<8;a++){const spoke=mesh(new THREE.BoxGeometry(.035,.78,.035),white,g);spoke.rotation.x=a*Math.PI/8}wheels.push(g)}wheel(-1.1);wheel(1.12);
+const wheels=[];
+const treadGeometry=new THREE.BoxGeometry(.105,.085,.13),treadDummy=new THREE.Object3D();
+function wheel(z){
+ const g=new THREE.Group();g.position.set(0,.66,z);frame.add(g);
+ const tire=mesh(new THREE.TorusGeometry(.60,.13,12,40),rubber,g);tire.rotation.y=Math.PI/2;
+ // Three staggered rows of square rubber knobs, batched into one draw call per tire.
+ const tread=new THREE.InstancedMesh(treadGeometry,rubber,96);tread.name='Knobby tire tread';tread.castShadow=true;tread.receiveShadow=true;
+ for(let row=0;row<3;row++)for(let i=0;i<32;i++){
+  const a=(i+(row===1?.5:0))*Math.PI*2/32,r=row===1?.745:.71;
+  treadDummy.position.set((row-1)*.105,Math.cos(a)*r,Math.sin(a)*r);treadDummy.rotation.set(a,0,row===1?0:(row-1)*-.3);treadDummy.updateMatrix();tread.setMatrixAt(row*32+i,treadDummy.matrix);
+ }
+ tread.computeBoundingSphere();g.add(tread);
+ const rim=mesh(new THREE.TorusGeometry(.46,.035,8,40),metal,g);rim.rotation.y=Math.PI/2;
+ const hub=mesh(new THREE.CylinderGeometry(.105,.105,.28,16),metal,g);hub.rotation.z=Math.PI/2;
+ for(let i=0;i<24;i++){
+  const a=i*Math.PI*2/24;
+  rod([i%2?.07:-.07,Math.cos(a+.2)*.10,Math.sin(a+.2)*.10],[i%2?.045:-.045,Math.cos(a)*.45,Math.sin(a)*.45],.012,white,g);
+ }
+ const disc=mesh(new THREE.RingGeometry(.13,.29,24),metal,g,-.17,0,0);disc.rotation.y=-Math.PI/2;
+ const caliper=mesh(new THREE.BoxGeometry(.09,.17,.13),black,g,-.19,.16,-.17);
+ wheels.push(g);
+}wheel(-1.1);wheel(1.12);
 function rod(a,b,r,material=metal,parent=frame){const v1=new THREE.Vector3(...a),v2=new THREE.Vector3(...b),d=v2.clone().sub(v1),o=mesh(new THREE.CylinderGeometry(r,r,d.length(),9),material,parent);o.position.copy(v1).add(v2).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return o}
 rod([0,.72,1.1],[0,1.48,.4],.085,orange);
 rod([0,1.48,.4],[0,.72,-1.1],.09,orange);
@@ -433,11 +454,57 @@ rod([0,.72,-1.1],[0,.72,1.1],.06,metal);
 const forkLeft=rod([-.2,1.5,-.2],[-.2,.7,-1.1],.065);
 const forkRight=rod([.2,1.5,-.2],[.2,.7,-1.1],.065);
 rod([0,1.42,.5],[0,.65,1.1],.085);
-const bodyPlastic=mesh(new THREE.BoxGeometry(.65,.36,1.4),orange,frame,0,1.52,.12);
+const tankGeometry=new THREE.BoxGeometry(.65,.36,1.05);
+const tankVertices=tankGeometry.attributes.position;
+for(let i=0;i<tankVertices.count;i++){const top=tankVertices.getY(i)>0;tankVertices.setX(i,tankVertices.getX(i)*(top?.72:1));if(top)tankVertices.setZ(i,tankVertices.getZ(i)*.78-.06)}
+tankGeometry.computeVertexNormals();
+const bodyPlastic=mesh(tankGeometry,orange,frame,0,1.52,.12);
 mesh(new THREE.BoxGeometry(.65,.17,.98),black,frame,0,1.75,.7);
-const frontFender=mesh(new THREE.BoxGeometry(.76,.11,.24),white,frame,0,1.7,-.8);
-const handlebar=mesh(new THREE.BoxGeometry(.95,.1,.14),metal,frame,0,2.02,-.32);
-const numberPlate=mesh(new THREE.BoxGeometry(.55,.18,.6),white,frame,0,1.86,-.9);
+const frontFender=mesh(new THREE.BoxGeometry(.43,.065,1.02),orange,frame,0,1.58,-1.05);frontFender.rotation.x=-.10;
+const handlebar=new THREE.Group();handlebar.position.set(0,2.02,-.32);frame.add(handlebar);
+rod([-.58,.06,.06],[-.28,0,0],.035,metal,handlebar);rod([-.28,0,0],[.28,0,0],.035,metal,handlebar);rod([.28,0,0],[.58,.06,.06],.035,metal,handlebar);
+rod([-.30,.10,0],[.30,.10,0],.022,metal,handlebar);
+mesh(new THREE.BoxGeometry(.35,.09,.09),black,handlebar,0,.10,0);
+const throttleGrip=new THREE.Group();throttleGrip.position.set(.51,.06,.06);handlebar.add(throttleGrip);
+for(const side of [-1,1]){
+ const parent=side===1?throttleGrip:handlebar,gripX=side===1?0:-.51;
+ const grip=mesh(new THREE.CylinderGeometry(.058,.058,.25,12),rubber,parent,gripX,side===1?0:.06,side===1?0:.06);grip.rotation.z=Math.PI/2;
+ for(let i=0;i<6;i++){const ring=mesh(new THREE.TorusGeometry(.059,.008,5,12),black,parent,gripX+(i-2.5)*.035,side===1?0:.06,side===1?0:.06);ring.rotation.y=Math.PI/2;}
+ rod([side*.36,.04,-.02],[side*.59,.03,-.12],.018,metal,handlebar);
+ mesh(new THREE.BoxGeometry(.12,.07,.09),black,handlebar,side*.33,.04,-.01);
+}
+function cable(points,parent=frame){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));return mesh(new THREE.TubeGeometry(curve,16,.012,5,false),rubber,parent)}
+cable([[.34,2.04,-.34],[.29,1.82,-.5],[.30,1.37,-.38],[.22,1.1,.0]]);
+cable([[-.34,2.04,-.34],[-.30,1.65,-.68],[-.25,1.05,-1.13]]);
+const numberPlate=mesh(new THREE.BoxGeometry(.45,.43,.065),white,frame,0,1.82,-.70);numberPlate.rotation.x=-.18;
+// Layered mechanical details use the original frame dimensions and do not alter collisions.
+const engineAlloy=mat(0x929b9c,.34,.8),engineDark=mat(0x353b3d,.6,.55);
+mesh(new THREE.BoxGeometry(.48,.43,.48),engineDark,frame,0,1.03,.08);
+for(let i=0;i<7;i++)mesh(new THREE.BoxGeometry(.54,.026,.43),engineAlloy,frame,0,1.07+i*.045,-.01);
+for(const side of [-1,1]){
+ const cover=mesh(new THREE.CylinderGeometry(.23,.23,.075,16),engineAlloy,frame,side*.29,.90,.15);cover.rotation.z=Math.PI/2;
+ for(let i=0;i<6;i++){const a=i*Math.PI/3;const bolt=mesh(new THREE.CylinderGeometry(.018,.018,.012,6),metal,frame,side*.335,.90+Math.cos(a)*.18,.15+Math.sin(a)*.18);bolt.rotation.z=Math.PI/2;}
+ rod([side*.16,.72,1.12],[side*.2,.82,.20],.045,metal);
+ const peg=mesh(new THREE.BoxGeometry(.20,.045,.18),metal,frame,side*.40,.78,.23);
+ for(let i=0;i<4;i++)mesh(new THREE.BoxGeometry(.025,.025,.18),black,frame,side*.40+(i-1.5)*.04,.81,.23);
+ const shroud=mesh(new THREE.BoxGeometry(.055,.36,.62),orange,frame,side*.34,1.48,-.15);shroud.rotation.x=-.22;
+ mesh(new THREE.BoxGeometry(.06,.25,.48),white,frame,side*.345,1.42,.69);
+}
+const rearFender=mesh(new THREE.BoxGeometry(.43,.075,.83),orange,frame,0,1.64,1.15);rearFender.rotation.x=.15;
+// Front suspension sleeves and dust seals, tucked around the existing fork rods.
+for(const side of [-1,1]){
+ rod([side*.20,.79,-1.02],[side*.20,1.17,-.65],.079,engineAlloy);
+ rod([side*.20,1.17,-.65],[side*.20,1.33,-.48],.086,rubber);
+}
+// Drive chain follows the rear swingarm on the left side.
+for(let i=0;i<22;i++){
+ const z=.15+i*.044;mesh(new THREE.BoxGeometry(.023,.025,.036),engineAlloy,frame,-.235,.79+(z-.15)*.08,z);
+ mesh(new THREE.BoxGeometry(.023,.025,.036),engineAlloy,frame,-.235,.69-(z-.15)*.06,z);
+}
+for(let i=0;i<9;i++)mesh(new THREE.BoxGeometry(.59,.012,.025),rubber,frame,0,1.84,.35+i*.075);
+rod([-.23,1.45,.72],[.23,.81,.6],.035,engineAlloy);
+const rearSpring=mesh(new THREE.TorusGeometry(.09,.025,6,12),metal,frame,0,1.15,.68);rearSpring.rotation.x=Math.PI/2;
+for(let i=0;i<6;i++){const coil=rearSpring.clone();coil.position.y+=i*.045;frame.add(coil)}
 // Preserve stock geometry and transforms for reversible, visual-only deformation.
 const vulnerable=[forkLeft,forkRight,frontFender,handlebar,numberPlate,bodyPlastic];
 const stockTransforms=new Map(vulnerable.map(o=>[o,{pos:o.position.clone(),quat:o.quaternion.clone(),scale:o.scale.clone()}]));
@@ -490,8 +557,43 @@ function updateExhaust(dt){
   p.sprite.material.opacity=(1-t)**1.65*(.21+engineThrottle*.08);
  }
 }
-// Rider silhouette with helmet, torso, legs and arms.
-const rider=new THREE.Group();frame.add(rider);mesh(new THREE.BoxGeometry(.66,.82,.37),black,rider,0,2.26,.35).rotation.x=-.23;mesh(new THREE.SphereGeometry(.29,14,12),orange,rider,0,2.87,.16);mesh(new THREE.BoxGeometry(.44,.1,.24),black,rider,0,2.82,-.1);for(const s of [-1,1]){rod([s*.28,2.5,.3],[s*.43,2.06,-.25],.095,black,rider);rod([s*.23,1.98,.5],[s*.35,1.32,.77],.13,black,rider);rod([s*.35,1.32,.77],[s*.28,1.15,.18],.12,black,rider)}
+// Riding suit, boots, helmet and articulated throttle arm.
+const rider=new THREE.Group();frame.add(rider);
+mesh(new THREE.BoxGeometry(.66,.82,.37),black,rider,0,2.26,.35).rotation.x=-.23;
+mesh(new THREE.BoxGeometry(.44,.32,.055),white,rider,0,2.40,.12).rotation.x=-.23;
+mesh(new THREE.SphereGeometry(.29,20,16),orange,rider,0,2.87,.16);
+mesh(new THREE.BoxGeometry(.45,.14,.15),black,rider,0,2.88,-.09);
+mesh(new THREE.BoxGeometry(.36,.13,.23),white,rider,0,2.71,-.07);
+mesh(new THREE.BoxGeometry(.48,.035,.29),orange,rider,0,3.03,-.02);
+const riderArms=[];
+for(const side of [-1,1]){
+ const shoulder=new THREE.Vector3(side*.28,2.50,.30),elbow=new THREE.Vector3(side*.48,2.24,.06),hand=new THREE.Vector3(side*.51,2.08,-.26);
+ const upper=rod(shoulder.toArray(),elbow.toArray(),.09,black,rider),lower=rod(elbow.toArray(),hand.toArray(),.075,black,rider);
+ const glove=new THREE.Group();glove.position.copy(hand);rider.add(glove);
+ mesh(new THREE.BoxGeometry(.16,.12,.16),white,glove,0,.035,0);
+ mesh(new THREE.BoxGeometry(.15,.065,.06),rubber,glove,0,-.04,-.07);
+ riderArms.push({side,shoulder,elbow,hand,upper,lower,glove,upperLength:shoulder.distanceTo(elbow),lowerLength:elbow.distanceTo(hand)});
+ rod([side*.23,1.98,.5],[side*.35,1.32,.77],.13,black,rider);
+ rod([side*.35,1.32,.77],[side*.28,1.15,.18],.12,black,rider);
+ mesh(new THREE.BoxGeometry(.19,.29,.25),white,rider,side*.29,1.13,.21);
+}
+let visualThrottle=0;
+const armMid=new THREE.Vector3(),armDirection=new THREE.Vector3(),armUp=new THREE.Vector3(0,1,0);
+function poseArmSegment(obj,a,b,length){obj.position.copy(armMid.copy(a).add(b).multiplyScalar(.5));armDirection.copy(b).sub(a);obj.scale.y=armDirection.length()/length;obj.quaternion.setFromUnitVectors(armUp,armDirection.normalize())}
+function updateBikeVisuals(dt,time){
+ const target=menuStage==='riding'&&!paused&&!ragdoll.active&&!spaceFall.active?Math.max(keys.KeyW||keys.ArrowUp?1:0,controller.throttle):0;
+ visualThrottle+=(target-visualThrottle)*(1-Math.exp(-dt*14));
+ throttleGrip.rotation.x=-visualThrottle*.65;
+ for(const a of riderArms){
+  // Right wrist rolls over the grip; the elbow dips naturally with the twist.
+  const twist=a.side===1?visualThrottle:0;
+  a.elbow.set(a.side*.48,2.24-twist*.12,.06+twist*.045);
+  a.glove.rotation.x=-twist*.65;
+  a.hand.set(a.side*.51,2.08,-.26);
+  poseArmSegment(a.upper,a.shoulder,a.elbow,a.upperLength);poseArmSegment(a.lower,a.elbow,a.hand,a.lowerLength);
+ }
+ if(BIKE_PAINTS[selectedPaint].rainbow){orange.color.setHSL((time/4)%1,.88,.53);const hex='#'+orange.color.getHexString();document.getElementById('paint-tank').setAttribute('fill',hex);document.getElementById('paint-fender').setAttribute('stroke',hex)}
+}
 // Existing bike, controls, scenery, and save system preserved; V3C extends the collision/air loop.
 const TUNING_SCHEMA = [
  {tab:'Ride',key:'maxSpeedKmh',label:'Top speed',min:25,max:240,step:1,value:144,unit:'km/h'},
@@ -530,6 +632,7 @@ const TUNING_SCHEMA = [
  {tab:'Camera',key:'cameraHeight',label:'Chase camera height',min:2,max:16,step:.5,value:7,unit:'m'},
  {tab:'Camera',key:'cameraFollow',label:'Camera follow speed',min:1,max:18,step:.5,value:4,unit:'1/s'},
  {tab:'Camera',key:'reverseCameraTurnSpeed',label:'Reverse camera orbit speed',min:.4,max:4,step:.1,value:1.4,unit:'rad/s'},
+ {tab:'Debug',key:'dustSize',label:'Rear-tire dust size',min:1,max:12,step:.1,value:1,unit:'×'},
  {tab:'Controller',key:'controllerDeadzone',label:'Steering stick dead zone',min:.02,max:.45,step:.01,value:.14,unit:'×'},
  {tab:'Controller',key:'controllerSteerSensitivity',label:'Controller steering sensitivity',min:.3,max:2.5,step:.05,value:1,unit:'×'},
  {tab:'Controller',key:'controllerTriggerDeadzone',label:'Trigger dead zone',min:0,max:.4,step:.01,value:.05,unit:'×'},
@@ -616,22 +719,6 @@ function renderFields(){
   const meter=document.createElement('div');meter.id='pad-telemetry';meter.className='pad-meter';meter.textContent='No live controller inputs.';
   tuningFields.append(status,mapping,meter);
  }
- if(activeTab==='Debug'){
-  const legend=document.createElement('p');legend.className='legend';legend.textContent='Debug view settings (hitboxes/contacts) now auto-save. J repairs in place and rights overturned bikes; R still resets to spawn. Clean wheel landings do not cause health damage. H: solid collider outlines · T: wheel contact probes · P: pause · O: single frame. V3J keeps world velocity when landing backwards or sideways after a spin. A 180° landing rolls backward at the same travel speed; the sideways landing tire-grip slider controls lateral skids. Contact and scenery collision models remain approximations.';
-  const b=document.createElement('div');b.className='buttons';
-  for(const [label,fn] of [['Hitboxes (H)',()=>toggleHitboxes()],['Contacts (T)',()=>toggleContacts()],['Pause (P)',()=>togglePause()]]){
-   const button=document.createElement('button');button.type='button';button.textContent=label;button.className='secondary';button.addEventListener('click',fn);b.append(button);
-  }
-  const stepButton=document.createElement('button');stepButton.type='button';stepButton.textContent='Single frame (O)';stepButton.className='secondary';stepButton.style.width='100%';stepButton.style.position='static';stepButton.addEventListener('click',()=>{paused=true;stepping=true;message('Stepped one physics frame')});
-  const verifyButton=document.createElement('button');verifyButton.type='button';verifyButton.textContent='Check saved tuning now';verifyButton.className='secondary';verifyButton.style.position='static';verifyButton.style.width='100%';
-  verifyButton.onclick=()=>{const expected=JSON.stringify(savedData),stored=storageRead();const ok=stored===expected;message(ok?'✓ Verified: latest tuning and debug settings are saved in this browser.':window.__DIRTBIKE_HOSTED__===true?'Tuning sent to launcher; check the status above and use Back up tuning in launcher.':'⚠ Save failed or storage isolated; export a JSON tuning file.');};
-  const telemetry=document.createElement('pre');telemetry.id='telemetry';telemetry.className='telemetry';telemetry.textContent='Contact sensors loading (front/rear independent loads)...';
-  const testButtons=document.createElement('div');testButtons.className='buttons';
-  for(const [label,fn] of [['Test airborne flips',launchAirTest],['Test air spins',launchSpinTest],['Test 180° backward landing',launch180LandingTest],['Test ramp wall',launchRampWallTest],['Test rock collision',launchRockTest],['🌙 Test circular edge fall',launchMoonFallTest],['Repair here (J)',repairHere]]){
-   const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;button.addEventListener('click',fn);testButtons.append(button);
-  }
-  tuningFields.append(legend,b,stepButton,verifyButton,testButtons,telemetry);return;
- }
  for(const s of TUNING_SCHEMA.filter(s=>s.tab===activeTab)){
   const wrapper=document.createElement('label');wrapper.className='setting';
   const line=document.createElement('div');line.className='setting-line';
@@ -646,6 +733,22 @@ function renderFields(){
    markDirty(true);persistCurrent();
   });
   line.append(title,out);wrapper.append(line,input);tuningFields.append(wrapper);fieldRows.set(s.key,{input,out});
+ }
+ if(activeTab==='Debug'){
+  const legend=document.createElement('p');legend.className='legend';legend.textContent='Dust size: 1× is the current small spray; 12× makes huge rising clouds. Changes auto-save with tuning. Debug view settings (hitboxes/contacts) now auto-save. J repairs in place and rights overturned bikes; R still resets to spawn. Clean wheel landings do not cause health damage. H: solid collider outlines · T: wheel contact probes · P: pause · O: single frame. V3J keeps world velocity when landing backwards or sideways after a spin. A 180° landing rolls backward at the same travel speed; the sideways landing tire-grip slider controls lateral skids. Contact and scenery collision models remain approximations.';
+  const b=document.createElement('div');b.className='buttons';
+  for(const [label,fn] of [['Hitboxes (H)',()=>toggleHitboxes()],['Contacts (T)',()=>toggleContacts()],['Pause (P)',()=>togglePause()]]){
+   const button=document.createElement('button');button.type='button';button.textContent=label;button.className='secondary';button.addEventListener('click',fn);b.append(button);
+  }
+  const stepButton=document.createElement('button');stepButton.type='button';stepButton.textContent='Single frame (O)';stepButton.className='secondary';stepButton.style.width='100%';stepButton.style.position='static';stepButton.addEventListener('click',()=>{paused=true;stepping=true;message('Stepped one physics frame')});
+  const verifyButton=document.createElement('button');verifyButton.type='button';verifyButton.textContent='Check saved tuning now';verifyButton.className='secondary';verifyButton.style.position='static';verifyButton.style.width='100%';
+  verifyButton.onclick=()=>{const expected=JSON.stringify(savedData),stored=storageRead();const ok=stored===expected;message(ok?'✓ Verified: latest tuning and debug settings are saved in this browser.':window.__DIRTBIKE_HOSTED__===true?'Tuning sent to launcher; check the status above and use Back up tuning in launcher.':'⚠ Save failed or storage isolated; export a JSON tuning file.');};
+  const telemetry=document.createElement('pre');telemetry.id='telemetry';telemetry.className='telemetry';telemetry.textContent='Contact sensors loading (front/rear independent loads)...';
+  const testButtons=document.createElement('div');testButtons.className='buttons';
+  for(const [label,fn] of [['Test airborne flips',launchAirTest],['Test air spins',launchSpinTest],['Test 180° backward landing',launch180LandingTest],['Test ramp wall',launchRampWallTest],['Test rock collision',launchRockTest],['🌙 Test circular edge fall',launchMoonFallTest],['Repair here (J)',repairHere]]){
+   const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;button.addEventListener('click',fn);testButtons.append(button);
+  }
+  tuningFields.append(legend,b,stepButton,verifyButton,testButtons,telemetry);return;
  }
  if(activeTab==='Crash'){
   const p=document.createElement('p');p.className='legend';p.textContent='Severe rock/ramp side hits and upside-down body crashes eject a 16-joint rider, while clean wheel-first landings stay safe. This lightweight joint/constraint ragdoll is tuned for a browser; it is not BeamNG soft-body physics. Hard crashes and moon hits rotate through your recorded screams with matching bubbles. Crash voices use only your uploaded recordings. Use the Sound button and volume slider to adjust audio. J repairs and puts your rider back on the bike; R resets to spawn.';
@@ -1093,6 +1196,7 @@ function stepSpaceFall(dt){
  for(let i=bubbles.length-1;i>=0;i--){const b=bubbles[i];b.age=b.scream?(performance.now()-b.startedAt)/1000:b.age+dt;if(b.age>=b.life){b.el.remove();bubbles.splice(i,1)}}
 }
 function drawSpaceFall(dt){
+ camera.up.set(0,1,0);
  const riderCenter=ragdoll.nodes.chest.p;
  const stageLook=riderCenter.clone();
  if(!spaceFall.hit){
@@ -1678,7 +1782,10 @@ function updateContactMarkers(samples){
   marker.line.geometry.attributes.position.needsUpdate=true;
  }
 }
+const firstPersonEye=new THREE.Vector3(0,2.5,-.30),firstPersonAim=new THREE.Vector3(0,1.25,-6);
+const firstPersonRotation=new THREE.Quaternion();
 function draw(dt,simDt){
+ camera.up.set(0,1,0);
  if(spaceFall.active){drawSpaceFall(dt);return}
  // Right stick orbits the external camera (R3 recenters); first-person view stays attached.
  if(controller.connected&&!(camMode===1&&!ragdoll.active)){
@@ -1709,10 +1816,11 @@ function draw(dt,simDt){
  const followHeading=cameraHeading;
  const follow=new THREE.Vector3();
  if(viewMode===0)follow.set(focus.x+Math.sin(followHeading+cameraOrbitYaw)*tuning.cameraDistance,focus.y+Math.max(1.5,tuning.cameraHeight+Math.sin(cameraOrbitPitch)*tuning.cameraDistance),focus.z+Math.cos(followHeading+cameraOrbitYaw)*tuning.cameraDistance);
- else if(viewMode===1)follow.set(focus.x-Math.sin(yaw)*.15,focus.y+2.75,focus.z-Math.cos(yaw)*.15);
+ else if(viewMode===1){frame.updateWorldMatrix(true,false);follow.copy(firstPersonEye);frame.localToWorld(follow);}
  else follow.set(focus.x+Math.sin(followHeading+Math.PI/2+cameraOrbitYaw)*tuning.cameraDistance+Math.sin(followHeading)*8,focus.y+Math.max(1.5,tuning.cameraHeight-1+Math.sin(cameraOrbitPitch)*tuning.cameraDistance),focus.z+Math.cos(followHeading+Math.PI/2+cameraOrbitYaw)*tuning.cameraDistance+Math.cos(followHeading)*8);
- camera.position.lerp(follow,1-Math.exp(-dt*(viewMode===1?12:tuning.cameraFollow)));
- const lookHeading=viewMode===1?yaw:followHeading;const look=new THREE.Vector3(focus.x-Math.sin(lookHeading)*(ragdoll.active?0:7),focus.y+(viewMode===1?2.6:ragdoll.active?0:1.5),focus.z-Math.cos(lookHeading)*(ragdoll.active?0:7));camera.lookAt(look);
+ if(viewMode===1){camera.position.copy(follow);camera.up.set(0,1,0).applyQuaternion(frame.getWorldQuaternion(firstPersonRotation));}
+ else camera.position.lerp(follow,1-Math.exp(-dt*tuning.cameraFollow));
+ const lookHeading=viewMode===1?yaw:followHeading;const look=new THREE.Vector3(focus.x-Math.sin(lookHeading)*(ragdoll.active?0:7),focus.y+(viewMode===1?2.6:ragdoll.active?0:1.5),focus.z-Math.cos(lookHeading)*(ragdoll.active?0:7));if(viewMode===1){look.copy(firstPersonAim);frame.localToWorld(look)}camera.lookAt(look);
  document.getElementById('speed').textContent=Math.round(Math.hypot(speed,lateralSpeed)*3.6)+' km/h';
  updateRideDial(Math.hypot(speed,lateralSpeed)*3.6);
  const spinning=!grounded&&Math.abs(airYawVelocity)>.2;
@@ -1757,10 +1865,10 @@ function draw(dt,simDt){
 }
 function loop(){
  requestAnimationFrame(loop);
- const dt=Math.min(clock.getDelta(),.025);lastDt=dt;readController();updateRideAudio(dt);
+ const dt=Math.min(clock.getDelta(),.025);lastDt=dt;readController();updateRideAudio(dt);updateBikeVisuals(dt,clock.elapsedTime);
  if(menuStage!=='riding'){
   bike.position.set(0,.08,25);bike.rotation.order='YXZ';bike.rotation.y=-.65+Math.sin(clock.elapsedTime*.42)*.12;bike.rotation.x=0;
-  camera.position.set(menuStage==='lobby'?9.5:8.5,menuStage==='lobby'?4.4:5,38);camera.lookAt(menuStage==='lobby'?5.6:0,1.35,25);
+  camera.up.set(0,1,0);camera.position.set(menuStage==='lobby'?9.5:8.5,menuStage==='lobby'?4.4:5,38);camera.lookAt(menuStage==='lobby'?5.6:0,1.35,25);
   updateMultiplayer(dt);renderer.render(scene,camera);return;
  }
  const simDt=(!paused||stepping)?(stepping?1/60:dt):0;
@@ -1774,7 +1882,7 @@ const MENU_STORAGE_KEY='dirtbike_v3o_menu_v1';
 const BIKE_PAINTS=[
  {name:'Orange',hex:0xf06d22},{name:'Red',hex:0xd72c2c},{name:'Blue',hex:0x2582f5},
  {name:'Green',hex:0x39aa4c},{name:'Yellow',hex:0xf7d332},{name:'Black',hex:0x20232c},
- {name:'White',hex:0xeef1ec},{name:'Purple',hex:0x8a48d2},{name:'Pink',hex:0xf36aa8},{name:'Teal',hex:0x10b8ab}
+ {name:'White',hex:0xeef1ec},{name:'Purple',hex:0x8a48d2},{name:'Pink',hex:0xf36aa8},{name:'Teal',hex:0x10b8ab},{name:'Rainbow',hex:0xf06d22,rainbow:true}
 ];
 const THEMES={
  desert:{label:'DESERT STUNT PARK',ground:0xc9a36c,side:0x99724b,rock:0x9c7054,sky:0x9fc5dd,fog:0xc5b99d,density:.0024,rim:0xe7ba7c,ramp:0x8e6540},
@@ -1792,7 +1900,7 @@ function applyPaint(){const paintHex='#'+BIKE_PAINTS[selectedPaint].hex.toString
 const swatchGrid=document.getElementById('bike-swatch-grid');
 for(const [i,paint] of BIKE_PAINTS.entries()){
  const button=document.createElement('button');button.type='button';button.className='bike-swatch';button.dataset.paint=String(i);button.setAttribute('aria-label',paint.name+' gas dirt bike');
- const dot=document.createElement('span');dot.className='paint-dot';dot.style.backgroundColor='#'+paint.hex.toString(16).padStart(6,'0');
+ const dot=document.createElement('span');dot.className='paint-dot';dot.style.backgroundColor='#'+paint.hex.toString(16).padStart(6,'0');if(paint.rainbow)dot.style.background='conic-gradient(#f44,#ff4,#4f4,#4ff,#44f,#f4f,#f44)';
  const name=document.createElement('span');name.textContent=paint.name;button.append(dot,name);
  button.addEventListener('click',()=>{selectedPaint=i;applyPaint()});swatchGrid.append(button);
 }
@@ -2223,7 +2331,7 @@ function makeRemoteBike(id,paint,name){
  const obj=bike.clone(true);obj.name='Friend rider '+id;
  obj.traverse(o=>{
   if(o.isMesh){o.material=o.material.clone();o.userData.roomMaterial=true;
-   if(o.material.color&&o.material.color.getHex()===orange.color.getHex())o.material.color.setHex(BIKE_PAINTS[paint].hex)}
+   if(o.material.color&&o.material.color.getHex()===orange.color.getHex()){o.userData.bikePaint=true;o.material.color.setHex(BIKE_PAINTS[paint].hex)}}
  });
  obj.add(makeRiderLabel(name,paint));scene.add(obj);
  const entry={obj,target:null,paint,name};multiplayer.seen.set(id,entry);return entry;
@@ -2238,7 +2346,7 @@ function receivePose(id,state){
   for(const label of entry.obj.children.filter(o=>o.isSprite)){label.material.map?.dispose();label.material.dispose();entry.obj.remove(label)}
   entry.obj.add(makeRiderLabel(meta.name,state.paint));
   // Paint only cloned gas-bike parts; do not change your real bike or its physics.
-  entry.obj.traverse(o=>{if(o.isMesh&&o.material?.color&&o.material.color.getHex()===BIKE_PAINTS[entry.paint].hex)o.material.color.setHex(BIKE_PAINTS[state.paint].hex)});
+  entry.obj.traverse(o=>{if(o.isMesh&&o.userData.bikePaint&&o.material?.color)o.material.color.setHex(BIKE_PAINTS[state.paint].hex)});
   entry.paint=state.paint;entry.name=meta.name;
  }
  entry.target=state;entry.lastSeen=performance.now();
@@ -2250,6 +2358,7 @@ function updateRemoteRiders(dt){
   if(!p)continue;
   const stale=performance.now()-entry.lastSeen>8000;
   entry.obj.visible=multiplayer.connected&&multiplayer.joined&&!stale&&menuStage==='riding'&&p.stage==='riding'&&!p.space&&!p.ragdoll&&!spaceFall.active;
+  if(BIKE_PAINTS[entry.paint].rainbow)entry.obj.traverse(o=>{if(o.userData.bikePaint)o.material.color.setHSL((clock.elapsedTime/4)%1,.88,.53)});
   if(!entry.obj.visible)continue;
   const target=new THREE.Vector3(...p.p);
   if(entry.obj.position.distanceToSquared(target)>2500)entry.obj.position.copy(target);
@@ -2468,31 +2577,32 @@ function clearTireDust(){
 }
 function updateTireDust(dt){
  const rear=currentSamples[1],motion=horizontalVelocity(),pace=Math.hypot(speed,lateralSpeed);
+ const dustSize=tuning.dustSize,dustLift=Math.sqrt(dustSize);
  const emitting=menuStage==='riding'&&grounded&&rear?.contact&&!ragdoll.active&&!spaceFall.active&&pace>1;
  if(emitting){
   const throttle=Math.max(keys.KeyW||keys.ArrowUp?1:0,controller.throttle);
-  dustBudget+=dt*Math.min(28,5+pace*.55+throttle*8);chipBudget+=dt*Math.min(8,1+pace*.12+throttle*2);
+  dustBudget+=dt*Math.min(32,6+pace*.65+throttle*10);chipBudget+=dt*Math.min(10,1+pace*.15+throttle*3);
   const backX=-motion.x/pace,backZ=-motion.z/pace;
   let count=Math.min(3,Math.floor(dustBudget));dustBudget-=count;
   while(count-- >0){
-   const p=tireDust[nextDust++%tireDust.length];p.age=0;p.life=.65+Math.random()*.45;p.size=.18+Math.random()*.14;
+   const p=tireDust[nextDust++%tireDust.length];p.age=0;p.life=.65+Math.random()*.45;p.size=.24+Math.random()*.16;
    p.obj.visible=true;p.obj.position.set(rear.x+backX*.15,rear.surface+.10,rear.z+backZ*.15);
-   p.obj.material.color.copy(sand.color);p.obj.material.opacity=.21;p.obj.material.rotation=Math.random()*Math.PI*2;
-   p.obj.scale.setScalar(p.size);
-   p.v.set(backX*(1+pace*.08)+(Math.random()-.5)*.8,.4+Math.random()*.5,backZ*(1+pace*.08)+(Math.random()-.5)*.8);
+   p.obj.material.color.copy(sand.color);p.obj.material.opacity=.32;p.obj.material.rotation=Math.random()*Math.PI*2;
+   p.obj.scale.setScalar(p.size*dustSize);
+   p.v.set(backX*(1+pace*.08)+(Math.random()-.5)*.8,(.55+throttle*.3+Math.random()*.6)*dustLift,backZ*(1+pace*.08)+(Math.random()-.5)*.8);
   }
   count=Math.min(2,Math.floor(chipBudget));chipBudget-=count;
   while(count-- >0){
    const p=tireChips[nextChip++%tireChips.length];p.age=0;p.life=.65+Math.random()*.35;p.bounced=false;p.spin=(Math.random()-.5)*18;
    p.obj.visible=true;p.obj.position.set(rear.x,rear.surface+.12,rear.z);p.obj.scale.setScalar(.6+Math.random()*.9);
    p.obj.material.color.copy(darkSand.color);p.obj.material.opacity=.9;
-   p.v.set(backX*(1.5+pace*.13)+(Math.random()-.5)*1.4,1.3+Math.random()*1.5,backZ*(1.5+pace*.13)+(Math.random()-.5)*1.4);
+   p.v.set(backX*(1.5+pace*.13)+(Math.random()-.5)*1.4,1.5+throttle*.5+Math.random()*1.5,backZ*(1.5+pace*.13)+(Math.random()-.5)*1.4);
   }
  }else dustBudget=chipBudget=0;
  for(const p of tireDust){
   if(!p.obj.visible)continue;p.age+=dt;if(p.age>=p.life){p.obj.visible=false;continue}
   p.obj.position.addScaledVector(p.v,dt);p.v.x*=Math.exp(-dt*1.5);p.v.z*=Math.exp(-dt*1.5);
-  p.obj.scale.setScalar(p.size+p.age*.8);p.obj.material.opacity=.21*(1-p.age/p.life)**1.6;
+  p.obj.scale.setScalar((p.size+p.age*.8)*dustSize);p.obj.material.opacity=.32*(1-p.age/p.life)**1.6;
  }
  for(const p of tireChips){
   if(!p.obj.visible)continue;p.age+=dt;if(p.age>=p.life){p.obj.visible=false;continue}

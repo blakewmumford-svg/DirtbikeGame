@@ -49,4 +49,38 @@ The portable package was installed with `npm ci` and passed `npm run check` plus
 ## Repository continuation
 
 Repository: https://github.com/blakewmumford-svg/DirtbikeGame
-Branch for the initial import: main. The repository was empty before transfer; existing work was not overwritten. Start new Codex chats from this repository and read this file plus AGENTS.md. The root HTML remains byte-identical to the verified port package. Optional untrimmed recording videos were not added; playback audio and music are embedded. No deployment or repository visibility change was performed.
+Branch for the initial import: main. The repository was empty before transfer; existing work was not overwritten. Start new Codex chats from this repository and read this file plus AGENTS.md. The root HTML matched the verified port package at import; the rear-tire spray adjustment below changes that hash. Optional untrimmed recording videos were not added; playback audio and music are embedded. No deployment or repository visibility change was performed.
+
+## Rear-tire spray visibility — November 14, 2026
+
+Current source remains `dirtbike_wheelie_landing_fixed.html`. Increased the existing rear-tire dust slightly: larger, more visible puffs, modestly higher emission, and a little extra upward dust/dirt spray under throttle. Retains the 40-sprite/18-chip pool, terrain colors, contact gating, and cleanup. No physics or audio changes.
+
+Validation: `npm run check` and all six `npm test` browser suites passed, including dust emission/excluded states/cleanup and bounded particle count. Physical Chromebook/tablet appearance and performance still need the owner's check. Real cross-device multiplayer remains unresolved. Next: try the updated HTML while accelerating on the ground and judge the spray amount.
+
+## Debug dust-size control — November 14, 2026
+
+Added **Rear-tire dust size** at the top of the Debug tab (G → Debug). Range 1×–12×; default/minimum 1× preserves the current spray. Higher values enlarge dust sprites and increase their upward launch speed for huge rising clouds. Dirt chips stay small; particle pools and physics remain unchanged. Uses the existing tuning schema, auto-save, presets, import/export and launcher profile bridge; old profiles default to 1×.
+
+Validation: `npm run check`, all six browser suites, and a focused dust rerun passed. The new browser check verifies bounds, 12× cloud sizing, increased height, reload persistence and the unchanged 58-particle pool. Existing contact exclusions and cleanup still pass. Next: owner checks visual preference on the Chromebook/tablet; real cross-device multiplayer remains unresolved. Source remains `dirtbike_wheelie_landing_fixed.html`.
+
+## Bike visual realism, throttle animation, rainbow paint — November 14, 2026
+
+Current source remains `dirtbike_wheelie_landing_fixed.html`. Added 96 square rubber tread knobs per wheel (one instanced draw per tire), open spoked rims, hubs, brake discs/calipers, engine fins/covers/bolts, chain, foot pegs, suspension trim, tapered tank/shrouds and slimmer motocross fenders/number plate. Handlebars now include crossbar, grips, levers and cables. The original deformation/detachment references remain supported. These are procedural visual details within the existing stylized game; handling/collision dimensions are unchanged.
+
+Mounted rider now has articulated arms and gloves. W/Up/controller throttle smoothly twists the right grip and wrist and dips the elbow; release returns to rest. Animation does not change engine/physics values. Added Rainbow as paint index 10, preserving existing color indexes and save key. It cycles about once every four seconds on painted parts in menus and riding; solid colors stay fixed. Rainbow selection uses existing menu save and room identity paths. Cloned remote paint uses explicit part tags so animated hues do not break later paint changes.
+
+Validation: `npm run check` and all seven browser suites passed. Re-ran the visual suite after final bodywork changes; all four checks passed, including a running render loop with real W key press/release, tire tread, rainbow cycle, reload persistence and switching back to solid paint. Browser screenshot inspected under `reports/bike-realism.png`. Physical Chromebook/tablet appearance and performance still need the owner's check; multiplayer remains unverified across real devices. Next: try the updated HTML, choose Rainbow in bike colors, and use C for closer camera views of the throttle hand.
+
+## Fixed first-person camera — November 14, 2026
+
+First-person view now uses an exact bike-frame mount (local 0, 2.5, -0.30), forward of the helmet, aimed slightly down toward the front bike. Removed first-person position interpolation so acceleration, turns and switching views cannot make the camera trail backward into the rider. Camera orientation follows frame pitch/lean; external views, menus and the moon cutscene restore world-up. Other camera modes retain their existing follow smoothing.
+
+Validation: syntax/audio check and the focused browser visual suite passed. A new camera check verifies identical local mount position after abrupt translation, yaw, pitch and lean, and world-up restoration on switching out. Inspected `reports/first-person.png`: unobstructed scene with front fender at the bottom, no helmet. Full regression result is recorded below after completion. Source remains `dirtbike_wheelie_landing_fixed.html`; real device performance and live multiplayer remain unverified.
+
+Full first-person regression run: all seven `npm test` suites passed after the camera change. Next: owner tries C → first-person in the updated HTML.
+
+## Stable hosting preparation — November 14, 2026
+
+User requested a bookmarkable hosted address. Added `.github/workflows/pages.yml` using the official GitHub Pages actions. On main game changes or manual dispatch it stages only the current game HTML as `_site/index.html` and deploys that artifact, preserving the single HTML source of truth. README documents one-time Pages activation, expected address, per-device browser autosave, and a one-time JSON transfer from old downloads if needed.
+
+Git read works through the existing platform proxy; `gh api repos/blakewmumford-svg/DirtbikeGame/pages` was denied. Runtime network policy excludes api.github.com, so CLI auth status cannot establish usable API credentials. No token was requested, copied or embedded, no network configuration was changed, and repository visibility was not changed. The owner must choose Settings → Pages → Source: GitHub Actions, then manually rerun the workflow if necessary. Hosting remains unverified until a successful deployment and an HTTP check of the public address. No automatic GitHub commit of browser tuning is implemented.

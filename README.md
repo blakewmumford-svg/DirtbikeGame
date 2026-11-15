@@ -72,3 +72,11 @@ Default: Trystero MQTT/WebRTC. Optional: Supabase direct Realtime WebSocket. **N
 - `IMPORT_MANIFEST.json`: initial file hashes, for verifying this transfer.
 
 The game includes user-supplied media. No license for the game or those uploads is asserted by this package. Third-party test fixtures are described in `THIRD_PARTY_NOTICES.md`.
+
+## Stable hosted game (GitHub Pages)
+
+The Pages workflow publishes only the current game HTML as the site's `index.html`; no build or secrets are required. One-time repository setup: **Settings → Pages → Build and deployment → Source → GitHub Actions**. After selecting that source, run **Actions → Publish game to GitHub Pages → Run workflow** if the first run failed before Pages was enabled.
+
+Once that deployment succeeds, bookmark https://blakewmumford-svg.github.io/DirtbikeGame/ . Later updates to the main game HTML on `main` deploy automatically to that same address. Publication is public web hosting; it does not configure real multiplayer or change the repository's visibility. GitHub may require a suitable plan for Pages on a private repository.
+
+Tuning and Debug sliders auto-save to browser storage at that stable origin. Keep using the same browser/profile and allow site storage. Settings survive game deployments but remain device-specific; clearing site data or using private browsing can remove them. This is not GitHub syncing. Old downloaded-file settings do not automatically transfer: import a tuning JSON once on the hosted site if needed. Rendering still loads Three.js from its existing CDN; this is not an offline installation.
