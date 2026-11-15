@@ -1,0 +1,61 @@
+name: Publish owner defaults
+
+on:
+  workflow_dispatch:
+    inputs:
+      settings:
+        description: Settings copied from game
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.actor == github.repository_owner && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate and apply settings
+        env:
+          DEFAULTS_JSON: ${{ inputs.settings }}
+        run: node scripts/publish-defaults.mjs
+      - name: Check updated game
+        run: npm run check
+      - name: Commit defaults to GitHub
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dirtbike_wheelie_landing_fixed.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish owner-selected game defaults"
+            git push origin HEAD:main
+          fi
+      # GITHUB_TOKEN pushes do not trigger another workflow; deploy in this run.
+      - uses: actions/configure-pages@v5
+      - name: Prepare playable site
+        run: |
+          mkdir -p _site
+          cp dirtbike_wheelie_landing_fixed.html _site/index.html
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

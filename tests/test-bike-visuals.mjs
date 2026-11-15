@@ -9,7 +9,7 @@ const target=fileURLToPath(new URL('../dirtbike_wheelie_landing_fixed.html',impo
 const results=[],errors=[];
 const instrumentation=`
 currentSamples=sampleWheels();
-globalThis.__visualTest={bike,wheels,handlebar,throttleGrip,riderArms,orange,updateBikeVisuals,
+globalThis.__visualTest={bike,wheels,handlebar,throttleGrip,riderArms,orange,updateBikeVisuals,prepareDefaultsPublish,
  setThrottle(on){showMenuStage('riding');keys.KeyW=on;controller.throttle=0;paused=false},
  update(time){for(let i=0;i<60;i++)updateBikeVisuals(1/60,time)},
  render(){document.getElementById('tuner').style.visibility='hidden';bike.position.set(0,.08,25);bike.rotation.set(0,0,0);camera.position.set(4,3.2,21.5);camera.lookAt(0,1.5,25);renderer.render(scene,camera)},
@@ -58,6 +58,19 @@ try{
   }
   assert.deepEqual(poses.external.up,[0,1,0]);
   await page.screenshot({path:fileURLToPath(new URL('../reports/first-person.png',import.meta.url))});return poses;
+ });
+ await check('Publish defaults prepares current tuning without sending credentials',async()=>{
+  const result=await page.evaluate(async()=>{
+   document.querySelector('[data-tab="Debug"]').click();
+   const input=document.querySelector('[aria-label="Rear-tire dust size"]');input.value='6';input.dispatchEvent(new Event('input',{bubbles:true}));
+   const oldOpen=window.open,oldClipboard=Object.getOwnPropertyDescriptor(navigator,'clipboard');let opened,copied;
+   window.open=url=>{opened=url;return null};Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{copied=value}}});
+   try{await __visualTest.prepareDefaultsPublish();return{opened,payload:JSON.parse(copied),status:document.getElementById('publish-defaults-status').textContent}}
+   finally{window.open=oldOpen;if(oldClipboard)Object.defineProperty(navigator,'clipboard',oldClipboard);else delete navigator.clipboard}
+  });
+  assert.equal(result.opened,'https://github.com/blakewmumford-svg/DirtbikeGame/actions/workflows/publish-defaults.yml');
+  assert.equal(result.payload.format,'dirtbike-defaults-v1');assert.equal(result.payload.settings.dustSize,6);assert.ok(result.status.includes('Copied!'));
+  return{destination:result.opened,dustSize:result.payload.settings.dustSize};
  });
  await check('Live game loop renders and responds to real W key presses',async()=>{
   await page.goto(`http://127.0.0.1:${server.address().port}/?live`);await page.waitForFunction(()=>!!window.__visualTest);

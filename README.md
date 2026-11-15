@@ -80,3 +80,11 @@ The Pages workflow publishes only the current game HTML as the site's `index.htm
 Once that deployment succeeds, bookmark https://blakewmumford-svg.github.io/DirtbikeGame/ . Later updates to the main game HTML on `main` deploy automatically to that same address. Publication is public web hosting; it does not configure real multiplayer or change the repository's visibility. GitHub may require a suitable plan for Pages on a private repository.
 
 Tuning and Debug sliders auto-save to browser storage at that stable origin. Keep using the same browser/profile and allow site storage. Settings survive game deployments but remain device-specific; clearing site data or using private browsing can remove them. This is not GitHub syncing. Old downloaded-file settings do not automatically transfer: import a tuning JSON once on the hosted site if needed. Rendering still loads Three.js from its existing CDN; this is not an offline installation.
+
+## Publish your tuning as the defaults for new players
+
+In the game, open **G → Debug → Publish defaults (owner only)** and press **Copy settings & open GitHub**. Your current tuning and hitbox/contact view choices are copied. In GitHub, sign in as `blakewmumford-svg`, choose **Run workflow** on **main**, paste into **Settings copied from game**, and confirm **Run workflow**. If clipboard access is blocked, the game shows selected text you can copy manually. You do not need to download a JSON file.
+
+The **Publish owner defaults** workflow permits only the repository owner on `main`. It validates every setting against the game's current schema, commits the defaults to the game HTML, and deploys the updated site in the same run. Invalid/outdated settings fail without a commit. GitHub branch protections or denied Actions write permissions can block the push; inspect the failed workflow rather than assuming publication succeeded.
+
+This is an explicit publishing action, not automatic publication of every slider movement. Ordinary players can only save their own settings. Existing browser settings are preserved; **Defaults** loads the latest published values. No GitHub token or password goes into the game. The copy button itself is visible to everyone, but GitHub enforces ownership before the workflow runs. No live owner-default publish has been executed during development.

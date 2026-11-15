@@ -646,7 +646,8 @@ const BRIDGE_SAVE='dirtbike-v3j-profile-save',BRIDGE_ACK='dirtbike-v3j-profile-a
 const schemaByKey=new Map(TUNING_SCHEMA.map(s=>[s.key,s]));
 const defaultTuning=Object.fromEntries(TUNING_SCHEMA.map(s=>[s.key,s.value]));
 const tuning={...defaultTuning};
-let savedData={presets:{},selected:'',lastTuning:{...defaultTuning},debug:{hitboxes:false,contacts:false},activeTab:'Ride',updatedAt:0};
+const DEFAULT_DEBUG={hitboxes:false,contacts:false};
+let savedData={presets:{},selected:'',lastTuning:{...defaultTuning},debug:{...DEFAULT_DEBUG},activeTab:'Ride',updatedAt:0};
 let dirty=false, activeTab='Ride',lastRideRestored=false;
 function storageRead(){try{return localStorage.getItem(STORAGE_KEY)}catch{return null}}
 // A successful write alone is not proof that the browser kept it. Read the bytes back.
@@ -743,12 +744,19 @@ function renderFields(){
   const stepButton=document.createElement('button');stepButton.type='button';stepButton.textContent='Single frame (O)';stepButton.className='secondary';stepButton.style.width='100%';stepButton.style.position='static';stepButton.addEventListener('click',()=>{paused=true;stepping=true;message('Stepped one physics frame')});
   const verifyButton=document.createElement('button');verifyButton.type='button';verifyButton.textContent='Check saved tuning now';verifyButton.className='secondary';verifyButton.style.position='static';verifyButton.style.width='100%';
   verifyButton.onclick=()=>{const expected=JSON.stringify(savedData),stored=storageRead();const ok=stored===expected;message(ok?'✓ Verified: latest tuning and debug settings are saved in this browser.':window.__DIRTBIKE_HOSTED__===true?'Tuning sent to launcher; check the status above and use Back up tuning in launcher.':'⚠ Save failed or storage isolated; export a JSON tuning file.');};
+  const publishBox=document.createElement('div');publishBox.className='legend';
+  const publishTitle=document.createElement('strong');publishTitle.textContent='Publish defaults (owner only)';
+  const publishHelp=document.createElement('p');publishHelp.textContent='Make your current tuning and debug views the starting settings for new players. Copy below, then in GitHub choose Run workflow on main, paste into Settings copied from game, and confirm. GitHub sign-in and repository-owner permission are required. Existing players keep their saved settings; Defaults loads the published values.';
+  const publishButton=document.createElement('button');publishButton.type='button';publishButton.className='secondary';publishButton.style.position='static';publishButton.textContent='Copy settings & open GitHub';publishButton.addEventListener('click',prepareDefaultsPublish);
+  const publishCopy=document.createElement('textarea');publishCopy.id='publish-defaults-copy';publishCopy.readOnly=true;publishCopy.hidden=true;publishCopy.setAttribute('aria-label','Settings to publish');publishCopy.style.cssText='width:100%;height:90px;box-sizing:border-box;margin-top:8px';
+  const publishStatus=document.createElement('p');publishStatus.id='publish-defaults-status';publishStatus.setAttribute('role','status');
+  publishBox.append(publishTitle,publishHelp,publishButton,publishCopy,publishStatus);
   const telemetry=document.createElement('pre');telemetry.id='telemetry';telemetry.className='telemetry';telemetry.textContent='Contact sensors loading (front/rear independent loads)...';
   const testButtons=document.createElement('div');testButtons.className='buttons';
   for(const [label,fn] of [['Test airborne flips',launchAirTest],['Test air spins',launchSpinTest],['Test 180° backward landing',launch180LandingTest],['Test ramp wall',launchRampWallTest],['Test rock collision',launchRockTest],['🌙 Test circular edge fall',launchMoonFallTest],['Repair here (J)',repairHere]]){
    const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;button.addEventListener('click',fn);testButtons.append(button);
   }
-  tuningFields.append(legend,b,stepButton,verifyButton,testButtons,telemetry);return;
+  tuningFields.append(legend,b,stepButton,verifyButton,publishBox,testButtons,telemetry);return;
  }
  if(activeTab==='Crash'){
   const p=document.createElement('p');p.className='legend';p.textContent='Severe rock/ramp side hits and upside-down body crashes eject a 16-joint rider, while clean wheel-first landings stay safe. This lightweight joint/constraint ragdoll is tuned for a browser; it is not BeamNG soft-body physics. Hard crashes and moon hits rotate through your recorded screams with matching bubbles. Crash voices use only your uploaded recordings. Use the Sound button and volume slider to adjust audio. J repairs and puts your rider back on the bike; R resets to spawn.';
@@ -787,6 +795,16 @@ function deletePreset(){const name=presetSelect.value;
  if(!name||!Object.hasOwn(savedData.presets,name)){message('Select a saved setup first.');return}
  delete savedData.presets[name];if(savedData.selected===name)savedData.selected='';
  refreshPresetSelect();storageWrite();markDirty(true);message('Deleted preset "'+name+'".');
+}
+async function prepareDefaultsPublish(){
+ const payload=JSON.stringify({format:'dirtbike-defaults-v1',settings:{...tuning},debug:{hitboxes:showHitboxes,contacts:showContactDebug}});
+ const copy=document.getElementById('publish-defaults-copy'),status=document.getElementById('publish-defaults-status');
+ copy.value=payload;copy.hidden=false;
+ // Open during the click gesture so a clipboard promise cannot trigger popup blocking.
+ const url='https://github.com/blakewmumford-svg/DirtbikeGame/actions/workflows/publish-defaults.yml';
+ window.open(url,'_blank','noopener,noreferrer');
+ try{await navigator.clipboard.writeText(payload);status.textContent='Copied! In GitHub: Run workflow → main → paste settings → Run workflow. The game updates after a successful deployment.'}
+ catch{copy.focus();copy.select();status.textContent='Copy the selected settings, then paste them into GitHub’s Run workflow form. No file download needed.'}
 }
 function exportPreset(){
  const name=presetName.value.trim()||'My Bike Setup';
@@ -829,7 +847,7 @@ document.getElementById('delete-preset').addEventListener('click',deletePreset);
 document.getElementById('export-preset').addEventListener('click',exportPreset);
 document.getElementById('import-preset').addEventListener('click',()=>document.getElementById('preset-file').click());
 document.getElementById('preset-file').addEventListener('change',importPreset);
-document.getElementById('default-preset').addEventListener('click',()=>{applyValues(defaultTuning,true);message('Factory defaults applied (save to keep a named preset).')});
+document.getElementById('default-preset').addEventListener('click',()=>{applyValues(defaultTuning,true);if(showHitboxes!==DEFAULT_DEBUG.hitboxes)toggleHitboxes();if(showContactDebug!==DEFAULT_DEBUG.contacts)toggleContacts();message('Published defaults applied; your settings are auto-saved.')});
 presetSelect.addEventListener('change',()=>{if(presetSelect.value)loadPreset()});
 refreshPresetSelect();if(savedData.selected&&savedData.presets[savedData.selected])presetName.value=savedData.selected;
 renderFields();markDirty(false);
@@ -2412,7 +2430,7 @@ function cancelRiderVoice(){
 function stopRideSounds(){
  cancelRiderVoice();
  for(const source of rideAudio.activeEffects){try{source.stop()}catch(_){}}
- rideAudio.activeEffects.clear();rideAudio.gear=1;rideAudio.rpm=rideAudio.targetRpm=1450;rideAudio.shiftTime=0;rideAudio.shiftCooldown=0;rideAudio.lastImpact=-10;
+ rideAudio.activeEffects.clear();rideAudio.gear=1;rideAudio.rpm=rideAudio.targetRpm=1450;rideAudio.shiftTime=0;rideAudio.shiftCooldown=0;rideAudio.lastImpact=-10;rideAudio.previousThrottle=0;
  rampSound(rideAudio.engineGain?.gain,0,.02);rampSound(rideAudio.noiseGain?.gain,0,.02);
 }
 async function unlockRideAudio(){
@@ -2428,11 +2446,28 @@ async function unlockRideAudio(){
    rideAudio.engineGain=ctx.createGain();rideAudio.engineGain.gain.value=0;
    rideAudio.engineFilter=ctx.createBiquadFilter();rideAudio.engineFilter.type='lowpass';rideAudio.engineFilter.frequency.value=1300;rideAudio.engineFilter.Q.value=.65;
    rideAudio.engineGain.connect(rideAudio.engineFilter);rideAudio.engineFilter.connect(master);
-   const real=new Float32Array(49),imag=new Float32Array(49);
-   for(let h=1;h<49;h++)real[h]=Math.exp(-h/17)/Math.pow(h,.38)*(h%2?.85:1);
-   const engine=rideAudio.engine=ctx.createOscillator();engine.setPeriodicWave(ctx.createPeriodicWave(real,imag));engine.frequency.value=1450/120;engine.connect(rideAudio.engineGain);engine.start();
-   const body=rideAudio.body=ctx.createOscillator();body.type='triangle';body.frequency.value=1450/60;
-   const bodyGain=ctx.createGain();bodyGain.gain.value=.34;body.connect(bodyGain);bodyGain.connect(rideAudio.engineGain);body.start();
+   // Single-cylinder four-stroke pressure pulses: 16 subtly different firing cycles.
+   // Generated locally once; no sound downloads or continuously allocated audio nodes.
+   const referenceRpm=1800,cycles=16,cycleSeconds=120/referenceRpm;
+   const exhaust=ctx.createBuffer(1,Math.round(ctx.sampleRate*cycleSeconds*cycles),ctx.sampleRate),pressure=exhaust.getChannelData(0);
+   let seed=73421,noiseLow=0;
+   for(let i=0;i<pressure.length;i++){
+    const cycle=i/pressure.length*cycles,index=Math.floor(cycle),t=(cycle-index)*cycleSeconds;
+    seed=(Math.imul(seed,1664525)+1013904223)>>>0;const noise=seed/4294967296*2-1;noiseLow+=.24*(noise-noiseLow);
+    const variation=.92+.08*Math.sin(index*2.399);
+    const attack=1-Math.exp(-t*2400),tail=Math.exp(-t*105);
+    const pulse=attack*(Math.exp(-t*190)-.42*Math.exp(-t*48));
+    const pipe=Math.sin(t*Math.PI*2*96)*Math.exp(-t*72);
+    const crack=(noise-noiseLow)*tail*.30;
+    pressure[i]=Math.tanh((pulse*1.45+pipe*.42+crack)*variation*1.65)*.8;
+   }
+   const engine=rideAudio.engine=ctx.createBufferSource();engine.buffer=exhaust;engine.loop=true;engine.playbackRate.value=1450/referenceRpm;
+   rideAudio.referenceRpm=referenceRpm;
+   const exhaustHighpass=ctx.createBiquadFilter();exhaustHighpass.type='highpass';exhaustHighpass.frequency.value=38;exhaustHighpass.Q.value=.5;
+   engine.connect(exhaustHighpass);exhaustHighpass.connect(rideAudio.engineGain);engine.start();
+   // Quiet crankcase resonance under the exhaust; the pressure pulse supplies the character.
+   const body=rideAudio.body=ctx.createOscillator();body.type='sine';body.frequency.value=1450/60;
+   const bodyGain=ctx.createGain();bodyGain.gain.value=.10;body.connect(bodyGain);bodyGain.connect(rideAudio.engineGain);body.start();
    // Low intake/exhaust hiss under the firing pulses, rather than a pure electronic tone.
    const noise=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),data=noise.getChannelData(0);let low=0;
    for(let i=0;i<data.length;i++){low=(low+Math.random()*.18-.09)/1.03;data[i]=low}
@@ -2516,14 +2551,18 @@ function updateRideAudio(dt){
  a.targetRpm=!running?1450:grounded?Math.min(8900,1450+kmh*ratios[a.gear-1]*72+a.throttle*1050):1450+Math.pow(a.throttle,.75)*7350;
  const shiftCut=a.shiftTime>0;
  if(shiftCut)a.targetRpm*=.8;
- a.rpm+=(a.targetRpm-a.rpm)*(1-Math.exp(-dt*(grounded?11:a.throttle>0?15:12)));
+ a.rpm+=(a.targetRpm-a.rpm)*(1-Math.exp(-dt*(grounded?7:a.throttle>0?10:6)));
  const limiter=a.rpm>8500&&a.throttle>.9?(Math.sin(ctx.currentTime*85)>-.1?1:.78):1;
- const hz=a.rpm/120*limiter;rampSound(a.engine.frequency,hz,.012);rampSound(a.body.frequency,hz*2,.012);
- rampSound(a.engineFilter.frequency,650+a.rpm*.17+a.throttle*950,.05);rampSound(a.intakeFilter.frequency,300+a.rpm*.12,.05);
+ // Slight idle unevenness disappears under throttle; pitch always follows revs, not airtime speed.
+ const flutter=1+(.006*(1-a.throttle))*Math.sin(ctx.currentTime*19)+.002*Math.sin(ctx.currentTime*43);
+ rampSound(a.engine.playbackRate,a.rpm/a.referenceRpm*flutter,.018);rampSound(a.body.frequency,a.rpm/60,.018);
+ if((a.previousThrottle||0)>.6&&a.throttle<.1&&grounded&&kmh>14&&a.shiftTime===0)playSoundNoise(.055,420,.10);
+ a.previousThrottle=a.throttle;
+ rampSound(a.engineFilter.frequency,500+a.rpm*.14+a.throttle*1600,.05);rampSound(a.intakeFilter.frequency,300+a.rpm*.12,.05);
  const duck=a.voiceVolume>0&&a.activeVoice&&ctx.currentTime<a.voiceEnds ? .38 : 1;
- const load=grounded ? .055+a.throttle*.13 : .012+a.throttle*.18;
+ const load=grounded ? .14+a.throttle*.30 : .035+a.throttle*.40;
  rampSound(a.engineGain.gain,running?a.bikeVolume*load*(shiftCut ? .35 : 1)*duck*limiter:0,.025);
- rampSound(a.noiseGain.gain,running?a.bikeVolume*(.018+a.throttle*.11)*duck*(shiftCut ? .4 : 1)*(grounded||a.throttle>0?1:.2):0,.035);
+ rampSound(a.noiseGain.gain,running?a.bikeVolume*(.008+a.throttle*.065)*duck*(shiftCut ? .4 : 1)*(grounded||a.throttle>0?1:.2):0,.035);
 }
 document.getElementById('menu-start').addEventListener('click',unlockRideAudio);
 addEventListener('blur',()=>{rideAudio.focused=false;stopRideSounds();rampSound(rideAudio.master?.gain,0,.015)});
