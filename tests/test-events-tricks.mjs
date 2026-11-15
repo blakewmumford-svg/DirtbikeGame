@@ -58,7 +58,7 @@ try{
    t.set();document.querySelector('[data-tab="Debug"]').click();return out;
   });
   for(let i=0;i<results.length;i+=3){assert.equal(results[i].left,119);assert.equal(results[i].visible,true);assert.equal(results[i+1].frozen,119);assert.equal(results[i+2].menu,119);assert.equal(results[i+2].visible,false)}
-  await page.getByRole('combobox',{name:'Disaster type',includeHidden:true}).selectOption('dust');await page.getByRole('button',{name:'Start now',exact:true,includeHidden:true}).evaluate(el=>el.click());assert.equal(await page.evaluate(()=>__screamTest.disaster.type),'dust');
+  await page.getByRole('button',{name:'Dust storm',exact:true,includeHidden:true}).evaluate(el=>el.click());assert.equal(await page.evaluate(()=>__screamTest.disaster.type),'dust');
   await page.getByRole('button',{name:'Stop event',exact:true,includeHidden:true}).evaluate(el=>el.click());assert.equal(await page.evaluate(()=>__screamTest.disaster.type),null);return results;
  });
  await check('The bike can still drive during each disaster',async()=>{

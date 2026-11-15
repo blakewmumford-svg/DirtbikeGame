@@ -221,7 +221,7 @@ body.touch-mode #hud-toggle::after{content:''}
 <text x="100" y="125" text-anchor="middle" fill="#fff" font-size="32" font-weight="850" id="dial-speed">0</text>
 <text x="100" y="143" text-anchor="middle" fill="#9db8c3" font-size="12">km/h</text>
 <text x="100" y="166" text-anchor="middle" fill="#e9a5a0" font-size="10">REV / REDLINE</text>
-</svg></div><button id="reset">Reset bike (R)</button><div id="room-hud" role="status" aria-live="polite"></div><div id="lobby-model-tip">🏍️ <b id="lobby-paint-name">ORANGE GAS BIKE</b><div>YOUR RIDER • READY TO RIDE</div></div><button id="open-main-menu" type="button" title="Return to the main lobby (M)">☰ Menu (M)</button><div id="help">W / ↑ accelerate (AIR: backflip) · S / ↓ brake (AIR: frontflip) · A D steer (AIR: flat spins) · Tap Space to wheelie · W balances · Shift boost / AIR no-hander · Ctrl AIR superman · Alt AIR can-can · C camera · Enter debug · H hitboxes · T contacts · P pause · O step · J repair here · R reset spawn · 🎮 RT / R2 backflip in air · LT / L2 frontflip in air · LS steer / air spin · Tap A to wheelie · RB boost</div><aside id="tuner" aria-label="Real-time bike tuning">
+</svg></div><button id="reset">Reset bike (R)</button><div id="room-hud" role="status" aria-live="polite"></div><div id="lobby-model-tip">🏍️ <b id="lobby-paint-name">ORANGE GAS BIKE</b><div>YOUR RIDER • READY TO RIDE</div></div><button id="open-main-menu" type="button" title="Return to the main lobby (M)">☰ Menu (M)</button><div id="help">W / ↑ accelerate (AIR: backflip) · S / ↓ brake (AIR: frontflip) · A D steer (AIR: flat spins) · Tap Space to wheelie · W balances · Backspace boost + gas · Shift AIR no-hander · Ctrl AIR superman · Alt AIR can-can · C camera · Enter debug · H hitboxes · T contacts · P pause · O step · J repair here · R reset spawn · 🎮 RT / R2 backflip in air · LT / L2 frontflip in air · LS steer / air spin · Tap A to wheelie · RB boost</div><aside id="tuner" aria-label="Real-time bike tuning">
  <div class="tuner-header"><strong>⚙️ Live Tuning Garage <span id="dirty-dot" title="Changes since named preset (your ride is autosaved)">●</span></strong><button id="toggle-tuner" type="button">Hide (Enter)</button></div>
  <div class="tuner-body">
   <nav class="tabs" aria-label="Tuning categories"><button type="button" class="active" data-tab="Ride">Ride</button><button type="button" data-tab="Lean">Turn lean</button><button type="button" data-tab="Air">Air tricks</button><button type="button" data-tab="Shocks">Shocks</button><button type="button" data-tab="Camera">Camera</button><button type="button" data-tab="Crash">Crashes</button><button type="button" data-tab="Debug">Debug</button><button type="button" data-tab="Controller">Controller</button></nav>
@@ -465,11 +465,11 @@ forestScenery.visible=false;hillsideScenery.visible=false;
 // Instanced wildlife keeps packs inexpensive on mobile; animal AI never changes the terrain.
 const wildlife=[],wolfPacks=[],wildlifeBatches=[],wildlifeRoot=new THREE.Group();scene.add(wildlifeRoot);
 const animalSphere=new THREE.SphereGeometry(1,10,7),animalBox=new THREE.BoxGeometry(1,1,1),animalCone=new THREE.ConeGeometry(1,1,7),animalTail=new THREE.CylinderGeometry(.08,.18,1,7);
-function addAnimal(species,x,z,pack=null){const a={species,home:new THREE.Vector3(x,0,z),position:new THREE.Vector3(x,0,z),heading:0,phase:wildlife.length*1.7,time:0,cooldown:0,mode:'roam',pack};wildlife.push(a);return a}
-for(let i=0;i<3;i++){const angle=.6+i*2.1;addAnimal('bear',Math.sin(angle)*240,Math.cos(angle)*240)}
-for(let i=0;i<5;i++){const angle=1.2+i*1.26;addAnimal('fox',Math.sin(angle)*310,Math.cos(angle)*310)}
+function addAnimal(species,x,z,pack=null){const a={species,home:new THREE.Vector3(x,0,z),position:new THREE.Vector3(x,0,z),heading:0,phase:wildlife.length*1.7,time:0,cooldown:0,mode:'roam',pack,flight:null,chaseUntil:0};wildlife.push(a);return a}
+for(let i=0;i<4;i++){const angle=.6+i*Math.PI/2;addAnimal('bear',Math.sin(angle)*240,Math.cos(angle)*240)}
+for(let i=0;i<7;i++){const angle=1.2+i*Math.PI*2/7;addAnimal('fox',Math.sin(angle)*310,Math.cos(angle)*310)}
 for(let p=0;p<2;p++){
- const pack={id:p,count:Math.floor(rand(5,16)),center:new THREE.Vector3(p?340:-310,0,p?160:120),callTimer:0,attackCooldown:0};wolfPacks.push(pack);
+ const pack={id:p,count:Math.floor(rand(8,16)),center:new THREE.Vector3(p?340:-310,0,p?160:120),callTimer:0,attackCooldown:0};wolfPacks.push(pack);
  for(let i=0;i<pack.count;i++){const angle=i*2.399,r=4+Math.sqrt(i)*3;addAnimal('wolf',pack.center.x+Math.sin(angle)*r,pack.center.z+Math.cos(angle)*r,pack)}
 }
 for(const species of ['bear','fox','wolf']){
@@ -486,8 +486,32 @@ for(const species of ['bear','fox','wolf']){
  for(const [geo,material,position,scale,kind] of defs){const mesh=new THREE.InstancedMesh(geo,material,animals.length);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;wildlifeRoot.add(mesh);wildlifeBatches.push({mesh,animals,position,scale,kind,species})}
 }
 const animalRootDummy=new THREE.Object3D(),animalPartDummy=new THREE.Object3D(),animalMatrix=new THREE.Matrix4();
+const WILDLIFE_SCALE={bear:4.6,fox:.78,wolf:1.55};
+const wildlifeLastBikePosition=new THREE.Vector3(0,.08,25);
+function launchAnimal(animal,pace){
+ const motion=horizontalVelocity();
+ animal.flight={velocity:new THREE.Vector3(motion.x*.95,10+Math.min(16,pace*.4),motion.z*.95),rotation:new THREE.Euler(.2,animal.heading,0),spin:new THREE.Vector3(2.5+pace*.05,1.8,3.8),life:0,bounces:0,limbs:Array.from({length:4},(_,i)=>({angle:(i%2?1:-1)*.5,velocity:(i%2?1:-1)*8}))};
+ animal.position.y+=WILDLIFE_SCALE[animal.species]*.82;animal.mode='ragdoll';animal.cooldown=12;if(animal.pack)animal.pack.attackCooldown=6;
+ damage=Math.min(100,damage+Math.min(95,45+pace)*tuning.damageScale);impact=Math.max(impact,pace*3.6);lastCollision='High-speed '+animal.species+' collision';
+ handleBikeCrash(Math.max(28,pace),lastCollision);if(!ragdoll.active)makeRagdoll(pace);bikeBend=Math.max(.85,bikeBend);setBikeBend();detachBikePiece(handlebar,pace);speed*=-.12;lateralSpeed*=.2;vertical+=4;
+}
+function hitAnimalAtSpeed(animal){
+ const pace=Math.hypot(speed,lateralSpeed);if(pace<12.5||ragdoll.active||animal.flight||spaceFall.active||pos.y>animal.position.y+WILDLIFE_SCALE[animal.species]*1.7+1||pos.y+2.8<animal.position.y)return false;
+ const dx=pos.x-wildlifeLastBikePosition.x,dz=pos.z-wildlifeLastBikePosition.z,denom=dx*dx+dz*dz;
+ const t=denom?THREE.MathUtils.clamp(((animal.position.x-wildlifeLastBikePosition.x)*dx+(animal.position.z-wildlifeLastBikePosition.z)*dz)/denom,0,1):1;
+ const px=wildlifeLastBikePosition.x+dx*t-animal.position.x,pz=wildlifeLastBikePosition.z+dz*t-animal.position.z,c=Math.cos(animal.heading),sn=Math.sin(animal.heading),size=WILDLIFE_SCALE[animal.species];
+ if(((c*px-sn*pz)/(.65*size+.65))**2+((sn*px+c*pz)/(1.3*size+.9))**2>1)return false;
+ launchAnimal(animal,pace);return true;
+}
+function stepAnimalFlight(animal,dt){
+ const f=animal.flight;f.life+=dt;f.velocity.y-=22*dt;animal.position.addScaledVector(f.velocity,dt);f.rotation.x+=f.spin.x*dt;f.rotation.y+=f.spin.y*dt;f.rotation.z+=f.spin.z*dt;
+ for(const limb of f.limbs){limb.velocity+=(-limb.angle*6-limb.velocity*1.5)*dt;limb.angle+=limb.velocity*dt}
+ const floor=heightAt(animal.position.x,animal.position.z)+WILDLIFE_SCALE[animal.species]*.7;
+ if(animal.position.y<floor){animal.position.y=floor;if(f.velocity.y< -2){f.velocity.y*=-.28;f.bounces++;for(const limb of f.limbs)limb.velocity+=(Math.random()-.5)*6}else f.velocity.y=0;f.velocity.x*=Math.exp(-dt*5);f.velocity.z*=Math.exp(-dt*5);f.spin.multiplyScalar(Math.exp(-dt*4));}
+ if(f.life>12){if(!onIsland(animal.position.x,animal.position.z))animal.position.copy(animal.home);animal.position.y=heightAt(animal.position.x,animal.position.z);animal.flight=null;animal.mode='recover';animal.cooldown=8;animal.chaseUntil=0;}
+}
 function animalAttack(animal,damageAmount){
- if(menuStage!=='riding'||ragdoll.active||spaceFall.active||Math.abs(pos.y-animal.position.y)>3)return;
+ if(menuStage!=='riding'||ragdoll.active||spaceFall.active||Math.abs(pos.y-animal.position.y)>3||Math.hypot(speed,lateralSpeed)>=12.5)return;
  damage=Math.min(100,damage+damageAmount*tuning.damageScale);impact=Math.max(impact,40);lastCollision=animal.species==='bear'?'Bear swipe':'Wolf pack: too close';
  handleBikeCrash(18,lastCollision);if(!ragdoll.active)makeRagdoll(14);playImpact(15);animal.cooldown=6;
 }
@@ -502,12 +526,17 @@ function updateWildlife(dt){
  wildlifeRoot.visible=!spaceFall.active;if(!wildlifeRoot.visible)return;
  const active=menuStage==='riding'&&!paused&&!document.hidden;
  if(active&&dt>0){
-  for(const pack of wolfPacks){pack.callTimer=Math.max(0,pack.callTimer-dt);pack.attackCooldown=Math.max(0,pack.attackCooldown-dt);const distance=pack.center.distanceTo(pos);if(distance<65&&pack.callTimer===0){playWolfCall(distance>22,distance);pack.callTimer=distance>22?12:6}}
+  for(const pack of wolfPacks){pack.callTimer=Math.max(0,pack.callTimer-dt);pack.attackCooldown=Math.max(0,pack.attackCooldown-dt);const distance=Math.min(...wildlife.filter(a=>a.pack===pack&&!a.flight).map(a=>a.position.distanceTo(pos)));if(distance<65&&pack.callTimer===0){pack.lastCall=distance>14?'howl':'growl';playWolfCall(distance>14,distance);pack.callTimer=distance>14?10:5}}
   for(const animal of wildlife){
-   animal.time+=dt;animal.cooldown=Math.max(0,animal.cooldown-dt);const dx=pos.x-animal.position.x,dz=pos.z-animal.position.z,distance=Math.hypot(dx,dz);let vx=0,vz=0,pace=animal.species==='bear'?.75:1.0;
-   if(animal.species==='bear'&&distance<65&&!ragdoll.active){animal.mode='chase';pace=5;vx=dx/Math.max(distance,.01);vz=dz/Math.max(distance,.01);if(distance<2.3&&animal.cooldown===0)animalAttack(animal,20)}
+   animal.time+=dt;if(animal.flight){stepAnimalFlight(animal,dt);continue}if(hitAnimalAtSpeed(animal))continue;animal.cooldown=Math.max(0,animal.cooldown-dt);const dx=pos.x-animal.position.x,dz=pos.z-animal.position.z,distance=Math.hypot(dx,dz);let vx=0,vz=0,pace=animal.species==='bear'?.75:1.0;
+   if(animal.species==='bear'&&distance<65&&!ragdoll.active&&animal.cooldown<6){animal.mode='chase';pace=5;vx=dx/Math.max(distance,.01);vz=dz/Math.max(distance,.01);if(distance<9.2&&animal.cooldown===0)animalAttack(animal,20)}
    else if(animal.species==='fox'&&distance<25){animal.mode='flee';pace=8;vx=-dx/Math.max(distance,.01);vz=-dz/Math.max(distance,.01)}
-   else if(animal.species==='wolf'&&distance<25){animal.mode=distance<4?'attack':'warn';animal.heading=Math.atan2(-dx,-dz);pace=0;if(distance<4&&animal.pack.attackCooldown===0&&!ragdoll.active){animalAttack(animal,12);animal.pack.attackCooldown=5}}
+   else if(animal.species==='wolf'&&(distance<35||animal.chaseUntil>animal.time)){
+    if(distance<10&&!ragdoll.active)animal.chaseUntil=animal.time+8;
+    const chasing=animal.chaseUntil>animal.time&&distance<65&&!ragdoll.active;
+    animal.mode=distance<4?'attack':chasing?'chase':'warn';animal.heading=Math.atan2(-dx,-dz);pace=chasing?6.5:0;if(chasing){vx=dx/Math.max(distance,.01);vz=dz/Math.max(distance,.01)}
+    if(distance<4&&animal.cooldown===0&&animal.pack.attackCooldown===0&&!ragdoll.active){animalAttack(animal,12);animal.pack.attackCooldown=5}
+   }
    else{animal.mode='roam';const tx=animal.home.x+Math.sin(animal.time*.14+animal.phase)*9,tz=animal.home.z+Math.cos(animal.time*.14+animal.phase)*9,d=Math.hypot(tx-animal.position.x,tz-animal.position.z);vx=(tx-animal.position.x)/Math.max(d,.01);vz=(tz-animal.position.z)/Math.max(d,.01)}
    const nx=animal.position.x+vx*pace*dt,nz=animal.position.z+vz*pace*dt;
    if(Math.hypot(nx,nz)<MAP_RADIUS-30){animal.position.x=nx;animal.position.z=nz}
@@ -515,12 +544,13 @@ function updateWildlife(dt){
   }
  }
  for(const batch of wildlifeBatches){for(let i=0;i<batch.animals.length;i++){
-  const a=batch.animals[i],size=a.species==='bear'?1.15:a.species==='fox'?.60:.85;
-  animalRootDummy.position.copy(a.position);animalRootDummy.rotation.set(0,a.heading,0);animalRootDummy.scale.setScalar(size);animalRootDummy.updateMatrix();animalPartDummy.position.set(...batch.position);animalPartDummy.scale.set(...batch.scale);animalPartDummy.rotation.set(0,0,0);
-  if(typeof batch.kind==='number'){const phase=a.phase+(batch.kind%2)*Math.PI+(batch.kind<2?0:Math.PI);animalPartDummy.rotation.x=a.mode==='warn'||a.mode==='attack'?0:Math.sin(phase)*.45}
+  const a=batch.animals[i],size=WILDLIFE_SCALE[a.species];
+  animalRootDummy.position.copy(a.position);if(a.flight)animalRootDummy.rotation.copy(a.flight.rotation);else animalRootDummy.rotation.set(0,a.heading,0);animalRootDummy.scale.setScalar(size);animalRootDummy.updateMatrix();animalPartDummy.position.set(...batch.position);animalPartDummy.scale.set(...batch.scale);if(a.flight)animalPartDummy.position.y-=.82;animalPartDummy.rotation.set(0,0,0);
+  if(typeof batch.kind==='number'){const phase=a.phase+(batch.kind%2)*Math.PI+(batch.kind<2?0:Math.PI);animalPartDummy.rotation.x=a.flight?a.flight.limbs[batch.kind].angle:a.mode==='warn'||a.mode==='attack'?0:Math.sin(phase)*.45}
   if(batch.kind==='tail'){animalPartDummy.rotation.x=Math.PI/2;animalPartDummy.rotation.z=Math.sin(a.time*2)*.15;if(a.species==='bear')animalPartDummy.scale.set(.65,.25,.65)}
   animalPartDummy.updateMatrix();animalMatrix.multiplyMatrices(animalRootDummy.matrix,animalPartDummy.matrix);batch.mesh.setMatrixAt(i,animalMatrix);
  }batch.mesh.instanceMatrix.needsUpdate=true}
+ wildlifeLastBikePosition.copy(pos);
 }
 
 // Bike local forward = -Z. Wheels roll around local X.
@@ -761,8 +791,8 @@ function updateBikeVisuals(dt,time){
 const disaster={type:null,remaining:0,untilNext:600,time:0,automatic:true,root:new THREE.Group(),choice:'storm'};
 try{disaster.automatic=JSON.parse(localStorage.getItem('dirtbike_events_v1')||'{}').automatic!==false}catch{}
 scene.add(disaster.root);disaster.root.visible=false;
-const EVENT_NAMES={storm:'Thunderstorm',dust:'Dust storm',quake:'Earthquake',flood:'Flood',fire:'Wildfire',party:'Party mode',meteor:'Meteor shower'};
-const AUTOMATIC_EVENTS=['storm','dust','quake','flood','fire','meteor'];
+const EVENT_NAMES={storm:'Thunderstorm',dust:'Dust storm',quake:'Earthquake',flood:'Flood',fire:'Wildfire',party:'Party mode',meteor:'Meteor shower',volcano:'Volcano',tornado:'Tornado'};
+const AUTOMATIC_EVENTS=['storm','dust','quake','flood','fire','meteor','volcano','tornado'];
 const weatherTint=new THREE.Color();
 const rainPositions=new Float32Array(180*6),rainSeeds=Array.from({length:180},(_,i)=>[(i*17.13)%50-25,(i*13.37)%45,(i*23.71)%50-25]);
 const rainGeometry=new THREE.BufferGeometry();rainGeometry.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));
@@ -789,11 +819,28 @@ function receiveDisaster(event){
 }
 function updateWorldEvents(visible){
  const eventTime=disaster.time+eventClockOffset();
- floodWater.visible=visible&&disaster.type==='flood';firePatches.visible=visible&&disaster.type==='fire';confetti.visible=visible&&disaster.type==='party';meteorHeads.visible=meteorTrails.visible=visible&&disaster.type==='meteor';
+ floodWater.visible=visible&&disaster.type==='flood';firePatches.visible=visible&&disaster.type==='fire';confetti.visible=visible&&disaster.type==='party';tornadoRoot.visible=visible&&disaster.type==='tornado';volcanoRoot.visible=visible&&disaster.type==='volcano';
+ if(tornadoRoot.visible)for(let i=0;i<tornadoRoot.children.length;i++){const ring=tornadoRoot.children[i];if(ring.userData.funnel){ring.rotation.y=eventTime*1.4;continue}ring.position.x=Math.sin(eventTime*1.8+i*.5)*i*.07;ring.position.z=Math.cos(eventTime*1.5+i*.4)*i*.07;ring.rotation.z=eventTime*1.8+i*.2;}
+ if(volcanoRoot.visible){for(let i=0;i<18;i++){const t=(eventTime*.2+i*.137)%1,a=i*2.399;confettiDummy.position.set(Math.sin(a)*t*65,24+Math.sin(Math.PI*t)*45-t*24,Math.cos(a)*t*65);confettiDummy.rotation.set(t*10,0,0);confettiDummy.updateMatrix();lava.setMatrixAt(i,confettiDummy.matrix)}lava.instanceMatrix.needsUpdate=true}meteorHeads.visible=meteorTrails.visible=visible&&disaster.type==='meteor';
  if(meteorHeads.visible){for(let i=0;i<18;i++){const phase=(eventTime*.22+i*.137)%1,x=(i*47.3)%220-110+phase*35,y=90-phase*87,z=(i*71.7)%240-160;confettiDummy.position.set(x,y,z);confettiDummy.rotation.set(0,0,0);confettiDummy.updateMatrix();meteorHeads.setMatrixAt(i,confettiDummy.matrix);meteorPositions.set([x,y,z,x-5,y+12,z+2],i*6)}meteorHeads.instanceMatrix.needsUpdate=true;meteorGeometry.attributes.position.needsUpdate=true}
  if(floodWater.visible)floodWater.position.y=.4+Math.sin(eventTime*.6)*.12;
  if(firePatches.visible)for(const patch of firePatches.children)for(const flame of patch.children){flame.scale.y=.8+Math.sin(eventTime*4+flame.userData.phase)*.22;flame.position.y=2*flame.scale.y}
  if(confetti.visible){for(let i=0;i<120;i++){confettiDummy.position.set((i*13.7)%35-17.5,((i*.71-eventTime*2)%16+16)%16,(i*23.1)%35-17.5);confettiDummy.rotation.set(eventTime+i,i*.8,eventTime*1.6);confettiDummy.updateMatrix();confetti.setMatrixAt(i,confettiDummy.matrix)}confetti.instanceMatrix.needsUpdate=true}
+}
+const tornadoRoot=new THREE.Group();tornadoRoot.position.set(0,0,-15);scene.add(tornadoRoot);tornadoRoot.visible=false;
+const tornadoMaterial=new THREE.MeshBasicMaterial({color:0x737779,transparent:true,opacity:.28,side:THREE.DoubleSide});
+const funnel=mesh(new THREE.CylinderGeometry(7.3,.8,35,20,8,true),tornadoMaterial,tornadoRoot,0,17.5,0);funnel.userData.funnel=true;
+for(let i=0;i<15;i++){const ring=mesh(new THREE.TorusGeometry(.8+i*.43,.5+i*.05,5,22),tornadoMaterial,tornadoRoot,0,1+i*2.3,0);ring.rotation.x=Math.PI/2;}
+const volcanoRoot=new THREE.Group();volcanoRoot.position.set(250,0,-180);scene.add(volcanoRoot);volcanoRoot.visible=false;
+mesh(new THREE.CylinderGeometry(6,18,25,24,1,true),mat(0x413a36),volcanoRoot,0,12,0);const crater=mesh(new THREE.TorusGeometry(6,.8,7,24),new THREE.MeshBasicMaterial({color:0xff6d16}),volcanoRoot,0,24.5,0);crater.rotation.x=Math.PI/2;
+const lava=new THREE.InstancedMesh(new THREE.SphereGeometry(.7,7,5),new THREE.MeshBasicMaterial({color:0xff8033}),18);lava.frustumCulled=false;volcanoRoot.add(lava);
+function applyTornadoForces(dt){
+ if(disaster.type!=='tornado'||menuStage!=='riding'||spaceFall.active)return;
+ if(ragdoll.active){for(const joint of Object.values(ragdoll.nodes)){const dx=joint.p.x,dz=joint.p.z+15,d=Math.hypot(dx,dz);if(d>55)continue;const f=(1-d/55)*dt*dt,den=Math.max(1,d);joint.old.x-=( -dx/den*20-dz/den*25)*f;joint.old.z-=( -dz/den*20+dx/den*25)*f;joint.old.y-=(tuning.gravity+20)*f;}return;}
+ const dx=pos.x,dz=pos.z+15,d=Math.hypot(dx,dz);if(d>55||pos.y>45)return;const f=1-d/55,den=Math.max(1,d),v=horizontalVelocity();
+ v.x+=(-dx/den*24-dz/den*30)*f*dt;v.z+=(-dz/den*24+dx/den*30)*f*dt;
+ if(grounded&&d<27){grounded=false;airTravelHeading=yaw;wheelieArmed=false;vertical=Math.max(5,vertical)}
+ const h=grounded?yaw:airTravelHeading;speed=-Math.sin(h)*v.x-Math.cos(h)*v.z;lateralSpeed=Math.cos(h)*v.x-Math.sin(h)*v.z;vertical+=(tuning.gravity+24)*f*dt;
 }
 const meteorHeads=new THREE.InstancedMesh(new THREE.SphereGeometry(.55,7,5),new THREE.MeshBasicMaterial({color:0xffad4f}),18),meteorPositions=new Float32Array(18*6),meteorGeometry=new THREE.BufferGeometry();meteorGeometry.setAttribute('position',new THREE.BufferAttribute(meteorPositions,3));const meteorTrails=new THREE.LineSegments(meteorGeometry,new THREE.LineBasicMaterial({color:0xffe0a3,transparent:true,opacity:.85}));meteorHeads.frustumCulled=meteorTrails.frustumCulled=false;disaster.root.add(meteorHeads,meteorTrails);
 const disasterHud=document.createElement('div');disasterHud.id='disaster-hud';disasterHud.style.cssText='position:fixed;top:65px;left:50%;transform:translateX(-50%);z-index:4;pointer-events:none;background:#14212bcc;color:white;padding:8px 14px;border-radius:10px;font:600 13px system-ui;display:none';document.body.append(disasterHud);
@@ -804,11 +851,13 @@ function disasterControls(){
  const label=document.createElement('label'),automatic=document.createElement('input');automatic.type='checkbox';automatic.checked=disaster.automatic;automatic.setAttribute('aria-label','Automatic natural disasters');
  automatic.onchange=()=>{if(!canEditTuning())return;disaster.automatic=automatic.checked;publishDisaster();try{localStorage.setItem('dirtbike_events_v1',JSON.stringify({automatic:disaster.automatic}))}catch{}};
  label.append(automatic,document.createTextNode(' Automatic events'));
- const select=document.createElement('select');select.setAttribute('aria-label','Disaster type');for(const [value,name] of Object.entries(EVENT_NAMES))select.add(new Option(name,value));select.value=disaster.choice;select.onchange=()=>{disaster.choice=select.value};
- const buttons=document.createElement('div');buttons.className='buttons';
- for(const [text,fn] of [['Start now',()=>{startDisaster(select.value);document.activeElement?.blur()}],['Stop event',()=>stopDisaster()]]){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=text;button.onclick=fn;button.dataset.eventControl='true';button.disabled=!canEditTuning();buttons.append(button)}
+ const grid=document.createElement('div');grid.className='buttons';grid.setAttribute('aria-label','Test a natural disaster');
+ for(const [type,name] of Object.entries(EVENT_NAMES)){
+  const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=name;button.dataset.eventControl='true';button.dataset.disasterType=type;button.disabled=!canEditTuning();button.setAttribute('aria-pressed',String(disaster.type===type));button.onclick=()=>{if(type==='party'&&disaster.type==='party')stopDisaster();else startDisaster(type);document.activeElement?.blur()};grid.append(button);
+ }
+ const buttons=document.createElement('div');buttons.className='buttons';const stop=document.createElement('button');stop.type='button';stop.className='secondary';stop.textContent='Stop event';stop.dataset.eventControl='true';stop.disabled=!canEditTuning();stop.onclick=()=>stopDisaster();buttons.append(stop);
  const status=document.createElement('p');status.id='event-status';status.textContent='Next event in '+Math.ceil(disaster.untilNext)+' seconds of riding.';
- box.append(title,description,label,select,buttons,status);return box;
+ box.append(title,description,label,grid,buttons,status);return box;
 }
 function startDisaster(type){
  if(!canEditTuning())return;
@@ -835,7 +884,7 @@ function updateDisasters(dt){
  const riding=menuStage==='riding'&&!paused&&!document.hidden&&!spaceFall.active;
  if(riding&&dt>0&&roomRole!=='host')advanceDisasterTime(dt);
  const eventTime=disaster.time+eventClockOffset();
- disaster.root.visible=riding&&!!disaster.type;updateWorldEvents(disaster.root.visible);
+ disaster.root.visible=riding&&!!disaster.type;for(const button of document.querySelectorAll('[data-disaster-type]'))button.setAttribute('aria-pressed',String(button.dataset.disasterType===disaster.type));updateWorldEvents(disaster.root.visible);
  const status=document.getElementById('event-status');if(status){const text=disaster.type?EVENT_NAMES[disaster.type]+': '+Math.ceil(disaster.remaining)+' seconds remaining.':disaster.automatic?'Next event in '+Math.ceil(disaster.untilNext)+' seconds of riding.':'Automatic events off. Start one whenever you like.';if(status.textContent!==text)status.textContent=text}
  if(!spaceFall.active){
   scene.background.copy(stockSky);stockFog.density=THEMES[selectedMap].density;
@@ -856,7 +905,7 @@ function updateDisasters(dt){
   for(let i=0;i<rainSeeds.length;i++){const [x,y,z]=rainSeeds[i],h=((y-eventTime*22)%45+45)%45;rainPositions.set([x,h,z,x-.25,h-1.1,z+.12],i*6)}
   rainGeometry.attributes.position.needsUpdate=true;
  }
- for(let i=0;i<stormClouds.length;i++){const p=stormClouds[i],quake=disaster.type==='quake';p.visible=disaster.type==='dust'||disaster.type==='fire'||quake;p.material.color.setHex(disaster.type==='fire'?0x777572:0xbd925a);if(p.visible){p.scale.setScalar(quake?1.7+i%3:5+i%5);p.position.set(((i*13.7+eventTime*(quake?.4:3))%65)-32,quake?.15+(i%3)*.2:1+(i*3.13)%9,((i*21.1)%65)-32)}}
+ for(let i=0;i<stormClouds.length;i++){const p=stormClouds[i],quake=disaster.type==='quake';p.visible=disaster.type==='dust'||disaster.type==='fire'||disaster.type==='volcano'||quake;p.material.color.setHex(disaster.type==='fire'||disaster.type==='volcano'?0x777572:0xbd925a);if(p.visible){p.scale.setScalar(quake?1.7+i%3:5+i%5);p.position.set(((i*13.7+eventTime*(quake?.4:3))%65)-32,quake?.15+(i%3)*.2:1+(i*3.13)%9,((i*21.1)%65)-32)}}
  // A low thunder rumble, spaced well apart; no flashing lights or damage.
  updatePlayerIndicators();
  if(disaster.type==='quake'&&dt>0&&Math.floor(eventTime/12)!==Math.floor((eventTime-dt)/12))playSoundNoise(1.8,100,.10);
@@ -1010,6 +1059,7 @@ function renderFields(){
   line.append(title,out);wrapper.append(line,input);tuningFields.append(wrapper);fieldRows.set(s.key,{input,out});
  }
  if(activeTab==='Debug'){
+  tuningFields.prepend(disasterControls());
   const legend=document.createElement('p');legend.className='legend';legend.textContent='Dust size: 1× is the current small spray; 12× makes huge rising clouds. Changes auto-save with tuning. Debug view settings (hitboxes/contacts) now auto-save. J repairs in place and rights overturned bikes; R still resets to spawn. Clean wheel landings do not cause health damage. H: solid collider outlines · T: wheel contact probes · P: pause · O: single frame. V3J keeps world velocity when landing backwards or sideways after a spin. A 180° landing rolls backward at the same travel speed; the sideways landing tire-grip slider controls lateral skids. Contact and scenery collision models remain approximations.';
   const b=document.createElement('div');b.className='buttons';
   for(const [label,fn] of [['Hitboxes (H)',()=>toggleHitboxes()],['Contacts (T)',()=>toggleContacts()],['Pause (P)',()=>togglePause()]]){
@@ -1030,7 +1080,7 @@ function renderFields(){
   for(const [label,fn] of [['Test airborne flips',launchAirTest],['Test air spins',launchSpinTest],['Test 180° backward landing',launch180LandingTest],['Test ramp wall',launchRampWallTest],['Test rock collision',launchRockTest],['🌙 Test circular edge fall',launchMoonFallTest],['Repair here (J)',repairHere]]){
    const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=label;button.addEventListener('click',fn);testButtons.append(button);
   }
-  tuningFields.append(legend,b,stepButton,verifyButton,publishBox,disasterControls(),testButtons,telemetry);lockRoomTuning();return;
+  tuningFields.append(legend,b,stepButton,verifyButton,publishBox,testButtons,telemetry);lockRoomTuning();return;
  }
  if(activeTab==='Crash'){
   const p=document.createElement('p');p.className='legend';p.textContent='Severe rock/ramp side hits and upside-down body crashes eject a 16-joint rider, while clean wheel-first landings stay safe. This lightweight joint/constraint ragdoll is tuned for a browser; it is not BeamNG soft-body physics. Hard crashes and moon hits rotate through your recorded screams with matching bubbles. Crash voices use only your uploaded recordings. Use the Sound button and volume slider to adjust audio. J repairs and puts your rider back on the bike; R resets to spawn.';
@@ -1137,9 +1187,9 @@ const keys={};
 const touchInput={throttle:0,brake:0,left:0,right:0,rollLeft:0,rollRight:0,boost:0};
 const touchPointers=new Map();let touchPreference='auto';
 try{const value=localStorage.getItem('dirtbike_touch_v1');if(['auto','on','off'].includes(value))touchPreference=value}catch{}
-function throttleInput(){return Math.max(keys.KeyW||keys.ArrowUp?1:0,controller.throttle,touchInput.throttle)}
+function throttleInput(){return Math.max(keys.KeyW||keys.ArrowUp?1:0,controller.throttle,touchInput.throttle,grounded&&boostInput()?1:0)}
 function brakeInput(){return Math.max(keys.KeyS||keys.ArrowDown?1:0,controller.brake,touchInput.brake)}
-function boostInput(){return !!(keys.ShiftLeft||keys.ShiftRight||controller.boost||touchInput.boost)}
+function boostInput(){return !!(keys.Backspace||controller.boost||touchInput.boost)}
 function steerInput(){const digital=(keys.KeyA?1:0)-(keys.KeyD?1:0)+touchInput.left-touchInput.right;return digital?THREE.MathUtils.clamp(digital,-1,1):(-controller.steer||0)}
 function rollControlInput(){return 0}
 function clearTouchInput(){touchPointers.clear();for(const key of Object.keys(touchInput))touchInput[key]=0;document.querySelectorAll('#touch-controls [aria-pressed]').forEach(b=>b.setAttribute('aria-pressed','false'))}
@@ -1287,7 +1337,7 @@ addEventListener('keydown',e=>{
  const editor=e.target?.closest?.('input,select,textarea,button');if(editor)return;
  if(menuStage!=='riding'){if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();return;}
  keys[e.code]=true;
- if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight'].includes(e.code)||e.ctrlKey||e.altKey)e.preventDefault();
+ if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','Backspace'].includes(e.code)||e.ctrlKey||e.altKey)e.preventDefault();
  if(e.repeat)return;
  if(!grounded&&!ragdoll.active){const trick={ControlLeft:'Superman',ControlRight:'Superman',AltLeft:'Can-can',AltRight:'Can-can'}[e.code];if(trick){stuntPose.queued=trick;stuntPose.hold=1.2;}}
  if(e.code==='Space')toggleWheelie();
@@ -1759,7 +1809,7 @@ function renderCrashEffects(dt){
  }
 }
 
-function reset(){riderBalance.lean=0;riderBalance.feet=0;riderBalance.walk=0;clearTouchInput();stuntPose.hold=0;stuntPose.queued='';stuntPose.amount=0;stuntPose.name='';clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
+function reset(){wildlifeLastBikePosition.set(0,.08,25);riderBalance.lean=0;riderBalance.feet=0;riderBalance.walk=0;clearTouchInput();stuntPose.hold=0;stuntPose.queued='';stuntPose.amount=0;stuntPose.name='';clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
 // J is a field repair: no move to spawn. Only an overturned bike is righted.
 function repairHere(){
  if(spaceFall.active||!onIsland(pos.x,pos.z)){reset();message('Rescued to the island spawn: no ground exists at this location.');return}
@@ -1944,6 +1994,7 @@ function resolveSolidScenery(previousX,previousZ){
 }
 const clock=new THREE.Clock();
 function simulateSubstep(dt){
+ applyTornadoForces(dt);
  const throttle=ragdoll.active?0:throttleInput();
  const brake=ragdoll.active?0:brakeInput(),lean=wheelieArmed,boost=!ragdoll.active&&boostInput()&&grounded;
  engineThrottle=throttle;exhaustTime+=dt*(7+Math.min(35,Math.hypot(speed,lateralSpeed)*1.05)+throttle*14);
@@ -2966,7 +3017,22 @@ function mountMusicControls(stage){
  if(controls&&parent&&controls.parentElement!==parent)parent.appendChild(controls);
 }
 function musicPlayable(){return rideAudio.enabled&&rideAudio.volume>0&&rideAudio.focused&&!document.hidden&&(menuStage!=='riding'||!paused)}
+function makePartyLoop(ctx){
+ const rate=ctx.sampleRate,length=rate*8,buffer=ctx.createBuffer(1,length,rate),data=buffer.getChannelData(0),roots=[48,45,41,43],lead=[76,79,83,79,76,74,72,74,76,79,81,79,76,74,72,71];let seed=8471;
+ for(let i=0;i<length;i++){
+  const t=i/rate,beat=t*2,step=Math.floor(beat*2),phase=(beat%1)*.5,root=roots[Math.floor(t/2)%4],hz=440*2**((root-69)/12),note=440*2**((lead[step%16]-69)/12),pl=(beat*2%1)*.25;
+  seed=(Math.imul(seed,1664525)+1013904223)>>>0;const noise=seed/4294967296*2-1;
+  const kick=Math.sin(2*Math.PI*(48*phase+7*(1-Math.exp(-phase*35))))*Math.exp(-phase*20)*.28;
+  const snare=Math.floor(beat)%2?noise*Math.exp(-phase*34)*.13:0;
+  const hats=noise*Math.exp(-((beat*2)%1)*35)*.035;
+  const bass=Math.sin(2*Math.PI*hz*t)*(.75+.25*Math.sin(2*Math.PI*hz*2*t))*.10;
+  const hook=(Math.sin(2*Math.PI*note*t)+.22*Math.sin(2*Math.PI*note*2*t))*(1-Math.exp(-pl*350))*Math.exp(-pl*12)*.10;
+  const pad=[0,4,7].reduce((sum,n)=>sum+Math.sin(2*Math.PI*hz*2**(n/12)*t),0)*.018;
+  const edge=Math.min(1,t/.012,(8-t)/.012);data[i]=Math.tanh((kick+snare+hats+bass+hook+pad)*1.4)*edge;
+ }return buffer;
+}
 function initRideMusic(ctx,master){
+ rideAudio.partyGain=ctx.createGain();rideAudio.partyGain.gain.value=0;rideAudio.partyGain.connect(master);rideAudio.partySource=ctx.createBufferSource();rideAudio.partySource.buffer=makePartyLoop(ctx);rideAudio.partySource.loop=true;rideAudio.partySource.connect(rideAudio.partyGain);rideAudio.partySource.start();
  rideAudio.musicMenuGain=ctx.createGain();rideAudio.musicMenuGain.gain.value=0;rideAudio.musicMenuGain.connect(master);
  rideAudio.musicRideGain=ctx.createGain();rideAudio.musicRideGain.gain.value=0;rideAudio.musicRideGain.connect(master);
  rideAudio.musicSources=[];rideAudio.musicBuffers=new Map();
@@ -2979,10 +3045,11 @@ function initRideMusic(ctx,master){
 }
 function updateRideMusic(){
  const a=rideAudio;if(!a.ctx||!a.musicMenuGain)return;
- const allowed=musicPlayable(),riding=menuStage==='riding';
+ const allowed=musicPlayable(),riding=menuStage==='riding',party=riding&&disaster.type==='party';
  const duck=a.voiceVolume>0&&a.activeVoice&&a.ctx.currentTime<a.voiceEnds ? .4 : 1;
+ rampSound(a.partyGain?.gain,allowed&&party?a.musicVolume*duck*.85:0,.08);
  rampSound(a.musicMenuGain.gain,allowed&&!riding?a.musicVolume*.65:0,.055);
- rampSound(a.musicRideGain.gain,allowed&&riding?a.musicVolume*duck:0,.055);
+ rampSound(a.musicRideGain.gain,allowed&&riding&&!party?a.musicVolume*duck:0,.055);
 }
 
 

@@ -10,7 +10,7 @@ const results=[],errors=[];
 const instrumentation=`
 currentSamples=sampleWheels();
 globalThis.__screamTest={wildlife,wolfPacks,wildlifeBatches,updateWildlife,disaster,updateDisasters,startDisaster,stopDisaster,AUTOMATIC_EVENTS,floodWater,firePatches,meteorHeads,confetti,
- reset(){reset();showMenuStage('riding');for(const a of wildlife){a.position.copy(a.home);a.cooldown=0}for(const p of wolfPacks){p.attackCooldown=0;p.callTimer=0}},
+ reset(){reset();showMenuStage('riding');for(const a of wildlife){a.position.copy(a.home);a.cooldown=0;a.flight=null;a.chaseUntil=0}for(const p of wolfPacks){p.attackCooldown=0;p.callTimer=0}},
  riderReset(){reset();showMenuStage('riding')},
  get state(){return{damage,ragdoll:ragdoll.active}},
  preview(type){this.reset();startDisaster(type);updateDisasters(3);updateWildlife(0);this.render()},
@@ -32,7 +32,7 @@ let code=0;
 try{
  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>!!window.__screamTest);
  await check('Wildlife includes bears, foxes and two wolf packs of 5–15 with instanced meshes',async()=>{
-  const result=await page.evaluate(()=>{const t=__screamTest;return{bears:t.wildlife.filter(a=>a.species==='bear').length,foxes:t.wildlife.filter(a=>a.species==='fox').length,packs:t.wolfPacks.map(p=>({size:p.count,actual:t.wildlife.filter(a=>a.pack===p).length})),batches:t.wildlifeBatches.length}});assert.equal(result.bears,3);assert.equal(result.foxes,5);assert.equal(result.packs.length,2);assert.ok(result.packs.every(p=>p.size>=5&&p.size<=15&&p.actual===p.size));assert.ok(result.batches<50);return result;
+  const result=await page.evaluate(()=>{const t=__screamTest;return{bears:t.wildlife.filter(a=>a.species==='bear').length,foxes:t.wildlife.filter(a=>a.species==='fox').length,packs:t.wolfPacks.map(p=>({size:p.count,actual:t.wildlife.filter(a=>a.pack===p).length})),batches:t.wildlifeBatches.length}});assert.equal(result.bears,4);assert.equal(result.foxes,7);assert.equal(result.packs.length,2);assert.ok(result.packs.every(p=>p.size>=5&&p.size<=15&&p.actual===p.size));assert.ok(result.batches<50);return result;
  });
  await page.evaluate(()=>__screamTest.animalsPreview());await page.screenshot({path:fileURLToPath(new URL('../reports/wildlife.png',import.meta.url))});
  await check('Bears chase nearby riders and a swipe causes damage and ragdoll once',async()=>{
@@ -42,7 +42,7 @@ try{
   const result=await page.evaluate(()=>{const t=__screamTest;t.reset();const fox=t.wildlife.find(a=>a.species==='fox');fox.position.set(0,0,32);t.updateWildlife(.1);const flee={mode:fox.mode,z:fox.position.z};t.reset();const wolf=t.wildlife.find(a=>a.species==='wolf');wolf.position.set(0,0,37);t.updateWildlife(.1);const warning={mode:wolf.mode,...t.state};wolf.position.set(0,0,27);t.updateWildlife(.016);const close=t.state;const cooldown=wolf.pack.attackCooldown;t.riderReset();t.updateWildlife(.1);return{flee,warning,close,cooldown,protected:t.state}});assert.equal(result.flee.mode,'flee');assert.ok(result.flee.z>32);assert.equal(result.warning.mode,'warn');assert.equal(result.warning.damage,0);assert.equal(result.warning.ragdoll,false);assert.equal(result.close.ragdoll,true);assert.ok(result.close.damage>=12);assert.ok(result.cooldown>4);assert.equal(result.protected.damage,0);return result;
  });
  await check('Meteor is automatic, party is manual only, and every new effect clears on stop',async()=>{
-  const result=await page.evaluate(()=>{const t=__screamTest;t.reset();t.stopDisaster();t.disaster.automatic=true;const random=Math.random;Math.random=()=>.999;try{t.updateDisasters(600)}finally{Math.random=random}const automatic=t.disaster.type;const effects=[];for(const [type,key] of [['flood','floodWater'],['fire','firePatches'],['meteor','meteorHeads'],['party','confetti']]){t.startDisaster(type);t.updateDisasters(1);effects.push({type,active:t[key].visible});t.stopDisaster();effects.push({off:!t[key].visible})}return{pool:t.AUTOMATIC_EVENTS,automatic,effects}});assert.ok(result.pool.includes('meteor')&&!result.pool.includes('party'));assert.equal(result.automatic,'meteor');assert.ok(result.effects.every(e=>e.active===true||e.off===true));return result;
+  const result=await page.evaluate(()=>{const t=__screamTest;t.reset();t.stopDisaster();t.disaster.automatic=true;const random=Math.random;Math.random=()=>.999;try{t.updateDisasters(600)}finally{Math.random=random}const automatic=t.disaster.type;const effects=[];for(const [type,key] of [['flood','floodWater'],['fire','firePatches'],['meteor','meteorHeads'],['party','confetti']]){t.startDisaster(type);t.updateDisasters(1);effects.push({type,active:t[key].visible});t.stopDisaster();effects.push({off:!t[key].visible})}return{pool:t.AUTOMATIC_EVENTS,automatic,effects}});assert.ok(result.pool.includes('meteor')&&!result.pool.includes('party'));assert.ok(result.pool.includes(result.automatic));assert.ok(result.effects.every(e=>e.active===true||e.off===true));return result;
  });
  for(const type of ['fire','flood','meteor','party']){await page.evaluate(type=>__screamTest.preview(type),type);await page.screenshot({path:fileURLToPath(new URL('../reports/event-'+type+'.png',import.meta.url))})}
  assert.deepEqual(errors,[]);

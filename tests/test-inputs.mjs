@@ -49,6 +49,9 @@ try{
   await page.evaluate(()=>{const id=[...__screamTest.touchPointers].find(([,action])=>action==='throttle')[0];document.querySelector('[data-hold=throttle]').dispatchEvent(new PointerEvent('pointerup',{pointerId:id,bubbles:true}))});assert.equal((await inputs()).throttle,0);assert.equal((await inputs()).steer,1);
   await touch('touchCancel',[]);assert.equal((await inputs()).steer,0);return held;
  });
+ await check('Touch Boost alone applies throttle and boost',async()=>{
+  const boost=await point('Boost',1);await touch('touchStart',[boost]);const state=await inputs();assert.equal(state.throttle,1);assert.equal(state.boost,true);await touch('touchCancel',[]);return state;
+ });
  await check('Keyboard and touch inputs are independent; menu and pause clear touch holds',async()=>{
   await page.keyboard.down('w');const gas=await point('Gas / backflip',1);await touch('touchStart',[gas]);await touch('touchEnd',[]);assert.equal((await inputs()).throttle,1);await page.keyboard.up('w');assert.equal((await inputs()).throttle,0);
   await touch('touchStart',[gas]);await page.getByRole('button',{name:'Pause',exact:true}).dispatchEvent('click',{detail:0});assert.equal((await inputs()).throttle,0);await touch('touchEnd',[]);
@@ -65,6 +68,7 @@ try{
    Object.defineProperty(navigator,'getGamepads',{configurable:true,value:()=>window.testPad?[window.testPad]:[]});__screamTest.readController();window.testPad.buttons[7]={pressed:true,value:.8};window.testPad.axes[0]=-.7;__screamTest.readController();
   });const pad=await inputs();assert.ok(pad.throttle>.5&&pad.throttle<1&&pad.steer>.5);
   await page.evaluate(()=>{__screamTest.set({air:true});window.testPad.axes[2]=.8;window.testPad.buttons[4]={pressed:true,value:1};__screamTest.readController();__screamTest.pose()});assert.equal((await inputs()).roll,0);assert.equal(await page.evaluate(()=>__screamTest.stuntPose.name),'Superman');
+  await page.evaluate(()=>{__screamTest.set();window.testPad.buttons[7]={pressed:false,value:0};window.testPad.buttons[5]={pressed:true,value:1};__screamTest.readController()});assert.equal((await inputs()).throttle,1);assert.equal((await inputs()).boost,true);
   await page.evaluate(()=>{window.testPad=null;__screamTest.readController()});assert.equal((await inputs()).throttle,0);assert.equal((await inputs()).steer,0);return{analog:pad,disconnected:true};
  });
  await check('Touch show/hide preference persists and sound controls remain accessible in Info',async()=>{
