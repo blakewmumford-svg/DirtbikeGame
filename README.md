@@ -95,7 +95,7 @@ Press **Enter** while riding to open the Debug tab; press it again to close. Tex
 
 ## Modifier tricks and natural disasters
 
-Airborne tricks: hold **Shift** for a no-hander, tap **Ctrl** for a superman, or tap **Alt** for a can-can. Ctrl/Alt taps play a short pose, so release those modifier keys before pressing other browser shortcut keys. Landing returns the rider to the normal pose. **Backspace** is keyboard boost (Shift is only the airborne no-hander). Ground boost automatically supplies full gas on keyboard, controller and touch; boosted takeoff momentum carries into the jump without forcing an airborne backflip.
+Airborne keyboard tricks toggle: tap **Shift** for a no-hander, **Ctrl** for a superman, or **Alt** for a can-can. Tap the same key again to finish and smoothly return to riding. Release the modifier after tapping so browser shortcuts are not held. Landing/reset clears the toggle. Controller/mobile trick behavior remains unchanged. **Backspace** is keyboard boost (Shift is only the airborne no-hander). Ground boost automatically supplies full gas on keyboard, controller and touch; boosted takeoff momentum carries into the jump without forcing an airborne backflip.
 
 Automatic disasters start every ten minutes and last two minutes: thunderstorms, dust storms, earthquakes, shallow floods, wildfires, meteor showers, volcanoes and tornadoes. Tornadoes pull nearby riders in and loft/swirl them. Party mode adds confetti and an original bright dance-pop instrumental; it is manual only. Events preserve rideable routes and existing bike handling; first-person stays steady. Solo timing follows active riding. In multiplayer the host keeps the room clock running even in menus/pause, with elapsed-time catch-up after background throttling; the host must keep the game open. Local moon-fall visuals take priority.
 
@@ -134,3 +134,9 @@ Bears chase nearby riders and can cause damage/ragdoll on contact. Foxes flee ap
 Bears are four times their former size; wolves are substantially larger and foxes slightly larger. Population increases are bounded: four bears, seven foxes and two packs of 8–15 wolves (still within the requested 5–15 range), with the same instanced draw batches. Wolves howl nearby, begin pursuit inside ten meters and chase briefly after you retreat; bites still require close contact and respect pack cooldowns.
 
 A fast collision (about 45 km/h or faster) with any animal launches it into a tumbling, articulated ragdoll flight, ejects the rider and heavily bends/damages the bike with flying parts. Swept collision checks account for the larger bodies and prevent skipping through an animal at speed. Animals bounce and recover after about twelve active seconds; the population never grows without bound. **J** repairs the bike in place; **R** resets the rider. Wildlife remains locally simulated, as described above.
+
+## Rider knees, wheelie turning, and mobile Boost
+
+Riding and walking knees bend toward the front of the bike. Reverse steps keep that knee direction while boots plant and lift in turn. During a grounded wheelie, the whole bike/rider banks into a turn (up to about 24 degrees), and heading change builds from the bank rather than instantly yawing from steering input. Lean returns smoothly when steering is released. Existing wheelie touchdown cancellation and deliberate re-arming remain.
+
+Touch Boost spans the full width of the right riding pad with a larger, highlighted hold target. Wheelie occupies the upper-left pad slot; Random trick stays above Brake, with the same dimensions as Brake. Utility buttons remain at the bottom edge. Backspace continues to provide keyboard gas + boost.

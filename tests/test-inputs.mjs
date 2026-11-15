@@ -35,10 +35,10 @@ try{
  await page.evaluate(()=>__screamTest.set());
  await check('Mobile controls fit portrait and landscape and hide in menus',async()=>{
   const sizes=[];
-  for(const size of [{width:390,height:844},{width:844,height:390}]){
+  for(const size of [{width:390,height:844},{width:844,height:390},{width:320,height:480}]){
    await page.setViewportSize(size);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));await page.evaluate(()=>__screamTest.set());const boxes=await page.locator('#touch-controls button:visible').evaluateAll(buttons=>buttons.map(b=>{const r=b.getBoundingClientRect();return{x:r.x,y:r.y,right:r.right,bottom:r.bottom}}));
-   assert.ok(boxes.length>=10);assert.ok(boxes.every(b=>b.x>=0&&b.y>=0&&b.right<=size.width&&b.bottom<=size.height));
-   const tools=await page.locator('.touch-tools button').evaluateAll(buttons=>buttons.map(b=>{const r=b.getBoundingClientRect();return{x:r.x,y:r.y,right:r.right,bottom:r.bottom}}));assert.ok(tools.every(b=>Math.abs(b.bottom-size.height)<1&&b.y>size.height-45));assert.equal(tools.length,3);const random=await page.getByRole('button',{name:'Random trick',exact:true}).boundingBox(),brake=await page.getByRole('button',{name:'Brake / frontflip',exact:true}).boundingBox();assert.ok(Math.abs(random.width-brake.width)<1&&Math.abs(random.height-brake.height)<1&&random.y+random.height<=brake.y);
+   assert.ok(boxes.length>=10);assert.ok(boxes.every(b=>b.x>=0&&b.y>=0&&b.right<=size.width&&b.bottom<=size.height),JSON.stringify({size,boxes}));
+   const tools=await page.locator('.touch-tools button').evaluateAll(buttons=>buttons.map(b=>{const r=b.getBoundingClientRect();return{x:r.x,y:r.y,right:r.right,bottom:r.bottom}}));assert.ok(tools.every(b=>Math.abs(b.bottom-size.height)<1&&b.y>size.height-45));assert.equal(tools.length,3);const boost=await page.getByRole('button',{name:'Boost',exact:true}).boundingBox();assert.ok(boost.width>=140&&boost.height>=54);const random=await page.getByRole('button',{name:'Random trick',exact:true}).boundingBox(),brake=await page.getByRole('button',{name:'Brake / frontflip',exact:true}).boundingBox();assert.ok(Math.abs(random.width-brake.width)<1&&Math.abs(random.height-brake.height)<1&&random.y+random.height<=brake.y);
    await page.screenshot({path:fileURLToPath(new URL(`../reports/mobile-${size.width}.png`,import.meta.url))});sizes.push(size);
   }
   await page.setViewportSize({width:390,height:844});return sizes;

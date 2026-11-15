@@ -177,6 +177,7 @@ body.menu-open #sound-controls{position:static;margin:16px auto;width:max-conten
 #sound-hint{grid-column:1 / -1;font-size:10px;color:#ccdedc}
 @media(max-height:480px){#sound-controls{bottom:65px}#sound-hint{display:none}}
 
+body>canvas{position:fixed;inset:0;display:block;width:100%!important;height:100%!important}
 /* Simultaneous pointer controls: safe areas, portrait and landscape phones/tablets. */
 #touch-controls{display:none;position:fixed;inset:auto 0 env(safe-area-inset-bottom,0px);height:174px;z-index:6;pointer-events:none;user-select:none;-webkit-user-select:none}
 body.touch-mode:not(.menu-open) #touch-controls{display:block}
@@ -189,8 +190,9 @@ body.touch-mode:not(.menu-open) #touch-controls{display:block}
 #touch-controls .touch-random{grid-column:2;grid-row:1}
 #touch-controls [data-hold=throttle]{grid-column:1;grid-row:2}
 #touch-controls [data-hold=brake]{grid-column:2;grid-row:2}
-#touch-controls .touch-pad:nth-child(2)>button:nth-child(3){grid-column:1;grid-row:3}
-#touch-controls [data-hold=boost]{grid-column:2;grid-row:3}
+#touch-controls .touch-pad:nth-child(2)>button:nth-child(3){grid-column:1;grid-row:1}
+#touch-controls [data-hold=boost]{grid-column:1 / -1;grid-row:3;min-height:62px;background:#dfab52;color:#14212b;font-size:14px}
+#touch-controls [data-hold=boost][aria-pressed=true]{background:#ffe4ae}
 #touch-controls .touch-gas{background:#278451ed}
 #touch-controls .touch-tools{position:absolute;bottom:0;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));display:flex;gap:5px;pointer-events:auto}
 #touch-controls .touch-tools button{min-height:34px;min-width:45px;font-size:10px;padding:5px}
@@ -207,7 +209,7 @@ body.touch-device #tuner .tuner-header button,body.touch-device #help{display:no
 body.touch-mode #tuner .tuner-header button,body.touch-mode #hud [data-keyboard-hint]{display:none}
 body.touch-mode #hud-toggle::after{content:''}
 @media(max-width:360px){#touch-controls .touch-pad{width:140px}#touch-controls button{font-size:11px}}
-@media(max-height:500px){#touch-controls{height:150px}#touch-controls .touch-pad{width:156px;gap:5px}#touch-controls button{min-height:46px}#touch-controls .touch-tools{bottom:0}#touch-controls .touch-pad{bottom:40px}#touch-controls .touch-tricks{bottom:145px}body.touch-mode:not(.menu-open) #speedometer{top:52px;bottom:auto;width:65px}}
+@media(max-height:500px){#touch-controls [data-hold=boost]{min-height:54px}#touch-controls{height:150px}#touch-controls .touch-pad{width:min(156px,calc((100vw - 32px)/2));gap:5px}#touch-controls button{min-height:46px}#touch-controls .touch-tools{bottom:0}#touch-controls .touch-pad{bottom:40px}#touch-controls .touch-tricks{bottom:145px}body.touch-mode:not(.menu-open) #speedometer{top:52px;bottom:auto;width:65px}}
 
 </style></head><body class="menu-open stage-lobby"><button id="hud-toggle" type="button" aria-controls="hud" aria-expanded="false" title="Show ride details (I)">☰ Info (I)</button><div id="hud" hidden><b>🏍️ <span id="map-hud-name">DESERT STUNT PARK</span> · V3Z</b><div id="speed">0 km/h</div><div id="status">Ready to ride</div><div id="angle">Wheelie angle: 0°</div><div id="lean-angle">Turn lean: 0° (upright)</div><div id="air-spin-hud">Air spin: 0° · stationary</div><div id="crash-hud">Crash system: ready · J repairs, R resets</div><div id="momentum-hud">Rolling: forward · world momentum preserved</div><div id="gamepad-hud">🎮 Controller: not connected</div><div style="font-size:12px;opacity:.8">CIRCULAR ISLAND · Fall off the edge for a moon cutscene · G: tune · J: repair · R: reset</div></div><div id="speedometer" aria-label="Speedometer and engine rev indicator">
 <svg viewBox="0 0 200 200" role="img" aria-label="Speed and revs">
@@ -721,7 +723,7 @@ mesh(new THREE.BoxGeometry(.45,.14,.15),black,upperBody,0,.62,-.44);
 mesh(new THREE.BoxGeometry(.36,.13,.23),white,upperBody,0,.45,-.42);
 mesh(new THREE.BoxGeometry(.48,.035,.29),orange,upperBody,0,.77,-.37);
 const riderArms=[],riderLegs=[];
-const stuntPose={name:"",amount:0,queued:"",hold:0};
+const stuntPose={name:"",amount:0,queued:"",hold:0,latched:""};
 for(const side of [-1,1]){
  const shoulder=new THREE.Vector3(side*.28,2.50,.30),elbow=new THREE.Vector3(side*.48,2.24,.06),hand=new THREE.Vector3(side*.51,2.08,-.26);
  const upper=rod(shoulder.toArray(),elbow.toArray(),.09,black,rider),lower=rod(elbow.toArray(),hand.toArray(),.075,black,rider);
@@ -745,9 +747,9 @@ function updateBikeVisuals(dt,time){
  throttleGrip.rotation.x=-visualThrottle*.65;
  const canTrick=menuStage==='riding'&&!paused&&!grounded&&!ragdoll.active&&!spaceFall.active;
  stuntPose.hold=Math.max(0,stuntPose.hold-dt);
- const requested=canTrick?(keys.ControlLeft||keys.ControlRight||controller.connected&&controller.previousButtons[4]?'Superman':keys.AltLeft||keys.AltRight||controller.connected&&controller.previousButtons[1]?'Can-can':keys.ShiftLeft||keys.ShiftRight||controller.boost?'No-hander':stuntPose.hold>0?stuntPose.queued:''):'';
+ const requested=canTrick?(stuntPose.latched||(controller.connected&&controller.previousButtons[4]?'Superman':controller.connected&&controller.previousButtons[1]?'Can-can':controller.boost?'No-hander':stuntPose.hold>0?stuntPose.queued:'')):'';
  if(requested)stuntPose.name=requested;
- if(!canTrick){stuntPose.amount=0;stuntPose.name='';stuntPose.hold=0;stuntPose.queued=''}
+ if(!canTrick){stuntPose.amount=0;stuntPose.name='';stuntPose.hold=0;stuntPose.queued='';stuntPose.latched=''}
  else {stuntPose.amount+=((requested?1:0)-stuntPose.amount)*(1-Math.exp(-dt*12));if(stuntPose.amount<.001)stuntPose.name=''}
  const superman=stuntPose.name==='Superman'?stuntPose.amount:0,noHands=stuntPose.name==='No-hander'?stuntPose.amount:0,canCan=stuntPose.name==='Can-can'?stuntPose.amount:0;
  const mounted=menuStage==='riding'&&!ragdoll.active&&!spaceFall.active;
@@ -773,13 +775,13 @@ function updateBikeVisuals(dt,time){
  for(const leg of riderLegs){
   const side=leg.side;
   leg.hip.set(side*.23,1.98+superman*.12,.5+superman*.48);
-  leg.knee.set(side*.35-canCan*.90,1.32+superman*.78+canCan*.48,.77+superman*.90);
+  leg.knee.set(side*.35-canCan*.90,1.67+superman*.43+canCan*.13,-.14+superman*1.81);
   leg.foot.set(side*.28-canCan*1.35,1.15+superman*.88+canCan*.43,.18+superman*2.12);
   if(feet>.001){
    const walking=speed<-.15&&!paused,phase=riderBalance.walk+(side>0?Math.PI:0),stride=walking?Math.cos(phase)*.28:0,lift=walking?Math.max(0,Math.sin(phase))*.18:0;
    riderFootWorld.set(side*.55,.16,.40+stride);frame.localToWorld(riderFootWorld);
    riderFootWorld.y=surfaceAt(riderFootWorld.x,riderFootWorld.z).height+.16+lift;frame.worldToLocal(riderFootWorld);
-   leg.hip.y-=feet*.14;leg.knee.lerp(new THREE.Vector3(side*.52,.92,.55+stride*.5),feet);leg.foot.lerp(riderFootWorld,feet);
+   leg.hip.y-=feet*.14;leg.knee.lerp(new THREE.Vector3(side*.52,.92,Math.min(leg.hip.z,riderFootWorld.z)-.28),feet);leg.foot.lerp(riderFootWorld,feet);
   }
   poseArmSegment(leg.thigh,leg.hip,leg.knee,leg.thighLength);poseArmSegment(leg.shin,leg.knee,leg.foot,leg.shinLength);
   leg.boot.position.copy(leg.foot);leg.boot.rotation.x=superman*1.1;leg.boot.rotation.z=canCan*.7;
@@ -1194,7 +1196,7 @@ function steerInput(){const digital=(keys.KeyA?1:0)-(keys.KeyD?1:0)+touchInput.l
 function rollControlInput(){return 0}
 function clearTouchInput(){touchPointers.clear();for(const key of Object.keys(touchInput))touchInput[key]=0;document.querySelectorAll('#touch-controls [aria-pressed]').forEach(b=>b.setAttribute('aria-pressed','false'))}
 function syncTouchInput(){for(const key of Object.keys(touchInput))touchInput[key]=Array.from(touchPointers.values()).includes(key)?1:0;document.querySelectorAll('#touch-controls [data-hold]').forEach(b=>b.setAttribute('aria-pressed',String(!!touchInput[b.dataset.hold])))}
-function triggerTrick(name){if(menuStage==='riding'&&!grounded&&!ragdoll.active&&!paused){stuntPose.queued=name;stuntPose.hold=1.2}}
+function triggerTrick(name,toggle=false){if(menuStage==='riding'&&!grounded&&!ragdoll.active&&!paused){if(toggle){stuntPose.latched=stuntPose.latched===name?'':name;stuntPose.queued='';stuntPose.hold=0}else{stuntPose.latched='';stuntPose.queued=name;stuntPose.hold=1.2}}}
 function updateTouchVisibility(){
  const coarse=matchMedia('(any-pointer: coarse)').matches||navigator.maxTouchPoints>0;
  const visible=touchPreference==='on'||touchPreference==='auto'&&coarse;
@@ -1339,7 +1341,7 @@ addEventListener('keydown',e=>{
  keys[e.code]=true;
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','Backspace'].includes(e.code)||e.ctrlKey||e.altKey)e.preventDefault();
  if(e.repeat)return;
- if(!grounded&&!ragdoll.active){const trick={ControlLeft:'Superman',ControlRight:'Superman',AltLeft:'Can-can',AltRight:'Can-can'}[e.code];if(trick){stuntPose.queued=trick;stuntPose.hold=1.2;}}
+ if(!grounded&&!ragdoll.active){const trick={ControlLeft:'Superman',ControlRight:'Superman',AltLeft:'Can-can',AltRight:'Can-can',ShiftLeft:'No-hander',ShiftRight:'No-hander'}[e.code];if(trick)triggerTrick(trick,true);}
  if(e.code==='Space')toggleWheelie();
  if(e.code==='KeyC')camMode=(camMode+1)%3;
  if(e.code==='KeyR')reset();
@@ -1809,7 +1811,7 @@ function renderCrashEffects(dt){
  }
 }
 
-function reset(){wildlifeLastBikePosition.set(0,.08,25);riderBalance.lean=0;riderBalance.feet=0;riderBalance.walk=0;clearTouchInput();stuntPose.hold=0;stuntPose.queued='';stuntPose.amount=0;stuntPose.name='';clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
+function reset(){wildlifeLastBikePosition.set(0,.08,25);riderBalance.lean=0;riderBalance.feet=0;riderBalance.walk=0;clearTouchInput();stuntPose.hold=0;stuntPose.queued='';stuntPose.latched='';stuntPose.amount=0;stuntPose.name='';clearTireDust();const wasInSpace=spaceFall.active;stopSpaceFall();clearCrashEffects();if(wasInSpace)camera.position.set(0,8,40);pos.set(0,.08,25);yaw=0;speed=0;lateralSpeed=0;vertical=0;pitch=0;pitchVelocity=0;grounded=true;damage=0;impact=0;collisionCooldown=0;lastCollision='Reset';airFlipCount=0;crashTime=0;turnLeanAngle=0;turnLeanTarget=0;turnSteer=0;airRoll=airRollVelocity=0;airYawVelocity=0;airTravelHeading=0;airYawStart=0;airSpinTurns=0;lastLandedSpinTurns=0;wheelieArmed=false;wheelieAirTime=0;cameraReverseView=false;cameraHeading=yaw;cameraHeadingReady=false;frame.rotation.z=0;for(const w of wheels)w.position.y=WHEEL_Y}
 // J is a field repair: no move to spawn. Only an overturned bike is righted.
 function repairHere(){
  if(spaceFall.active||!onIsland(pos.x,pos.z)){reset();message('Rescued to the island spawn: no ground exists at this location.');return}
@@ -2023,7 +2025,9 @@ function simulateSubstep(dt){
  if(grounded){
   airYawVelocity=0;
   const oldYaw=yaw;
-  yaw+=steer*dt*tuning.turnRate*THREE.MathUtils.clamp(Math.hypot(speed,lateralSpeed)/10,0,1)*(speed<0?-1:1);
+  const wheelieTurning=wheelieArmed&&pitch>.12&&speed>.55;
+  if(wheelieTurning){const rate=THREE.MathUtils.clamp(9.81*Math.tan(turnLeanAngle)/Math.max(3,Math.abs(speed)),-.9,.9);yaw+=rate*dt;}
+  else yaw+=steer*dt*tuning.turnRate*THREE.MathUtils.clamp(Math.hypot(speed,lateralSpeed)/10,0,1)*(speed<0?-1:1);
   // Steering turns the chassis first; grip then makes momentum follow the tires.
   // Pure yaw changes must not rotate the existing world velocity instantaneously.
   projectVelocityBetweenHeadings(oldYaw,yaw);
@@ -2152,8 +2156,9 @@ function simulateSubstep(dt){
  turnSteer=steer;
  const maxRadians=tuning.turnLeanDegrees*Math.PI/180;
  const speedFactor=THREE.MathUtils.clamp(Math.abs(speed)*3.6/tuning.turnLeanSpeed,0,1);
- turnLeanTarget=grounded ? steer*tuning.turnLeanDirection*maxRadians*speedFactor*(speed<0?-1:1) : 0;
- turnLeanAngle+= (turnLeanTarget-turnLeanAngle)*(1-Math.exp(-tuning.turnLeanResponse*dt));
+ const wheelieBanking=grounded&&wheelieArmed&&pitch>.12&&speed>.55;
+ turnLeanTarget=wheelieBanking?steer*.42*THREE.MathUtils.clamp(Math.abs(speed)/3,.25,1):grounded ? steer*tuning.turnLeanDirection*maxRadians*speedFactor*(speed<0?-1:1) : 0;
+ turnLeanAngle+= (turnLeanTarget-turnLeanAngle)*(1-Math.exp(-(wheelieBanking?6:tuning.turnLeanResponse)*dt));
  frame.rotation.z=turnLeanAngle+airRoll+Math.sin(travel*2)*damage*.0008;
  if(!spaceFall.active && !onIsland(pos.x,pos.z) && pos.y < -1.5)beginSpaceFall();
 }
@@ -2219,7 +2224,7 @@ function draw(dt,simDt){
  document.getElementById('speed').textContent=Math.round(Math.hypot(speed,lateralSpeed)*3.6)+' km/h';
  updateRideDial(Math.hypot(speed,lateralSpeed)*3.6);
  const spinning=!grounded&&Math.abs(airYawVelocity)>.2;
- document.getElementById('status').textContent=stuntPose.amount>.2&&!grounded?stuntPose.name+' · release to return':paused&&!stepping?'PAUSED':ragdoll.active?'💥 RIDER EJECTED · J TO REPAIR · R TO RESET':grounded?(speed< -1&&Math.abs(speed)>Math.abs(lateralSpeed)?'ROLLING BACKWARD':Math.abs(lateralSpeed)>Math.abs(speed)&&Math.abs(lateralSpeed)>1?'SIDEWAYS SKID':wheelieArmed?'TAP WHEELIE · W TO BALANCE':pitch>.2?'WHEELIE / RIDING':'Riding'):'AIRBORNE · '+(spinning?(airYawVelocity>0?'SPIN LEFT':'SPIN RIGHT')+' · ':'')+(pitchVelocity>=0?'BACK':'FRONT')+' FLIP';
+ document.getElementById('status').textContent=stuntPose.amount>.2&&!grounded?stuntPose.name+(stuntPose.latched?' · press same key to finish':' · release / wait to return'):paused&&!stepping?'PAUSED':ragdoll.active?'💥 RIDER EJECTED · J TO REPAIR · R TO RESET':grounded?(speed< -1&&Math.abs(speed)>Math.abs(lateralSpeed)?'ROLLING BACKWARD':Math.abs(lateralSpeed)>Math.abs(speed)&&Math.abs(lateralSpeed)>1?'SIDEWAYS SKID':wheelieArmed?'TAP WHEELIE · W TO BALANCE':pitch>.2?'WHEELIE / RIDING':'Riding'):'AIRBORNE · '+(spinning?(airYawVelocity>0?'SPIN LEFT':'SPIN RIGHT')+' · ':'')+(pitchVelocity>=0?'BACK':'FRONT')+' FLIP';
  document.getElementById('angle').textContent=(wheelieArmed?'Wheelie ARMED · ':'Wheelie angle: ')+Math.round(THREE.MathUtils.radToDeg(Math.max(0,pitch)))+'° · Camera '+(camMode+1)+'/3 · Damage '+Math.round(damage)+'% · Impact '+Math.round(impact)+' km/h';
  const crashHud=document.getElementById('crash-hud');if(crashHud)crashHud.textContent=ragdoll.active?'💥 RAGDOLL · 16 joints · '+debris.length+' flying parts · J repair':bikeBend>.02?'Bike bent '+Math.round(bikeBend*100)+'% · '+debris.length+' flying parts · J repair':'Crash system: ready · J repairs, R resets';
  renderCrashEffects(dt);
