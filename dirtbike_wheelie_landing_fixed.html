@@ -186,6 +186,11 @@ body.touch-mode:not(.menu-open) #touch-controls{display:block}
 #touch-controls button{position:static;touch-action:none;min-height:54px;border:1px solid #ffffff75;border-radius:14px;background:#142d3be8;color:white;font:700 12px system-ui;padding:7px 5px;box-shadow:0 3px 10px #0005}
 #touch-controls button:disabled{opacity:.45}
 #touch-controls button[aria-pressed=true]{background:#dba55b;color:#14212b}
+#touch-controls .touch-random{grid-column:2;grid-row:1}
+#touch-controls [data-hold=throttle]{grid-column:1;grid-row:2}
+#touch-controls [data-hold=brake]{grid-column:2;grid-row:2}
+#touch-controls .touch-pad:nth-child(2)>button:nth-child(3){grid-column:1;grid-row:3}
+#touch-controls [data-hold=boost]{grid-column:2;grid-row:3}
 #touch-controls .touch-gas{background:#278451ed}
 #touch-controls .touch-tools{position:absolute;bottom:0;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));display:flex;gap:5px;pointer-events:auto}
 #touch-controls .touch-tools button{min-height:34px;min-width:45px;font-size:10px;padding:5px}
@@ -392,12 +397,15 @@ function addRamp(x,z,w,len,height,kind='dirt'){
 }
 
 addRamp(0,-55,16,44,7);addRamp(0,-145,22,65,13);addRamp(48,-85,14,45,10,'metal');addRamp(-55,-120,20,60,17);addRamp(70,-200,22,72,22,'metal');addRamp(-65,-230,26,86,25);addRamp(0,-280,30,95,30);
+addRamp(130,-70,12,24,3);addRamp(175,-110,14,32,6);addRamp(220,-160,16,40,9,'metal');addRamp(-150,-50,18,30,5);addRamp(-200,-120,18,50,12);addRamp(-240,-190,24,70,18);addRamp(140,110,20,45,10,'metal');addRamp(-140,130,22,60,15);
+const stuntGateMaterial=new THREE.MeshStandardMaterial({color:0x61d5df,emissive:0x184a50,emissiveIntensity:.7,roughness:.45});
+for(const [x,y,z] of [[130,7,-96],[175,10,-135],[220,14,-189],[-150,9,-75],[-200,15,-155],[140,14,80]]){const gate=mesh(new THREE.TorusGeometry(3.5,.13,7,36),stuntGateMaterial,scene,x,y,z);gate.name='Jump-through stunt ring';}
 // Scattered desert rocks, far enough from initial driving lane.
 // Every scenery rock and hill has a matching collision volume. Reuse these exact dimensions for debug wireframes.
 let activeMap="desert";
 const obstacles=[];let terrainSeed=0xD1A7B1CE;const rand=(a,b)=>{terrainSeed=(1664525*terrainSeed+1013904223)>>>0;return a+(terrainSeed/4294967296)*(b-a)};
 for(let i=0;i<130;i++){
- const x=rand(-440,440),z=rand(-440,440);if(Math.abs(x)<20&&z>-320&&z<50)continue;
+ const x=rand(-440,440),z=rand(-440,440);if(Math.abs(x)<20&&z>-320&&z<50)continue;if(ramps.some(r=>r.id>=7&&Math.abs(x-r.x)<r.w/2+18&&Math.abs(z-r.z)<r.len/2+30))continue;
  const r=rand(1.5,9),b=mesh(new THREE.DodecahedronGeometry(r,0),i%3?rock:darkSand,scene,x,r*.38,z);
  b.scale.set(rand(.8,1.8),rand(.5,1.5),rand(.8,1.6));b.rotation.y=rand(0,6.28);
  // Conservative ellipse encloses the rotated rock's irregular footprint.
@@ -408,7 +416,7 @@ for(let i=0;i<130;i++){
  obstacles.push({kind:'rock',mesh:b,x,z,rx:Math.max(rx,boundR*.82),rz:Math.max(rz,boundR*.82),height:r*(.38+b.scale.y)});
 }
 for(let i=0;i<38;i++){
- const x=rand(-550,550),z=rand(-550,550);if(Math.abs(x)<80&&z>-320&&z<30)continue;
+ const x=rand(-550,550),z=rand(-550,550);if(Math.abs(x)<80&&z>-320&&z<30)continue;if(ramps.some(r=>r.id>=7&&Math.abs(x-r.x)<r.w/2+55&&Math.abs(z-r.z)<r.len/2+55))continue;
  const h=rand(14,55),radius=rand(20,50);
  const hill=mesh(new THREE.ConeGeometry(radius,h,6),i%2?rock:darkSand,scene,x,h*.35,z);hill.rotation.y=rand(0,6.28);
  if(!onIsland(x,z)){hill.visible=false;continue}
@@ -453,6 +461,67 @@ for(let i=0;i<24;i++){
  obstacles.push({kind:'hill',theme:'hillside',mesh:mound,x,z,rx:radius,rz:radius,height});
 }
 forestScenery.visible=false;hillsideScenery.visible=false;
+
+// Instanced wildlife keeps packs inexpensive on mobile; animal AI never changes the terrain.
+const wildlife=[],wolfPacks=[],wildlifeBatches=[],wildlifeRoot=new THREE.Group();scene.add(wildlifeRoot);
+const animalSphere=new THREE.SphereGeometry(1,10,7),animalBox=new THREE.BoxGeometry(1,1,1),animalCone=new THREE.ConeGeometry(1,1,7),animalTail=new THREE.CylinderGeometry(.08,.18,1,7);
+function addAnimal(species,x,z,pack=null){const a={species,home:new THREE.Vector3(x,0,z),position:new THREE.Vector3(x,0,z),heading:0,phase:wildlife.length*1.7,time:0,cooldown:0,mode:'roam',pack};wildlife.push(a);return a}
+for(let i=0;i<3;i++){const angle=.6+i*2.1;addAnimal('bear',Math.sin(angle)*240,Math.cos(angle)*240)}
+for(let i=0;i<5;i++){const angle=1.2+i*1.26;addAnimal('fox',Math.sin(angle)*310,Math.cos(angle)*310)}
+for(let p=0;p<2;p++){
+ const pack={id:p,count:Math.floor(rand(5,16)),center:new THREE.Vector3(p?340:-310,0,p?160:120),callTimer:0,attackCooldown:0};wolfPacks.push(pack);
+ for(let i=0;i<pack.count;i++){const angle=i*2.399,r=4+Math.sqrt(i)*3;addAnimal('wolf',pack.center.x+Math.sin(angle)*r,pack.center.z+Math.cos(angle)*r,pack)}
+}
+for(const species of ['bear','fox','wolf']){
+ const animals=wildlife.filter(a=>a.species===species),fur=mat(species==='bear'?0x64412c:species==='fox'?0xc36b28:0x72777c,.95),dark=mat(0x222426),light=mat(species==='fox'?0xf2ddbe:0xaaa99f);
+ const defs=[
+  [animalSphere,fur,[0,.82,0],[.48,.48,.80]], [animalSphere,fur,[0,1.10,-.66],[.34,.33,.37]],
+  [animalSphere,light,[0,.96,-.97],[.21,.17,.32]], [animalSphere,dark,[0,.99,-1.22],[.10,.08,.08]],
+  [species==='bear'?animalSphere:animalCone,fur,[-.24,1.40,-.65],[.13,.23,.14]], [species==='bear'?animalSphere:animalCone,fur,[.24,1.40,-.65],[.13,.23,.14]],
+  [animalSphere,dark,[-.23,1.18,-.87],[.045,.045,.045]], [animalSphere,dark,[.23,1.18,-.87],[.045,.045,.045]],
+  [animalTail,fur,[0,.82,.97],[1,1,1],'tail'],
+ ];
+ for(let i=0;i<4;i++)defs.push([animalBox,fur,[i%2?-.31:.31,.35,i<2?-.47:.48],[.18,.65,.20],i]);
+ if(species==='fox')defs.push([animalSphere,light,[0,.76,1.37],[.14,.14,.23]]);
+ for(const [geo,material,position,scale,kind] of defs){const mesh=new THREE.InstancedMesh(geo,material,animals.length);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;wildlifeRoot.add(mesh);wildlifeBatches.push({mesh,animals,position,scale,kind,species})}
+}
+const animalRootDummy=new THREE.Object3D(),animalPartDummy=new THREE.Object3D(),animalMatrix=new THREE.Matrix4();
+function animalAttack(animal,damageAmount){
+ if(menuStage!=='riding'||ragdoll.active||spaceFall.active||Math.abs(pos.y-animal.position.y)>3)return;
+ damage=Math.min(100,damage+damageAmount*tuning.damageScale);impact=Math.max(impact,40);lastCollision=animal.species==='bear'?'Bear swipe':'Wolf pack: too close';
+ handleBikeCrash(18,lastCollision);if(!ragdoll.active)makeRagdoll(14);playImpact(15);animal.cooldown=6;
+}
+function playWolfCall(howl,distance){
+ const a=rideAudio,ctx=a.ctx;if(!ctx||!soundPlayable()||a.activeVoice)return;
+ const t=ctx.currentTime,source=ctx.createOscillator(),gain=ctx.createGain(),filter=ctx.createBiquadFilter(),duration=howl?1.8:.65;
+ source.type=howl?'sine':'triangle';source.frequency.setValueAtTime(howl?280:64,t);source.frequency.exponentialRampToValueAtTime(howl?520:110,t+(howl?.65:.2));source.frequency.exponentialRampToValueAtTime(howl?330:52,t+duration);
+ filter.type='lowpass';filter.frequency.value=howl?1300:300;gain.gain.setValueAtTime(.001,t);gain.gain.linearRampToValueAtTime((howl?.13:.09)*Math.max(.1,1-distance/70),t+.12);gain.gain.exponentialRampToValueAtTime(.001,t+duration);
+ source.connect(filter);filter.connect(gain);gain.connect(a.effectsGain);a.activeEffects.add(source);source.onended=()=>{a.activeEffects.delete(source);source.disconnect();gain.disconnect();filter.disconnect()};source.start();source.stop(t+duration+.02);
+}
+function updateWildlife(dt){
+ wildlifeRoot.visible=!spaceFall.active;if(!wildlifeRoot.visible)return;
+ const active=menuStage==='riding'&&!paused&&!document.hidden;
+ if(active&&dt>0){
+  for(const pack of wolfPacks){pack.callTimer=Math.max(0,pack.callTimer-dt);pack.attackCooldown=Math.max(0,pack.attackCooldown-dt);const distance=pack.center.distanceTo(pos);if(distance<65&&pack.callTimer===0){playWolfCall(distance>22,distance);pack.callTimer=distance>22?12:6}}
+  for(const animal of wildlife){
+   animal.time+=dt;animal.cooldown=Math.max(0,animal.cooldown-dt);const dx=pos.x-animal.position.x,dz=pos.z-animal.position.z,distance=Math.hypot(dx,dz);let vx=0,vz=0,pace=animal.species==='bear'?.75:1.0;
+   if(animal.species==='bear'&&distance<65&&!ragdoll.active){animal.mode='chase';pace=5;vx=dx/Math.max(distance,.01);vz=dz/Math.max(distance,.01);if(distance<2.3&&animal.cooldown===0)animalAttack(animal,20)}
+   else if(animal.species==='fox'&&distance<25){animal.mode='flee';pace=8;vx=-dx/Math.max(distance,.01);vz=-dz/Math.max(distance,.01)}
+   else if(animal.species==='wolf'&&distance<25){animal.mode=distance<4?'attack':'warn';animal.heading=Math.atan2(-dx,-dz);pace=0;if(distance<4&&animal.pack.attackCooldown===0&&!ragdoll.active){animalAttack(animal,12);animal.pack.attackCooldown=5}}
+   else{animal.mode='roam';const tx=animal.home.x+Math.sin(animal.time*.14+animal.phase)*9,tz=animal.home.z+Math.cos(animal.time*.14+animal.phase)*9,d=Math.hypot(tx-animal.position.x,tz-animal.position.z);vx=(tx-animal.position.x)/Math.max(d,.01);vz=(tz-animal.position.z)/Math.max(d,.01)}
+   const nx=animal.position.x+vx*pace*dt,nz=animal.position.z+vz*pace*dt;
+   if(Math.hypot(nx,nz)<MAP_RADIUS-30){animal.position.x=nx;animal.position.z=nz}
+   animal.position.y=heightAt(animal.position.x,animal.position.z);if(pace>0){animal.heading=Math.atan2(-vx,-vz);animal.phase+=dt*pace*3;}
+  }
+ }
+ for(const batch of wildlifeBatches){for(let i=0;i<batch.animals.length;i++){
+  const a=batch.animals[i],size=a.species==='bear'?1.15:a.species==='fox'?.60:.85;
+  animalRootDummy.position.copy(a.position);animalRootDummy.rotation.set(0,a.heading,0);animalRootDummy.scale.setScalar(size);animalRootDummy.updateMatrix();animalPartDummy.position.set(...batch.position);animalPartDummy.scale.set(...batch.scale);animalPartDummy.rotation.set(0,0,0);
+  if(typeof batch.kind==='number'){const phase=a.phase+(batch.kind%2)*Math.PI+(batch.kind<2?0:Math.PI);animalPartDummy.rotation.x=a.mode==='warn'||a.mode==='attack'?0:Math.sin(phase)*.45}
+  if(batch.kind==='tail'){animalPartDummy.rotation.x=Math.PI/2;animalPartDummy.rotation.z=Math.sin(a.time*2)*.15;if(a.species==='bear')animalPartDummy.scale.set(.65,.25,.65)}
+  animalPartDummy.updateMatrix();animalMatrix.multiplyMatrices(animalRootDummy.matrix,animalPartDummy.matrix);batch.mesh.setMatrixAt(i,animalMatrix);
+ }batch.mesh.instanceMatrix.needsUpdate=true}
+}
 
 // Bike local forward = -Z. Wheels roll around local X.
 const bike=new THREE.Group();scene.add(bike);const frame=new THREE.Group();bike.add(frame);
@@ -692,50 +761,91 @@ function updateBikeVisuals(dt,time){
 const disaster={type:null,remaining:0,untilNext:600,time:0,automatic:true,root:new THREE.Group(),choice:'storm'};
 try{disaster.automatic=JSON.parse(localStorage.getItem('dirtbike_events_v1')||'{}').automatic!==false}catch{}
 scene.add(disaster.root);disaster.root.visible=false;
-const EVENT_NAMES={storm:'Thunderstorm',dust:'Dust storm',quake:'Earthquake'};
+const EVENT_NAMES={storm:'Thunderstorm',dust:'Dust storm',quake:'Earthquake',flood:'Flood',fire:'Wildfire',party:'Party mode',meteor:'Meteor shower'};
+const AUTOMATIC_EVENTS=['storm','dust','quake','flood','fire','meteor'];
 const weatherTint=new THREE.Color();
 const rainPositions=new Float32Array(180*6),rainSeeds=Array.from({length:180},(_,i)=>[(i*17.13)%50-25,(i*13.37)%45,(i*23.71)%50-25]);
 const rainGeometry=new THREE.BufferGeometry();rainGeometry.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));
 const rain=new THREE.LineSegments(rainGeometry,new THREE.LineBasicMaterial({color:0xc6e2ef,transparent:true,opacity:.48}));rain.frustumCulled=false;disaster.root.add(rain);
 const stormClouds=Array.from({length:28},(_,i)=>{const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTexture,color:0xbd925a,transparent:true,opacity:.12,depthWrite:false}));sprite.scale.setScalar(5+i%5);disaster.root.add(sprite);return sprite});
+const floodWater=mesh(new THREE.CircleGeometry(MAP_RADIUS-1,96),new THREE.MeshStandardMaterial({color:0x359db3,transparent:true,opacity:.43,roughness:.22,metalness:.2,depthWrite:false}),scene,0,.45,0);floodWater.rotation.x=-Math.PI/2;floodWater.visible=false;
+const firePatches=new THREE.Group();scene.add(firePatches);firePatches.visible=false;
+const flameMaterial=new THREE.MeshBasicMaterial({color:0xff7c21,transparent:true,opacity:.82}),flameCore=new THREE.MeshBasicMaterial({color:0xffd367,transparent:true,opacity:.85});
+for(let i=0;i<16;i++){
+ const angle=i*2.399,radius=180+(i%5)*48,g=new THREE.Group();g.position.set(Math.sin(angle)*radius,0,Math.cos(angle)*radius);firePatches.add(g);
+ for(let j=0;j<4;j++){const flame=mesh(new THREE.ConeGeometry(1.2,4.5,6),j%2?flameCore:flameMaterial,g,Math.sin(j*2.4)*2,2,Math.cos(j*2.4)*2);flame.userData.phase=i+j;}
+}
+const confetti=new THREE.InstancedMesh(new THREE.PlaneGeometry(.20,.12),new THREE.MeshBasicMaterial({side:THREE.DoubleSide}),120),confettiDummy=new THREE.Object3D(),confettiColor=new THREE.Color();
+confetti.frustumCulled=false;disaster.root.add(confetti);for(let i=0;i<120;i++){confettiColor.setHSL(i/120,.9,.6);confetti.setColorAt(i,confettiColor)}
+function eventClockOffset(){return roomRole==='host'?Math.max(0,(performance.now()-roomEventClock)/1000):0}
+function disasterSnapshot(){const offset=eventClockOffset();return{type:disaster.type,remaining:Math.max(0,disaster.remaining-offset),untilNext:Math.max(0,disaster.untilNext-offset),time:disaster.time+offset,automatic:disaster.automatic,id:disaster.id||0}}
+function publishDisaster(){if(roomRole==='host'&&multiplayer.ready)broadcastRoom({t:'weather',event:disasterSnapshot()})}
+function receiveDisaster(event){
+ if(!event||!(event.type===null||Object.hasOwn(EVENT_NAMES,event.type))||!['remaining','untilNext','time','id'].every(k=>Number.isFinite(event[k])&&event[k]>=0)||event.remaining>120||event.untilNext>600||typeof event.automatic!=='boolean')return;
+ const fresh=disaster.id!==event.id||disaster.type!==event.type;
+ Object.assign(disaster,event);
+ if(fresh&&event.type==='storm')playSoundNoise(1.2,180,.14);
+ const automatic=document.querySelector('[aria-label="Automatic natural disasters"]');if(automatic)automatic.checked=disaster.automatic;
+}
+function updateWorldEvents(visible){
+ const eventTime=disaster.time+eventClockOffset();
+ floodWater.visible=visible&&disaster.type==='flood';firePatches.visible=visible&&disaster.type==='fire';confetti.visible=visible&&disaster.type==='party';meteorHeads.visible=meteorTrails.visible=visible&&disaster.type==='meteor';
+ if(meteorHeads.visible){for(let i=0;i<18;i++){const phase=(eventTime*.22+i*.137)%1,x=(i*47.3)%220-110+phase*35,y=90-phase*87,z=(i*71.7)%240-160;confettiDummy.position.set(x,y,z);confettiDummy.rotation.set(0,0,0);confettiDummy.updateMatrix();meteorHeads.setMatrixAt(i,confettiDummy.matrix);meteorPositions.set([x,y,z,x-5,y+12,z+2],i*6)}meteorHeads.instanceMatrix.needsUpdate=true;meteorGeometry.attributes.position.needsUpdate=true}
+ if(floodWater.visible)floodWater.position.y=.4+Math.sin(eventTime*.6)*.12;
+ if(firePatches.visible)for(const patch of firePatches.children)for(const flame of patch.children){flame.scale.y=.8+Math.sin(eventTime*4+flame.userData.phase)*.22;flame.position.y=2*flame.scale.y}
+ if(confetti.visible){for(let i=0;i<120;i++){confettiDummy.position.set((i*13.7)%35-17.5,((i*.71-eventTime*2)%16+16)%16,(i*23.1)%35-17.5);confettiDummy.rotation.set(eventTime+i,i*.8,eventTime*1.6);confettiDummy.updateMatrix();confetti.setMatrixAt(i,confettiDummy.matrix)}confetti.instanceMatrix.needsUpdate=true}
+}
+const meteorHeads=new THREE.InstancedMesh(new THREE.SphereGeometry(.55,7,5),new THREE.MeshBasicMaterial({color:0xffad4f}),18),meteorPositions=new Float32Array(18*6),meteorGeometry=new THREE.BufferGeometry();meteorGeometry.setAttribute('position',new THREE.BufferAttribute(meteorPositions,3));const meteorTrails=new THREE.LineSegments(meteorGeometry,new THREE.LineBasicMaterial({color:0xffe0a3,transparent:true,opacity:.85}));meteorHeads.frustumCulled=meteorTrails.frustumCulled=false;disaster.root.add(meteorHeads,meteorTrails);
 const disasterHud=document.createElement('div');disasterHud.id='disaster-hud';disasterHud.style.cssText='position:fixed;top:65px;left:50%;transform:translateX(-50%);z-index:4;pointer-events:none;background:#14212bcc;color:white;padding:8px 14px;border-radius:10px;font:600 13px system-ui;display:none';document.body.append(disasterHud);
 function disasterControls(){
  const box=document.createElement('div');box.className='legend';
  const title=document.createElement('strong');title.textContent='Natural disasters';
- const description=document.createElement('p');description.textContent='Two-minute events about every ten minutes of active riding. Roads and ramps stay open. Pause and menus stop the timer.';
+ const description=document.createElement('p');description.textContent='Events every ten minutes, lasting two minutes. The room host starts events for everyone. Party mode is manual only. Routes stay rideable.';
  const label=document.createElement('label'),automatic=document.createElement('input');automatic.type='checkbox';automatic.checked=disaster.automatic;automatic.setAttribute('aria-label','Automatic natural disasters');
- automatic.onchange=()=>{disaster.automatic=automatic.checked;try{localStorage.setItem('dirtbike_events_v1',JSON.stringify({automatic:disaster.automatic}))}catch{}};
+ automatic.onchange=()=>{if(!canEditTuning())return;disaster.automatic=automatic.checked;publishDisaster();try{localStorage.setItem('dirtbike_events_v1',JSON.stringify({automatic:disaster.automatic}))}catch{}};
  label.append(automatic,document.createTextNode(' Automatic events'));
  const select=document.createElement('select');select.setAttribute('aria-label','Disaster type');for(const [value,name] of Object.entries(EVENT_NAMES))select.add(new Option(name,value));select.value=disaster.choice;select.onchange=()=>{disaster.choice=select.value};
  const buttons=document.createElement('div');buttons.className='buttons';
- for(const [text,fn] of [['Start now',()=>{startDisaster(select.value);document.activeElement?.blur()}],['Stop event',()=>stopDisaster()]]){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=text;button.onclick=fn;buttons.append(button)}
+ for(const [text,fn] of [['Start now',()=>{startDisaster(select.value);document.activeElement?.blur()}],['Stop event',()=>stopDisaster()]]){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=text;button.onclick=fn;button.dataset.eventControl='true';button.disabled=!canEditTuning();buttons.append(button)}
  const status=document.createElement('p');status.id='event-status';status.textContent='Next event in '+Math.ceil(disaster.untilNext)+' seconds of riding.';
  box.append(title,description,label,select,buttons,status);return box;
 }
 function startDisaster(type){
+ if(!canEditTuning())return;
  if(!Object.hasOwn(EVENT_NAMES,type))return;
- disaster.type=type;disaster.remaining=120;disaster.untilNext=600;disaster.time=0;
+ disaster.type=type;disaster.remaining=120;disaster.untilNext=600;disaster.time=0;if(roomRole==='host')roomEventClock=performance.now();disaster.id=(disaster.id||0)+1;publishDisaster();
+ if(type==='storm')playSoundNoise(1.2,180,.14);
  message(EVENT_NAMES[type]+' started: lasts two minutes. Keep riding, or stop it in Debug.');
 }
 function stopDisaster(){
+ if(!canEditTuning())return;
  disaster.type=null;disaster.remaining=0;disaster.untilNext=600;disaster.root.visible=false;
  if(!spaceFall.active){scene.background.copy(stockSky);stockFog.density=THEMES[selectedMap].density;}
- disasterHud.style.display='none';
+ disasterHud.style.display='none';updateWorldEvents(false);publishDisaster();
+}
+function advanceDisasterTime(dt){
+ let left=dt;
+ while(left>0){
+  if(disaster.type){const step=Math.min(left,disaster.remaining);disaster.remaining=Math.max(0,disaster.remaining-step);disaster.untilNext=Math.max(0,disaster.untilNext-step);disaster.time+=step;left-=step;if(disaster.remaining===0){disaster.type=null;publishDisaster()}else break;}
+  else if(disaster.automatic&&canEditTuning()){const step=Math.min(left,disaster.untilNext);disaster.untilNext=Math.max(0,disaster.untilNext-step);left-=step;if(disaster.untilNext===0)startDisaster(AUTOMATIC_EVENTS[Math.floor(Math.random()*AUTOMATIC_EVENTS.length)]);else break;}
+  else break;
+ }
 }
 function updateDisasters(dt){
  const riding=menuStage==='riding'&&!paused&&!document.hidden&&!spaceFall.active;
- if(riding&&dt>0){
-  if(disaster.type){disaster.remaining=Math.max(0,disaster.remaining-dt);disaster.untilNext=Math.max(0,disaster.untilNext-dt);disaster.time+=dt;if(disaster.remaining===0)disaster.type=null}
-  else if(disaster.automatic){disaster.untilNext=Math.max(0,disaster.untilNext-dt);if(disaster.untilNext===0)startDisaster(Object.keys(EVENT_NAMES)[Math.floor(Math.random()*3)])}
- }
- disaster.root.visible=riding&&!!disaster.type;
+ if(riding&&dt>0&&roomRole!=='host')advanceDisasterTime(dt);
+ const eventTime=disaster.time+eventClockOffset();
+ disaster.root.visible=riding&&!!disaster.type;updateWorldEvents(disaster.root.visible);
  const status=document.getElementById('event-status');if(status){const text=disaster.type?EVENT_NAMES[disaster.type]+': '+Math.ceil(disaster.remaining)+' seconds remaining.':disaster.automatic?'Next event in '+Math.ceil(disaster.untilNext)+' seconds of riding.':'Automatic events off. Start one whenever you like.';if(status.textContent!==text)status.textContent=text}
  if(!spaceFall.active){
   scene.background.copy(stockSky);stockFog.density=THEMES[selectedMap].density;
   if(disaster.root.visible){
-   const fade=Math.min(1,disaster.time/3,disaster.remaining/3);
+   const fade=Math.min(1,eventTime/3,disaster.remaining/3);
    if(disaster.type==='storm'){weatherTint.setHex(0x526573);scene.background.lerp(weatherTint,fade*.65);stockFog.density+=fade*.0006}
    if(disaster.type==='dust'){weatherTint.setHex(0xc79d68);scene.background.lerp(weatherTint,fade*.55);stockFog.density+=fade*.001}
+   if(disaster.type==='fire'){weatherTint.setHex(0xb3815c);scene.background.lerp(weatherTint,fade*.35);stockFog.density+=fade*.0004}
+   if(disaster.type==='meteor'){weatherTint.setHex(0x444760);scene.background.lerp(weatherTint,fade*.5)}
+   if(disaster.type==='party'){weatherTint.setHSL((eventTime/12)%1,.5,.65);scene.background.lerp(weatherTint,fade*.18)}
   }
  }
  disasterHud.style.display=disaster.root.visible?'block':'none';if(disaster.root.visible)disasterHud.textContent=EVENT_NAMES[disaster.type]+' · '+Math.ceil(disaster.remaining)+'s · keep riding';
@@ -743,14 +853,14 @@ function updateDisasters(dt){
  disaster.root.position.set(pos.x,Math.max(0,pos.y),pos.z);
  rain.visible=disaster.type==='storm';
  if(rain.visible){
-  for(let i=0;i<rainSeeds.length;i++){const [x,y,z]=rainSeeds[i],h=((y-disaster.time*22)%45+45)%45;rainPositions.set([x,h,z,x-.25,h-1.1,z+.12],i*6)}
+  for(let i=0;i<rainSeeds.length;i++){const [x,y,z]=rainSeeds[i],h=((y-eventTime*22)%45+45)%45;rainPositions.set([x,h,z,x-.25,h-1.1,z+.12],i*6)}
   rainGeometry.attributes.position.needsUpdate=true;
  }
- for(let i=0;i<stormClouds.length;i++){const p=stormClouds[i],quake=disaster.type==='quake';p.visible=disaster.type==='dust'||quake;if(p.visible){p.scale.setScalar(quake?1.7+i%3:5+i%5);p.position.set(((i*13.7+disaster.time*(quake?.4:3))%65)-32,quake?.15+(i%3)*.2:1+(i*3.13)%9,((i*21.1)%65)-32)}}
+ for(let i=0;i<stormClouds.length;i++){const p=stormClouds[i],quake=disaster.type==='quake';p.visible=disaster.type==='dust'||disaster.type==='fire'||quake;p.material.color.setHex(disaster.type==='fire'?0x777572:0xbd925a);if(p.visible){p.scale.setScalar(quake?1.7+i%3:5+i%5);p.position.set(((i*13.7+eventTime*(quake?.4:3))%65)-32,quake?.15+(i%3)*.2:1+(i*3.13)%9,((i*21.1)%65)-32)}}
  // A low thunder rumble, spaced well apart; no flashing lights or damage.
  updatePlayerIndicators();
- if(disaster.type==='quake'&&dt>0&&Math.floor(disaster.time/12)!==Math.floor((disaster.time-dt)/12))playSoundNoise(1.8,100,.10);
- if(rain.visible&&dt>0&&Math.floor(disaster.time/18)!==Math.floor((disaster.time-dt)/18))playSoundNoise(1.2,180,.14);
+ if(disaster.type==='quake'&&dt>0&&Math.floor(eventTime/12)!==Math.floor((eventTime-dt)/12))playSoundNoise(1.8,100,.10);
+ if(rain.visible&&dt>0&&Math.floor(eventTime/18)!==Math.floor((eventTime-dt)/18))playSoundNoise(1.2,180,.14);
 }
 
 const TUNING_SCHEMA = [
@@ -798,6 +908,7 @@ const TUNING_SCHEMA = [
  {tab:'Controller',key:'controllerLookSpeed',label:'Right-stick camera speed',min:.3,max:4,step:.05,value:1.7,unit:'rad/s'},
  {tab:'Controller',key:'invertLookY',label:'Invert camera vertical look',min:0,max:1,step:1,value:0,unit:'',type:'toggle'}
 ];
+let roomEventClock=performance.now();
 let roomRole='solo',sharedTuning=null,soloTuning=null,lastRoomTuningSent='';
 function canEditTuning(){return !['joining','guest'].includes(roomRole)}
 const STORAGE_KEY='dirtbike_v3a_tuning_v1';
@@ -1056,7 +1167,7 @@ function setupTouchControls(){
  }
  button(left,'← Steer','left',true);button(left,'Steer →','right',true);
  button(right,'Gas / backflip','throttle',true).classList.add('touch-gas');button(right,'Brake / frontflip','brake',true);button(right,'Wheelie','wheelie');button(right,'Boost','boost',true);
- button(tools,'Camera','camera');button(tools,'Pause','pause');button(tools,'Repair','repair');const randomTrick=button(tools,'Random trick','random');randomTrick.dataset.randomTrick='true';randomTrick.disabled=true;
+ button(tools,'Camera','camera');button(tools,'Pause','pause');button(tools,'Repair','repair');const randomTrick=button(right,'Random trick','random');randomTrick.className='touch-random';randomTrick.dataset.randomTrick='true';randomTrick.disabled=true;
  root.append(left,right,tools);document.body.append(root);
  const label=document.createElement('label');label.textContent='Touch controls: ';const preference=document.createElement('select');preference.id='touch-preference';preference.setAttribute('aria-label','Touch controls visibility');for(const value of ['auto','on','off'])preference.add(new Option(value==='auto'?'Automatic':value==='on'?'Show':'Hide',value));preference.value=touchPreference;preference.onchange=()=>{touchPreference=preference.value;try{localStorage.setItem('dirtbike_touch_v1',touchPreference)}catch{}updateTouchVisibility()};label.append(preference);document.getElementById('hud').append(label);
  updateTouchVisibility();if(document.body.classList.contains('touch-mode')&&!tuner.classList.contains('collapsed'))toggleTuner();
@@ -2108,7 +2219,7 @@ function loop(){
  }
  const simDt=(!paused||stepping)?(stepping?1/60:dt):0;
  if(simDt){simulate(simDt);frameCount++;stepping=false}
- updateDisasters(simDt);updateMultiplayer(dt);draw(dt,simDt);
+ updateWildlife(simDt);updateDisasters(simDt);updateMultiplayer(dt);draw(dt,simDt);
 }
 
 // V3O main-menu selection intentionally uses its own key. V3N physics autosave
@@ -2252,8 +2363,8 @@ function connectedRiders(){return multiplayer.role==='host'?multiplayer.clients.
 function renderRoom(){
  const nextRole=multiplayer.role;
  if(['joining','guest'].includes(nextRole)&&!soloTuning)soloTuning={...tuning};
- if(nextRole==='solo'&&soloTuning){Object.assign(tuning,soloTuning);soloTuning=null;sharedTuning=null;}
- if(roomRole!==nextRole){roomRole=nextRole;renderFields();}lockRoomTuning();
+ if(nextRole==='solo'&&soloTuning){disaster.type=null;disaster.remaining=0;disaster.untilNext=600;updateWorldEvents(false);Object.assign(tuning,soloTuning);soloTuning=null;sharedTuning=null;}
+ if(roomRole!==nextRole){roomRole=nextRole;roomEventClock=performance.now();renderFields();}lockRoomTuning();
  const online=multiplayer.connected&&multiplayer.ready&&multiplayer.joined;
  document.body.classList.toggle('room-active',multiplayer.role!=='solo');
  roomDom.code.textContent=multiplayer.role!=='solo'?multiplayer.room:'— — —';
@@ -2304,6 +2415,7 @@ function sendRoom(target,msg){
 function broadcastRoom(msg,exceptId){if(multiplayer.role==='host')sendRoom(null,exceptId?{...msg,_except:exceptId}:msg)}
 function roomPlayers(){return [{id:playerId,...roomLocalMeta()},...Array.from(multiplayer.peers,([id,p])=>({id,...p,host:false}))]}
 function lockRoomTuning(){
+ for(const el of document.querySelectorAll('[data-event-control]'))el.disabled=!canEditTuning();
  for(const id of ['default-preset','import-preset','load-preset','preset-select']){const el=document.getElementById(id);if(el)el.disabled=!canEditTuning()}
  for(const el of document.querySelectorAll('#tuning-fields input[type=range],#tuning-fields input[type=checkbox],#tuning-fields select'))el.disabled=!canEditTuning();
  let note=document.getElementById('room-tuning-note');if(!note){note=document.createElement('p');note.id='room-tuning-note';note.className='legend';document.getElementById('tuning-fields').before(note)}
@@ -2317,9 +2429,9 @@ function receiveRoomTuning(settings){
 function publishRoomTuning(){
  if(multiplayer.role!=='host'||!multiplayer.ready)return;const value=JSON.stringify(tuning);if(value===lastRoomTuningSent)return;lastRoomTuningSent=value;broadcastRoom({t:'tuning',settings:{...tuning}});
 }
-function hostAnnouncement(target){if(multiplayer.role==='host'&&multiplayer.ready)sendRoom(target,{t:'host',room:multiplayer.room,version:'v3z',map:activeMap,settings:{...tuning},players:roomPlayers()})}
+function hostAnnouncement(target){if(multiplayer.role==='host'&&multiplayer.ready)sendRoom(target,{t:'host',room:multiplayer.room,version:'v3z',map:activeMap,settings:{...tuning},event:disasterSnapshot(),players:roomPlayers()})}
 function applyRoomSnapshot(msg){
- if(multiplayer.role==='guest')receiveRoomTuning(msg.settings);
+ if(multiplayer.role==='guest'){receiveRoomTuning(msg.settings);receiveDisaster(msg.event);}
  const players=new Map();
  for(const p of Array.isArray(msg.players)?msg.players.slice(0,ROOM_MAX_PLAYERS):[]){if(p&&typeof p.id==='string'&&/^[a-f0-9]{24}$/.test(p.id)&&p.id!==playerId)players.set(p.id,roomMeta(p,p.id===multiplayer.hostConnection))}
  if(!players.has(multiplayer.hostConnection))return;
@@ -2375,7 +2487,7 @@ function onRealtimeMessage(msg){
    if(isNew){const used=new Set(Array.from(multiplayer.clients.values(),x=>x.slot));const slot=[1,2,3].find(x=>!used.has(x));multiplayer.clients.set(source,{slot,lastSeen:performance.now()});logRoom('Friend joined',source.slice(0,8))}
    else multiplayer.clients.get(source).lastSeen=performance.now();
    const meta=roomMeta(msg),previous=multiplayer.peers.get(source);multiplayer.peers.set(source,meta);
-   sendRoom(source,{t:'welcome',room:multiplayer.room,map:activeMap,settings:{...tuning},slot:multiplayer.clients.get(source).slot,players:roomPlayers()});
+   sendRoom(source,{t:'welcome',room:multiplayer.room,map:activeMap,settings:{...tuning},event:disasterSnapshot(),slot:multiplayer.clients.get(source).slot,players:roomPlayers()});
    if(isNew||JSON.stringify(previous)!==JSON.stringify(meta)){hostAnnouncement();setRoomStatus('Room '+multiplayer.room+' · '+connectedRiders()+'/'+ROOM_MAX_PLAYERS+' riders connected.');renderRoom()}
    return;
   }
@@ -2398,6 +2510,7 @@ function onRealtimeMessage(msg){
   if(msg.t==='reject'){closeRoom('Cannot join room '+multiplayer.room+': '+String(msg.reason||'Unavailable').slice(0,100));return}
   if(msg.t==='bye'){closeRoom('Host left the room. Back to solo mode. Ask for a new invite when the host returns.');return}
   if(multiplayer.role!=='guest')return;
+  if(msg.t==='weather'){receiveDisaster(msg.event);return}
   if(msg.t==='tuning'){receiveRoomTuning(msg.settings);return}
   if(msg.t==='gone'&&typeof msg.id==='string'){multiplayer.peers.delete(msg.id);removeRemote(msg.id);renderRoom()}
   else if(msg.t==='map'){const map=roomSafeMap(msg.map);if(map!==activeMap){applyMapTheme(map);if(menuStage==='riding')reset()}setRoomStatus('Shared map: '+THEMES[map].label+' (host chooses map).')}
@@ -2926,7 +3039,8 @@ function updateTireDust(dt){
  }
 }
 
-setupTouchControls();applyPaint();applyMapTheme(selectedMap);showMenuStage('lobby');
+setInterval(()=>{const now=performance.now(),elapsed=(now-roomEventClock)/1000;roomEventClock=now;if(roomRole==='host'&&multiplayer.ready)advanceDisasterTime(elapsed)},1000);
+updateWildlife(0);setupTouchControls();applyPaint();applyMapTheme(selectedMap);showMenuStage('lobby');
 
 currentSamples=sampleWheels();loop();
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});

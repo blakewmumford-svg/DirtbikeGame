@@ -9,7 +9,7 @@ const target=fileURLToPath(new URL('../dirtbike_wheelie_landing_fixed.html',impo
 const results=[],errors=[];
 const instrumentation=`
 currentSamples=sampleWheels();
-globalThis.__screamTest={ramps,scene,THREE,riderArms,riderLegs,upperBody,stuntPose,disaster,updateDisasters,startDisaster,stopDisaster,
+globalThis.__screamTest={ramps,scene,THREE,surfaceAt,riderArms,riderLegs,upperBody,stuntPose,disaster,updateDisasters,startDisaster,stopDisaster,
  set({air=false,stage='riding',pause=false}={}){reset();showMenuStage(stage);grounded=!air;pos.y=air?30:.08;paused=pause},
  pose(){for(let i=0;i<60;i++)updateBikeVisuals(1/60,0)},
  drive(){const before=pos.clone();for(let i=0;i<90;i++){keys.KeyW=true;simulateSubstep(1/120);updateDisasters(1/120)}keys.KeyW=false;return pos.distanceTo(before)},
@@ -29,9 +29,9 @@ async function check(name,fn){const evidence=await fn();results.push({name,statu
 let code=0;
 try{
  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>!!window.__screamTest);
- await check('All seven ramp decks face upward and are hit by rays from above',async()=>{
-  const result=await page.evaluate(()=>{const t=__screamTest;return t.ramps.map(r=>{const normal=r.deck.geometry.attributes.normal;let min=1;for(let i=0;i<normal.count;i++)min=Math.min(min,normal.getY(i));const ray=new t.THREE.Raycaster(new t.THREE.Vector3(r.x,r.height+10,r.z),new t.THREE.Vector3(0,-1,0));return{id:r.id,normal:min,hits:ray.intersectObject(r.deck).length}})});
-  assert.equal(result.length,7);assert.ok(result.every(r=>r.normal>0&&r.hits>0));return result;
+ await check('All ramp decks face upward and are hit by rays from above',async()=>{
+  const result=await page.evaluate(()=>{const t=__screamTest;return t.ramps.map(r=>{const normal=r.deck.geometry.attributes.normal;let min=1;for(let i=0;i<normal.count;i++)min=Math.min(min,normal.getY(i));const ray=new t.THREE.Raycaster(new t.THREE.Vector3(r.x,r.height+10,r.z),new t.THREE.Vector3(0,-1,0));return{id:r.id,normal:min,hits:ray.intersectObject(r.deck).length,source:t.surfaceAt(r.x,r.z).source}})});
+  assert.equal(result.length,15);assert.ok(result.every(r=>r.normal>0&&r.hits>0));assert.ok(result.filter(r=>r.id>=7).every(r=>r.source==='ramp '+(r.id+1)));return result;
  });
  await page.evaluate(()=>__screamTest.renderRamp());await page.screenshot({path:fileURLToPath(new URL('../reports/solid-ramps.png',import.meta.url))});
  await check('Modifier keys pose distinct airborne tricks and return to neutral on landing',async()=>{

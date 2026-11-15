@@ -25,7 +25,7 @@ wss.on('connection',socket=>{
 });
 const mockModule=`let socket;export const getRelaySockets=()=>({'test-relay':socket});export function joinRoom(config,roomId){const id=crypto.randomUUID();let onJoin=()=>{},onLeave=()=>{},onData=()=>{};socket=new WebSocket('ws://127.0.0.1:${wss.address().port}');socket.onopen=()=>socket.send(JSON.stringify({type:'join',room:roomId,id}));socket.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='peer')onJoin(m.id);if(m.type==='leave')onLeave(m.id);if(m.type==='data')onData(m.data,m.id)};return{makeAction(){return[(data)=>{if(socket.readyState===1)socket.send(JSON.stringify({type:'data',data}));return Promise.resolve()},callback=>onData=callback]},onPeerJoin(cb){onJoin=cb},onPeerLeave(cb){onLeave=cb},leave(){socket.close()}}}`;
 let source=fs.readFileSync(fileURLToPath(new URL('../dirtbike_wheelie_landing_fixed.html',import.meta.url)),'utf8');
-source=source.replace('currentSamples=sampleWheels();loop();',`renderer.render=()=>{};globalThis.__test={multiplayer,roomDom,tuning,applyValues,canEditTuning,onRealtimeMessage,showMenuStage,get state(){return {role:multiplayer.role,ready:multiplayer.ready,room:multiplayer.room,peers:[...multiplayer.peers],clients:[...multiplayer.clients],map:activeMap,stage:menuStage,remotes:[...multiplayer.seen].map(([id,e])=>({id,visible:e.obj.visible,target:e.target}))}}};currentSamples=sampleWheels();loop();`);
+source=source.replace('currentSamples=sampleWheels();loop();',`renderer.render=()=>{};globalThis.__test={multiplayer,roomDom,tuning,applyValues,canEditTuning,onRealtimeMessage,disaster,startDisaster,stopDisaster,hostAnnouncement,updateDisasters,rain,floodWater,firePatches,confetti,meteorHeads,showMenuStage,get state(){return {role:multiplayer.role,ready:multiplayer.ready,room:multiplayer.room,peers:[...multiplayer.peers],clients:[...multiplayer.clients],map:activeMap,stage:menuStage,remotes:[...multiplayer.seen].map(([id,e])=>({id,visible:e.obj.visible,target:e.target}))}}};currentSamples=sampleWheels();loop();`);
 const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html'}).end(source)});await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch(browserOptions);
 const errors=[],results=[];
@@ -49,6 +49,21 @@ try{
   await host.evaluate(()=>__test.applyValues({...__test.tuning,dustSize:7,gravity:18}));await guest.waitForFunction(()=>__test.tuning.dustSize===7&&__test.tuning.gravity===18);
   assert.equal(await guest.evaluate(()=>__test.canEditTuning()),false);assert.ok(await guest.locator('#tuning-fields input[type=range]').first().isDisabled());
   await guest.evaluate(()=>{__test.applyValues({...__test.tuning,dustSize:10});__test.onRealtimeMessage({_from:'f'.repeat(24),t:'tuning',settings:{...__test.tuning,dustSize:11}})});assert.equal(await guest.evaluate(()=>__test.tuning.dustSize),7);assert.equal(await host.evaluate(()=>__test.tuning.dustSize),7);
+ });
+ await step('Host-started events reach guests, refresh from host snapshots, and stop for everyone',async()=>{
+  for(const type of ['storm','flood','fire','party','meteor']){
+   await host.evaluate(type=>__test.startDisaster(type),type);await guest.waitForFunction(type=>__test.disaster.type===type,type);
+   assert.ok(await guest.evaluate(()=>__test.disaster.remaining>110));await guest.waitForFunction(type=>__test[{storm:'rain',flood:'floodWater',fire:'firePatches',party:'confetti',meteor:'meteorHeads'}[type]].visible,type);
+   await guest.evaluate(()=>__test.startDisaster('quake'));assert.equal(await guest.evaluate(()=>__test.disaster.type),type);
+   await guest.evaluate(()=>{__test.disaster.type=null});await host.evaluate(()=>__test.hostAnnouncement());await guest.waitForFunction(type=>__test.disaster.type===type,type);
+   await host.evaluate(()=>__test.stopDisaster());await guest.waitForFunction(()=>__test.disaster.type===null);
+  }
+ });
+ await step('Late joiners get the active meteor shower and the host clock runs in menus',async()=>{
+  await host.evaluate(()=>{__test.showMenuStage('lobby');__test.startDisaster('meteor')});
+  const late=await rider('Late rider');await late.locator('#room-input').fill((await state(host)).room);await late.locator('#room-join').click();await late.waitForFunction(()=>__test.state.role==='guest'&&__test.disaster.type==='meteor',null,{timeout:12000});
+  await host.waitForFunction(()=>__test.disaster.remaining<119);assert.ok(Math.abs((await host.evaluate(()=>__test.disaster.remaining))-(await late.evaluate(()=>__test.disaster.remaining)))<3);
+  await late.evaluate(()=>__test.roomDom.leave.click());await host.waitForFunction(()=>__test.state.clients.length===1);await host.evaluate(()=>{__test.stopDisaster();__test.showMenuStage('riding')});
  });
  await step('Leaving removes guest from roster',async()=>{await guest.evaluate(()=>__test.roomDom.leave.click());await host.waitForFunction(()=>__test.state.clients.length===0);assert.equal(await guest.evaluate(()=>__test.tuning.dustSize),3);assert.equal(await guest.evaluate(()=>__test.canEditTuning()),true)});
  assert.deepEqual(errors,[]);

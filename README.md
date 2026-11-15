@@ -97,13 +97,13 @@ Press **Enter** while riding to open the Debug tab; press it again to close. Tex
 
 Airborne tricks: hold **Shift** for a no-hander, tap **Ctrl** for a superman, or tap **Alt** for a can-can. Ctrl/Alt taps play a short pose, so release those modifier keys before pressing other browser shortcut keys. Landing returns the rider to the normal pose. Shift remains ground boost; boosted takeoff speed carries into the jump.
 
-Automatic events start every ten minutes of active riding and last two minutes. Thunderstorms bring rain and low thunder, dust storms bring drifting dust and mild haze, and earthquakes bring low rumbles, small dust puffs and gentle external-camera shake. These events do not destroy terrain, block ramps or change bike handling. First-person remains steady. Timers freeze in menus, while paused or while the tab is hidden; moon-fall effects take priority.
+Automatic disasters start every ten minutes and last two minutes: thunderstorms, dust storms, earthquakes, shallow floods, wildfires and meteor showers. Party mode adds colorful confetti and is manual only. Events preserve rideable routes and existing bike handling; first-person stays steady. Solo timing follows active riding. In multiplayer the host keeps the room clock running even in menus/pause, with elapsed-time catch-up after background throttling; the host must keep the game open. Local moon-fall visuals take priority.
 
-For immediate testing: **Enter → Debug → Natural disasters**, choose an event and press **Start now**. **Stop event** clears it. The Automatic events checkbox controls future automatic events and saves on this device. Weather timing/effects are local to each browser; they are not synchronized multiplayer disasters.
+For immediate testing: **Enter → Debug → Natural disasters**, choose an event and press **Start now**. In multiplayer, the host starts/stops it for everyone; guests cannot override it. **Stop event** clears it across the room. Host announcements carry the current event and timers for late joins/reconnects. The host’s Automatic events checkbox controls automatic room events. Thunder gets an initial rumble when started (subject to sound settings/browser audio unlock). Party mode is excluded from the random pool.
 
 ## Touch, keyboard and connected controllers
 
-Phones/tablets automatically show multi-touch controls in portrait or landscape. Steer and hold Gas with separate fingers; Gas/Brake also control airborne flips. Wheelie is a tap, and Boost remains the ground boost control. The single Random trick button picks Superman, Can-can or No-hander while airborne. Camera/Pause/Repair are pinned to the bottom-left edge; Random trick is at the bottom-right edge, with the center kept clear. Use **Info → Touch controls** to choose Automatic, Show or Hide. Sound sliders are inside Info on touch devices.
+Phones/tablets automatically show multi-touch controls in portrait or landscape. Steer and hold Gas with separate fingers; Gas/Brake also control airborne flips. Wheelie is a tap, and Boost remains the ground boost control. The single Random trick button picks Superman, Can-can or No-hander while airborne. Camera/Pause/Repair are pinned to the bottom-left edge; Random trick is directly above Brake at the same size, with the center kept clear. Use **Info → Touch controls** to choose Automatic, Show or Hide. Sound sliders are inside Info on touch devices.
 
 Keyboard controls remain available at the same time. Standard Bluetooth/USB controllers work through the browser's Gamepad API: RT/R2 throttle, LT/L2 brake, left stick steering/air yaw, A/Cross wheelie, Y/Triangle camera, X/Square reset. RB/R1 is ground boost/air no-hander; LB/L1 is ground pause/air superman; B/Circle is ground contact probes/air can-can. Right stick orbits the camera. L3 pauses anywhere. D-pad left repairs; Start/Options opens the garage. Press a controller button after connecting so the browser can discover it.
 
@@ -120,3 +120,10 @@ Active multiplayer riders have paint-colored direction arrows with names and dis
 ## Shared room tuning
 
 In multiplayer, the host's tuning applies to everyone in that room, including late joiners. Guest tuning/preset controls are read-only and non-host tuning messages are ignored by the normal client. Leaving restores the guest's local solo tuning; temporary room tuning is not written over it. Host announcements periodically refresh settings. This is room-level host authority, not account authentication or a server-side anti-cheat system. Publishing built-in defaults for every future player remains the separate GitHub-owner workflow.
+
+
+## Expanded stunt park and wildlife
+
+All three maps now have fifteen ramps (the original seven plus eight new jumps) and six jump-through stunt rings. New ramp approaches are cleared of scattered rocks/hills.
+
+Bears chase nearby riders and can cause damage/ragdoll on contact. Foxes flee approaching riders. Two wolf packs have 5–15 wolves each: they howl/growl nearby and attack only within four meters. A pack-wide cooldown limits repeated bites. Use **J** to repair/recover or **R** to reset. Calls are synthesized and follow the existing effects volume/mute rules. Wildlife uses instanced meshes for mobile efficiency. Animals and damage are simulated locally on each client; wildlife AI is not a shared authoritative multiplayer simulation. Shared disasters are synchronized separately.
