@@ -810,13 +810,15 @@ for(let i=0;i<16;i++){
 const confetti=new THREE.InstancedMesh(new THREE.PlaneGeometry(.20,.12),new THREE.MeshBasicMaterial({side:THREE.DoubleSide}),120),confettiDummy=new THREE.Object3D(),confettiColor=new THREE.Color();
 confetti.frustumCulled=false;disaster.root.add(confetti);for(let i=0;i<120;i++){confettiColor.setHSL(i/120,.9,.6);confetti.setColorAt(i,confettiColor)}
 function eventClockOffset(){return roomRole==='host'?Math.max(0,(performance.now()-roomEventClock)/1000):0}
-function disasterSnapshot(){const offset=eventClockOffset();return{type:disaster.type,remaining:Math.max(0,disaster.remaining-offset),untilNext:Math.max(0,disaster.untilNext-offset),time:disaster.time+offset,automatic:disaster.automatic,id:disaster.id||0}}
+function disasterSnapshot(){const offset=eventClockOffset();return{type:disaster.type,remaining:Math.max(0,disaster.remaining-offset),untilNext:Math.max(0,disaster.untilNext-offset),time:disaster.time+offset,automatic:disaster.automatic,id:disaster.id||0,lightning:disaster.type==='storm'&&disaster.lightning?{...disaster.lightning}:null}}
 function publishDisaster(){if(roomRole==='host'&&multiplayer.ready)broadcastRoom({t:'weather',event:disasterSnapshot()})}
 function receiveDisaster(event){
  if(!event||!(event.type===null||Object.hasOwn(EVENT_NAMES,event.type))||!['remaining','untilNext','time','id'].every(k=>Number.isFinite(event[k])&&event[k]>=0)||event.remaining>120||event.untilNext>600||typeof event.automatic!=='boolean')return;
  const fresh=disaster.id!==event.id||disaster.type!==event.type;
+ const bolt=validLightning(event.lightning,event.id)?{...event.lightning}:null;
  Object.assign(disaster,event);
  if(fresh)clearEventHazards();
+ disaster.lightning=event.type==='storm'?bolt:null;
  if(fresh&&event.type==='storm')playSoundNoise(1.2,180,.14);
  const automatic=document.querySelector('[aria-label="Automatic natural disasters"]');if(automatic)automatic.checked=disaster.automatic;
 }
@@ -827,7 +829,7 @@ function updateWorldEvents(visible){
  moveTornado(eventTime);
  if(tornadoRoot.visible)for(let i=0;i<tornadoRoot.children.length;i++){const ring=tornadoRoot.children[i];if(ring.userData.funnel){ring.rotation.y=eventTime*1.4;continue}ring.position.x=Math.sin(eventTime*1.8+i*.5)*i*.07;ring.position.z=Math.cos(eventTime*1.5+i*.4)*i*.07;ring.rotation.z=eventTime*1.8+i*.2;}
  if(volcanoRoot.visible){for(let i=0;i<18;i++){const t=(eventTime*.2+i*.137)%1,a=i*2.399;confettiDummy.position.set(Math.sin(a)*t*65,24+Math.sin(Math.PI*t)*45-t*24,Math.cos(a)*t*65);confettiDummy.rotation.set(t*10,0,0);confettiDummy.updateMatrix();lava.setMatrixAt(i,confettiDummy.matrix)}lava.instanceMatrix.needsUpdate=true}meteorHeads.visible=meteorTrails.visible=visible&&disaster.type==='meteor';
- updateFallingRocks(eventTime,visible);
+ updateFallingRocks(eventTime,visible);updateLightning(eventTime,visible);
  if(floodWater.visible)floodWater.position.y=.4+Math.sin(eventTime*.6)*.12;
  if(firePatches.visible)for(const patch of firePatches.children){patch.position.y=surfaceAt(patch.position.x,patch.position.z).height;for(const flame of patch.children){flame.scale.y=.8+Math.sin(eventTime*4+flame.userData.phase)*.22;flame.position.y=2*flame.scale.y}}
  if(confetti.visible){for(let i=0;i<120;i++){confettiDummy.position.set((i*13.7)%35-17.5,((i*.71-eventTime*2)%16+16)%16,(i*23.1)%35-17.5);confettiDummy.rotation.set(eventTime+i,i*.8,eventTime*1.6);confettiDummy.updateMatrix();confetti.setMatrixAt(i,confettiDummy.matrix)}confetti.instanceMatrix.needsUpdate=true}
@@ -878,6 +880,7 @@ let splashCursor=0,rippleCursor=0,splashBudget=0,eventHurtCooldown=0,eventImpact
 const hazardLastBike=new THREE.Vector3(0,.08,25);
 function eventRandom(n){const v=Math.sin(n*127.1+(disaster.id||0)*311.7)*43758.5453;return v-Math.floor(v)}
 function clearEventHazards(){
+ clearLightning();
  for(const r of eventRocks){r.active=false;r.obj.visible=false;r.key='';r.seen='';r.impactAge=99}
  for(const ring of impactRings)ring.visible=false;for(const smoke of volcanoSmoke)smoke.visible=false;
  for(const p of splashDrops)p.life=0;for(const r of waterRipples){r.age=2;r.obj.visible=false}splashMesh.visible=false;splashBudget=0;eventHurtCooldown=0;eventImpactShake=0;eventHazardTime=0;
@@ -911,6 +914,7 @@ function eventHit(amount,severity,name,eject=false){
 function updateEventHazards(dt){
  if(dt<=0)return;eventHurtCooldown=Math.max(0,eventHurtCooldown-dt);eventImpactShake=Math.max(0,eventImpactShake-dt*1.15);eventHazardTime+=dt;
  const visible=menuStage==='riding'&&!spaceFall.active,point=ragdoll.active?ragdoll.nodes.chest.p:pos;
+ if(visible)applyLightningHit();
  if(visible&&disaster.type==='fire'&&!ragdoll.active){for(const patch of firePatches.children){if(Math.hypot(pos.x-patch.position.x,pos.z-patch.position.z)<4.5&&pos.y<patch.position.y+6){eventHit(18,9,'Wildfire burns');break}}}
  if(visible&&disaster.type==='volcano'&&Math.hypot(pos.x-volcanoRoot.position.x,pos.z-volcanoRoot.position.z)<14&&pos.y<29)eventHit(24,12,'Volcano heat');
  for(const r of eventRocks){
@@ -938,6 +942,54 @@ function updateFloodSplashes(dt,visible){
  splashMesh.visible=wet;
  for(let i=0;i<64;i++){const p=splashDrops[i];p.life=Math.max(0,p.life-dt);if(!wet)p.life=0;if(p.life>0){p.v.y-=9*dt;p.p.addScaledVector(p.v,dt)}confettiDummy.position.copy(p.p);confettiDummy.scale.setScalar(p.life>0?Math.min(1,p.life*5):0);confettiDummy.rotation.set(0,0,0);confettiDummy.updateMatrix();splashMesh.setMatrixAt(i,confettiDummy.matrix)}splashMesh.instanceMatrix.needsUpdate=true;confettiDummy.scale.setScalar(1);
  for(const r of waterRipples){r.age+=dt;r.obj.visible=wet&&r.age<.85;if(r.obj.visible){r.obj.scale.setScalar(.2+r.age*2.5);r.obj.material.opacity=.5*(1-r.age/.85)}}
+}
+
+// The room host selects and broadcasts a warned strike; guests never choose targets.
+const stormTracks=new Map();let lightningSlot=0,lightningSoundKey='',lightningHitKey='';
+const lightningRoot=new THREE.Group();scene.add(lightningRoot);
+const lightningVertices=new Float32Array(13*3),lightningGeometry=new THREE.BufferGeometry();lightningGeometry.setAttribute('position',new THREE.BufferAttribute(lightningVertices,3));
+const lightningBolt=new THREE.Line(lightningGeometry,new THREE.LineBasicMaterial({color:0xe5f7ff,transparent:true,opacity:1,depthTest:false}));lightningBolt.frustumCulled=false;lightningBolt.visible=false;lightningRoot.add(lightningBolt);
+const lightningCore=new THREE.InstancedMesh(new THREE.CylinderGeometry(.10,.10,1,5),new THREE.MeshBasicMaterial({color:0xe5f7ff,transparent:true,opacity:1,depthTest:false}),12);lightningCore.frustumCulled=false;lightningCore.visible=false;lightningRoot.add(lightningCore);
+const lightningFrom=new THREE.Vector3(),lightningTo=new THREE.Vector3(),lightningAxis=new THREE.Vector3(0,1,0),lightningDirection=new THREE.Vector3();
+const lightningWarning=new THREE.Mesh(new THREE.RingGeometry(3.4,3.8,32),new THREE.MeshBasicMaterial({color:0xffd061,transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false}));lightningWarning.rotation.x=-Math.PI/2;lightningWarning.visible=false;lightningRoot.add(lightningWarning);
+const lightningGlow=new THREE.PointLight(0xcdeaff,0,45,1.5);lightningRoot.add(lightningGlow);
+function validLightning(b,eventId){return b&&typeof b==='object'&&b.eventId===eventId&&Number.isInteger(b.seq)&&b.seq>=1&&b.seq<=24&&['x','y','z','at'].every(k=>Number.isFinite(b[k]))&&Math.abs(b.x)<2000&&Math.abs(b.z)<2000&&b.y>=-100&&b.y<1000&&b.at>=0&&b.at<=120}
+function clearLightning(){stormTracks.clear();lightningSlot=0;lightningSoundKey='';lightningHitKey='';disaster.lightning=null;lightningRoot.visible=false;lightningBolt.visible=false;lightningCore.visible=false;lightningWarning.visible=false;lightningGlow.intensity=0}
+function updateStormTracks(time){
+ const candidates=[];
+ if(menuStage==='riding'&&!paused&&!spaceFall.active&&!ragdoll.active)candidates.push({id:playerId,p:pos.toArray()});
+ if(roomRole==='host')for(const [id,entry] of multiplayer.seen){const p=entry.target;if(p?.stage==='riding'&&!p.ragdoll&&!p.space&&performance.now()-entry.lastSeen<3000)candidates.push({id,p:p.p})}
+ const active=new Set();
+ for(const c of candidates){if(!onIsland(c.p[0],c.p[2]))continue;active.add(c.id);let track=stormTracks.get(c.id);if(!track||time<track.since||Math.hypot(c.p[0]-track.x,c.p[2]-track.z)>2.5){track={x:c.p[0],z:c.p[2],since:time};stormTracks.set(c.id,track)}c.still=Math.max(0,time-track.since)}
+ for(const id of stormTracks.keys())if(!active.has(id))stormTracks.delete(id);
+ return candidates.filter(c=>active.has(c.id));
+}
+function updateLightning(time,visible){
+ lightningRoot.visible=visible&&disaster.type==='storm';lightningCore.visible=lightningBolt.visible=lightningWarning.visible=false;lightningGlow.intensity=0;
+ if(disaster.type!=='storm')return;
+ if(canEditTuning()){
+  const candidates=updateStormTracks(time),slot=Math.floor(time/5);
+  if(slot>lightningSlot){
+   lightningSlot=slot;let x=(eventRandom(slot*17)-.5)*360,z=(eventRandom(slot*17+1)-.5)*360;
+   if(candidates.length){const weights=candidates.map(c=>1+Math.min(25,c.still*c.still/8)),total=weights.reduce((a,b)=>a+b,0);let pick=eventRandom(slot*17+2)*total,index=0;while(index<weights.length-1&&pick>=weights[index])pick-=weights[index++];const c=candidates[index],chance=.18+.74*THREE.MathUtils.clamp((c.still-4)/10,0,1);if(eventRandom(slot*17+3)<chance){x=c.p[0];z=c.p[2]}}
+   disaster.lightning={eventId:disaster.id||0,seq:slot,x,y:surfaceAt(x,z).height,z,at:Math.min(119.8,time+1.25)};publishDisaster();
+  }
+ }
+ const b=disaster.lightning;if(!validLightning(b,disaster.id||0))return;
+ const age=time-b.at,key=b.eventId+':'+b.seq;
+ lightningWarning.visible=lightningRoot.visible&&age>=-1.25&&age<0;
+ if(lightningWarning.visible){lightningWarning.position.set(b.x,b.y+.08,b.z);lightningWarning.scale.setScalar(1+Math.max(0,1+age/1.25)*.18);lightningWarning.material.opacity=.45+.35*(1+age/1.25)}
+ lightningBolt.visible=lightningRoot.visible&&age>=0&&age<.28;
+ if(lightningBolt.visible){
+  for(let i=0;i<13;i++){const fraction=i/12,jitter=i===0||i===12?0:3;lightningVertices.set([b.x+(eventRandom(b.seq*89+i)-.5)*jitter,b.y+85*(1-fraction),b.z+(eventRandom(b.seq*97+i)-.5)*jitter],i*3)}lightningGeometry.attributes.position.needsUpdate=true;lightningBolt.material.opacity=1-age/.28;lightningCore.visible=true;lightningCore.material.opacity=1-age/.28;for(let i=0;i<12;i++){lightningFrom.fromArray(lightningVertices,i*3);lightningTo.fromArray(lightningVertices,(i+1)*3);lightningDirection.subVectors(lightningTo,lightningFrom);confettiDummy.position.copy(lightningFrom).lerp(lightningTo,.5);confettiDummy.quaternion.setFromUnitVectors(lightningAxis,lightningDirection.clone().normalize());confettiDummy.scale.set(1,lightningDirection.length(),1);confettiDummy.updateMatrix();lightningCore.setMatrixAt(i,confettiDummy.matrix)}lightningCore.instanceMatrix.needsUpdate=true;confettiDummy.scale.setScalar(1);lightningGlow.position.set(b.x,b.y+5,b.z);lightningGlow.intensity=12*(1-age/.28);
+ }
+ if(lightningRoot.visible&&age>=0&&age<.65&&lightningSoundKey!==key){lightningSoundKey=key;playSoundNoise(1.6,110,.24);eventImpactShake=Math.max(eventImpactShake,.7)}
+}
+function applyLightningHit(){
+ const b=disaster.lightning;if(disaster.type!=='storm'||!validLightning(b,disaster.id||0))return;
+ const age=disaster.time+eventClockOffset()-b.at,key=b.eventId+':'+b.seq;
+ if(age<0||age>.65||lightningHitKey===key)return;lightningHitKey=key;
+ if(menuStage==='riding'&&!spaceFall.active&&!ragdoll.active&&Math.hypot(pos.x-b.x,pos.z-b.z)<4.5&&pos.y>=b.y-2&&pos.y<b.y+85){eventHit(50,28,'Lightning strike',true);vertical=Math.max(vertical,9)}
 }
 
 const disasterHud=document.createElement('div');disasterHud.id='disaster-hud';disasterHud.style.cssText='position:fixed;top:65px;left:50%;transform:translateX(-50%);z-index:4;pointer-events:none;background:#14212bcc;color:white;padding:8px 14px;border-radius:10px;font:600 13px system-ui;display:none';document.body.append(disasterHud);
@@ -994,7 +1046,7 @@ function updateDisasters(dt){
    if(disaster.type==='party'){weatherTint.setHSL((eventTime/12)%1,.5,.65);scene.background.lerp(weatherTint,fade*.18)}
   }
  }
- disasterHud.style.display=disaster.root.visible?'block':'none';if(disaster.root.visible)disasterHud.textContent=EVENT_NAMES[disaster.type]+' · '+Math.ceil(disaster.remaining)+'s · keep riding';
+ disasterHud.style.display=disaster.root.visible?'block':'none';if(disaster.root.visible){const b=disaster.lightning,near=disaster.type==='storm'&&b&&eventTime<b.at&&b.at-eventTime<=1.25&&Math.hypot(pos.x-b.x,pos.z-b.z)<10;disasterHud.textContent=near?'⚡ Lightning nearby — MOVE!':EVENT_NAMES[disaster.type]+' · '+Math.ceil(disaster.remaining)+'s · keep riding';}
  if(!disaster.root.visible)return;
  disaster.root.position.set(pos.x,Math.max(0,pos.y),pos.z);
  rain.visible=disaster.type==='storm';
@@ -1003,7 +1055,7 @@ function updateDisasters(dt){
   rainGeometry.attributes.position.needsUpdate=true;
  }
  for(let i=0;i<stormClouds.length;i++){const p=stormClouds[i],quake=disaster.type==='quake';p.visible=disaster.type==='dust'||disaster.type==='fire'||disaster.type==='volcano'||quake;p.material.color.setHex(disaster.type==='fire'||disaster.type==='volcano'?0x777572:0xbd925a);if(p.visible){p.scale.setScalar(quake?1.7+i%3:5+i%5);p.position.set(((i*13.7+eventTime*(quake?.4:3))%65)-32,quake?.15+(i%3)*.2:1+(i*3.13)%9,((i*21.1)%65)-32)}}
- // A low thunder rumble, spaced well apart; no flashing lights or damage.
+ // Lightning has its own warned strikes, impact sound and damage; background rumbles remain.
  updatePlayerIndicators();
  if(disaster.type==='quake'&&dt>0&&Math.floor(eventTime/12)!==Math.floor((eventTime-dt)/12))playSoundNoise(1.8,100,.10);
  if(rain.visible&&dt>0&&Math.floor(eventTime/18)!==Math.floor((eventTime-dt)/18))playSoundNoise(1.2,180,.14);
@@ -2122,7 +2174,7 @@ function simulateSubstep(dt){
   airYawVelocity=0;
   const oldYaw=yaw;
   const wheelieTurning=wheelieArmed&&pitch>.12&&speed>.55;
-  if(wheelieTurning){const direct=steer*tuning.turnRate*THREE.MathUtils.clamp(Math.abs(speed)/8,.15,1)*.78,bank=THREE.MathUtils.clamp(9.81*Math.tan(turnLeanAngle)/Math.max(3,Math.abs(speed)),-.9,.9);yaw+=(direct+bank*.35)*dt;}
+  if(wheelieTurning){const control=THREE.MathUtils.lerp(1.45,.65,THREE.MathUtils.clamp((Math.abs(speed)-1)/17,0,1)),direct=steer*tuning.turnRate*control,bank=THREE.MathUtils.clamp(9.81*Math.tan(turnLeanAngle)/Math.max(3,Math.abs(speed)),-.9,.9);yaw+=(direct+bank*.35)*dt;}
   else yaw+=steer*dt*tuning.turnRate*THREE.MathUtils.clamp(Math.hypot(speed,lateralSpeed)/10,0,1)*(speed<0?-1:1);
   // Steering turns the chassis first; grip then makes momentum follow the tires.
   // Pure yaw changes must not rotate the existing world velocity instantaneously.

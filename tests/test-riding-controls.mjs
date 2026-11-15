@@ -12,7 +12,7 @@ currentSamples=sampleWheels();
 globalThis.__screamTest={riderLegs,stuntPose,
  set(air=false,v=0){reset();showMenuStage('riding');grounded=!air;speed=v;pos.y=air?30:.08;for(const k of Object.keys(keys))keys[k]=false;controller.boost=false},
  pose(n=60){for(let i=0;i<n;i++)updateBikeVisuals(1/60,0)},
- wheelie(){this.set();pitch=.55;pitchVelocity=0;speed=8;keys.KeyW=true;grounded=true;wheelieArmed=true;pos.y=heightAt(pos.x,pos.z)+WHEEL_RADIUS-WHEEL_Y*Math.cos(pitch)+WHEEL_Z[1]*Math.sin(pitch)-.02;currentSamples=sampleWheels()},
+ wheelie(v=8){this.set();pitch=.55;pitchVelocity=0;speed=v;keys.KeyW=true;grounded=true;wheelieArmed=true;pos.y=heightAt(pos.x,pos.z)+WHEEL_RADIUS-WHEEL_Y*Math.cos(pitch)+WHEEL_Z[1]*Math.sin(pitch)-.02;currentSamples=sampleWheels()},
  step(n){for(let i=0;i<n;i++)simulateSubstep(1/120)},
  get state(){return{bank:turnLeanAngle,target:turnLeanTarget,yaw,pitch,grounded,armed:wheelieArmed,ragdoll:ragdoll.active,frameBank:frame.rotation.z}},
  render(){bike.position.copy(pos);bike.rotation.set(pitch,yaw,0,'YXZ');camera.position.set(5,2.8,25);camera.lookAt(0,1.5,25);document.getElementById('tuner').style.visibility='hidden';renderer.render(scene,camera)}
@@ -52,6 +52,11 @@ try{
    await page.evaluate(()=>__screamTest.wheelie());await page.keyboard.down(key);await page.evaluate(()=>__screamTest.step(1));const first=await page.evaluate(()=>__screamTest.state);assert.ok(first.yaw*sign>.001);
    await page.evaluate(()=>__screamTest.step(35));const turning=await page.evaluate(()=>__screamTest.state);await page.keyboard.up(key);assert.ok(turning.bank*sign>.15);assert.ok(turning.yaw*sign>.18);assert.ok(Math.abs(turning.bank)<.43);assert.equal(turning.frameBank,turning.bank);assert.equal(turning.ragdoll,false);results.push({key,first,turning});
   }return results;
+ });
+ await check('Low-speed wheelies steer more tightly than fast wheelies in both directions',async()=>{
+  const result=[];
+  for(const key of ['a','d'])for(const v of [2,8,18]){await page.evaluate(v=>__screamTest.wheelie(v),v);await page.keyboard.down(key);await page.evaluate(()=>__screamTest.step(1));const state=await page.evaluate(()=>__screamTest.state);await page.keyboard.up(key);result.push({key,v,...state})}
+  for(const key of ['a','d']){const states=result.filter(s=>s.key===key);assert.ok(Math.abs(states[0].yaw)>Math.abs(states[1].yaw));assert.ok(Math.abs(states[1].yaw)>Math.abs(states[2].yaw));assert.ok(states.every(s=>s.armed&&!s.ragdoll))}return result;
  });
  assert.deepEqual(errors,[]);
 }catch(e){code=1;console.error(e);results.push({error:String(e),stack:e.stack})}

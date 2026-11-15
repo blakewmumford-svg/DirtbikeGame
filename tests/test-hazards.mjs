@@ -9,13 +9,14 @@ const target=fileURLToPath(new URL('../dirtbike_wheelie_landing_fixed.html',impo
 const results=[],errors=[];
 const instrumentation=`
 currentSamples=sampleWheels();
-globalThis.__screamTest={eventRocks,impactRings,volcanoSmoke,splashDrops,waterRipples,splashMesh,tornadoRoot,tornadoRide,firePatches,disaster,startDisaster,stopDisaster,receiveDisaster,disasterSnapshot,updateWorldEvents,updateEventHazards,applyTornadoForces,
+globalThis.__screamTest={eventRocks,impactRings,volcanoSmoke,splashDrops,waterRipples,splashMesh,tornadoRoot,tornadoRide,firePatches,disaster,startDisaster,stopDisaster,receiveDisaster,disasterSnapshot,updateWorldEvents,updateEventHazards,applyTornadoForces,updateLightning,lightningRoot,lightningWarning,lightningBolt,stormTracks,
  set(type){reset();showMenuStage('riding');for(const k of Object.keys(keys))keys[k]=false;startDisaster(type)},
  place(x,y,z,v=0){pos.set(x,y,z);speed=v;hazardLastBike.copy(pos)},
  at(time){disaster.time=time;updateWorldEvents(true)},
  sweepRock(){const r=eventRocks[0];pos.set(r.p.x-8,r.p.y-1,r.p.z);hazardLastBike.copy(pos);pos.x+=16;speed=40;updateEventHazards(1/60)},
  frame(dt){simulateSubstep(dt);disaster.time+=dt;updateWorldEvents(true);updateEventHazards(dt)},
  get state(){return{pos:pos.toArray(),speed,vertical,lateralSpeed,damage,ragdoll:ragdoll.active,shake:eventImpactShake,captured:tornadoRide.captured,turns:tornadoRide.turns,cooldown:tornadoRide.cooldown}},
+ lightningPreview(time){this.set('storm');this.place(0,.08,25);disaster.lightning={eventId:disaster.id,seq:1,x:0,y:0,z:25,at:2};this.at(time);bike.position.copy(pos);camera.position.set(28,32,65);camera.lookAt(0,30,25);renderer.render(scene,camera)},
  render(){bike.position.copy(pos);bike.rotation.set(pitch,yaw,0,'YXZ');camera.position.copy(pos).add(new THREE.Vector3(14,12,22));camera.lookAt(pos.x,pos.y+2,pos.z);renderer.render(scene,camera)}
 };`;
 const server=http.createServer((req,res)=>{
@@ -32,6 +33,15 @@ async function check(name,fn){const evidence=await fn();results.push({name,statu
 let code=0;
 try{
  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>!!window.__screamTest);
+ await check('Lightning increasingly targets stationary riders and warns before striking',async()=>{
+  const r=await page.evaluate(()=>{const t=__screamTest;function sample(moving){let targeted=0,total=0;for(let trial=1;trial<=40;trial++){t.set('storm');t.disaster.id=trial;t.place(0,.08,25);t.at(0);for(let time=1;time<=100;time++){if(moving)t.place(Math.sin(time*.5)*80,.08,25+Math.cos(time*.5)*80);t.at(time);if(time%5===0&&time>=20){const b=t.disaster.lightning;total++;if(Math.hypot(b.x-t.state.pos[0],b.z-t.state.pos[2])<.01)targeted++}}}return{targeted,total,rate:targeted/total}}return{still:sample(false),moving:sample(true)}});assert.ok(r.still.rate>.8&&r.moving.rate<.3&&r.still.rate>r.moving.rate*3);return r;
+ });
+ await check('Lightning warning precedes damage; a strike ejects once, while riding away dodges it',async()=>{
+  const r=await page.evaluate(()=>{const t=__screamTest;function setup(){t.set('storm');t.place(0,.08,25);t.disaster.lightning={eventId:t.disaster.id,seq:1,x:0,y:0,z:25,at:2};t.at(1);t.updateEventHazards(.016)}setup();const warning={visible:t.lightningWarning.visible,bolt:t.lightningBolt.visible,...t.state};t.at(2.1);t.updateEventHazards(.016);const hit={visible:t.lightningBolt.visible,...t.state};t.updateEventHazards(.016);const again=t.state;setup();t.place(15,.08,25);t.at(2.1);t.updateEventHazards(.016);const dodged=t.state;t.stopDisaster();return{warning,hit,again,dodged,stopped:t.lightningRoot.visible}});assert.ok(r.warning.visible&&!r.warning.bolt&&!r.warning.ragdoll&&r.warning.damage===0);assert.ok(r.hit.visible&&r.hit.ragdoll&&r.hit.damage===50&&r.hit.vertical>=9);assert.equal(r.again.damage,r.hit.damage);assert.equal(r.dodged.damage,0);assert.equal(r.dodged.ragdoll,false);assert.equal(r.stopped,false);return r;
+ });
+ await check('Lightning snapshots retain strikes and reject malformed targets',async()=>{
+  const r=await page.evaluate(()=>{const t=__screamTest;t.set('storm');const bolt={eventId:t.disaster.id,seq:1,x:10,y:0,z:25,at:8};t.disaster.lightning=bolt;const snap=t.disasterSnapshot();t.stopDisaster();t.receiveDisaster(snap);const restored=t.disaster.lightning;t.receiveDisaster({...snap,lightning:{...bolt,x:Infinity}});return{bolt,restored,invalid:t.disaster.lightning}});assert.deepEqual(r.bolt,r.restored);assert.equal(r.invalid,null);return r;
+ });
  await check('Flood produces bounded tire spray and expanding water marks only in shallow water',async()=>{
   const r=await page.evaluate(()=>{const t=__screamTest;t.set('flood');t.place(0,.08,25,12);t.at(2);for(let i=0;i<50;i++)t.updateEventHazards(1/120);const wet={drops:t.splashDrops.filter(p=>p.life>0).length,ripples:t.waterRipples.filter(p=>p.obj.visible).length,visible:t.splashMesh.visible};t.place(0,20,25,12);for(let i=0;i<120;i++)t.updateEventHazards(1/120);const dry=t.splashDrops.filter(p=>p.life>0).length;t.stopDisaster();return{wet,dry,stopped:t.splashMesh.visible}});assert.ok(r.wet.drops>5&&r.wet.drops<=64&&r.wet.ripples>0&&r.wet.visible);assert.equal(r.dry,0);assert.equal(r.stopped,false);return r;
  });
@@ -53,6 +63,8 @@ try{
  await check('Volcano smoke rises and large ballistic rocks can hit riders and become obstacles',async()=>{
   const r=await page.evaluate(()=>{const t=__screamTest;t.set('volcano');t.at(2);const rock=t.eventRocks[0],falling=!rock.landed,radius=rock.radius,smoke=t.volcanoSmoke.filter(p=>p.visible).length,y=t.volcanoSmoke[0].position.y;t.place(rock.p.x,rock.p.y-1,rock.p.z);t.updateEventHazards(.016);const hit=t.state;t.at(6);const landed=t.eventRocks[0].landed;t.stopDisaster();return{falling,radius,smoke,y,hit,landed,off:t.volcanoSmoke.every(p=>!p.visible)}});assert.ok(r.falling&&r.radius>=1.5&&r.smoke===16&&r.y>25&&r.hit.ragdoll&&r.hit.damage>0&&r.landed&&r.off);return r;
  });
+ await page.evaluate(()=>{document.getElementById('tuner').style.visibility='hidden';__screamTest.lightningPreview(1.5)});await page.screenshot({path:fileURLToPath(new URL('../reports/lightning-warning.png',import.meta.url))});
+ await page.evaluate(()=>__screamTest.lightningPreview(2.1));await page.screenshot({path:fileURLToPath(new URL('../reports/lightning-strike.png',import.meta.url))});
  await page.evaluate(()=>{const t=__screamTest;t.set('flood');t.place(0,.08,25,15);t.at(2);for(let i=0;i<50;i++)t.updateEventHazards(1/120);document.getElementById('tuner').style.visibility='hidden';t.render()});await page.screenshot({path:fileURLToPath(new URL('../reports/flood-splashes.png',import.meta.url))});
  assert.deepEqual(errors,[]);
 }catch(e){code=1;console.error(e);results.push({error:String(e),stack:e.stack})}
