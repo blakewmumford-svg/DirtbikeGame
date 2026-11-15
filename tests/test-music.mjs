@@ -9,7 +9,7 @@ const target=fileURLToPath(new URL('../dirtbike_wheelie_landing_fixed.html',impo
 const results=[],errors=[];
 const instrumentation=`
 currentSamples=sampleWheels();renderer.render=()=>{};
-globalThis.__screamTest={rideAudio,updateRideAudio,popCrashBubble,popMoonPow,handleBikeCrash,makeRagdoll,beginSpaceFall,simulate,simulateSubstep,reset,toggleWheelie,showMenuStage,clearCrashEffects,stopRideSounds,speakCrash,
+globalThis.__screamTest={rideAudio,PARTY_TRACK,startDisaster,stopDisaster,updateRideMusic,partyAt(time){startDisaster('party');disaster.time=time;updateRideMusic()},updateRideAudio,popCrashBubble,popMoonPow,handleBikeCrash,makeRagdoll,beginSpaceFall,simulate,simulateSubstep,reset,toggleWheelie,showMenuStage,clearCrashEffects,stopRideSounds,speakCrash,
  head(){return ragdoll.nodes.head.p},
  set(s){
   if(s.speed!==undefined)speed=s.speed;
@@ -65,6 +65,14 @@ try{
   await page.evaluate(()=>__screamTest.set({stage:'lobby'}));await tick(30);const s=await page.evaluate(()=>{const a=__screamTest.rideAudio;return{menu:a.musicMenuGain.gain.value,ride:a.musicRideGain.gain.value,sources:a.musicSources.length}});assert.ok(s.menu>.1&&s.ride<.001);assert.equal(s.sources,2);
   await page.setViewportSize({width:390,height:844});await page.locator('#music-volume').scrollIntoViewIfNeeded();assert.ok(await page.locator('#music-volume').isVisible());
   const rect=await page.locator('#sound-controls').boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=391);await page.screenshot({path:fileURLToPath(new URL('../reports/mobile-controls.png',import.meta.url))});return{...s,rect};
+ });
+ await check('Party song has a two-minute stereo arrangement with a contrasting bridge and big chorus',async()=>{
+  await page.evaluate(()=>{__screamTest.set({stage:'riding',paused:false,throttle:false});__screamTest.partyAt(0)});await tick(30);
+  const r=await page.evaluate(()=>{const a=__screamTest.rideAudio,b=a.partyBuffer,l=b.getChannelData(0),r=b.getChannelData(1);const sections=__screamTest.PARTY_TRACK.sections.map(s=>{let sum=0,n=0;for(let i=Math.ceil(s.start*b.sampleRate);i<Math.min(l.length,s.end*b.sampleRate);i+=32){sum+=l[i]*l[i];n++}return{name:s.name,rms:Math.sqrt(sum/n)}});let peak=0,width=0;for(let i=0;i<l.length;i+=32){peak=Math.max(peak,Math.abs(l[i]),Math.abs(r[i]));width+=(l[i]-r[i])**2}return{duration:b.duration,channels:b.numberOfChannels,peak,width:Math.sqrt(width/(l.length/32)),sections,gain:a.partyGain.gain.value,ride:a.musicRideGain.gain.value,offset:a.partyStartOffset}});
+  assert.ok(Math.abs(r.duration-120)<.1&&r.channels===2&&r.width>.005&&r.peak<1);assert.equal(r.sections.length,10);assert.ok(r.sections.every(s=>s.rms>.003));const level=name=>r.sections.find(s=>s.name===name).rms;assert.ok(level('Chorus')>level('Verse 1')*1.15&&level('Chorus')>level('Bridge')*2);assert.ok(r.gain>.1&&r.ride<.001&&r.offset===0);return r;
+ });
+ await check('Party starts at event time, restarts for a new event, ducks for voices and releases its source',async()=>{
+  const r=await page.evaluate(async()=>{const t=__screamTest,a=t.rideAudio,first=a.partySource;t.partyAt(45);const offset=a.partyStartOffset,replaced=first!==a.partySource;const priorGain=a.partyGain.gain.value;await t.speakCrash('recorded_wallace');for(let i=0;i<30;i++){t.updateRideAudio(1/60);await new Promise(r=>setTimeout(r,16))}const ducked=a.partyGain.gain.value;t.stopRideSounds();t.set({paused:true});t.updateRideAudio(1/60);const paused=a.partySource===null;t.set({paused:false});t.updateRideAudio(1/60);const resumed=!!a.partySource;t.stopDisaster();t.updateRideAudio(1/60);return{offset,replaced,priorGain,ducked,paused,resumed,stopped:a.partySource===null}});assert.equal(r.offset,45);assert.ok(r.replaced&&r.paused&&r.resumed&&r.stopped);assert.ok(r.ducked<r.priorGain*.6);return r;
  });
  assert.deepEqual(errors,[]);
 }catch(e){code=1;console.error(e);results.push({error:String(e),stack:e.stack})}

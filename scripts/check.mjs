@@ -15,4 +15,6 @@ const meta=JSON.parse(source.match(/const RECORDED_REACTIONS=(.*);\n/)[1]);
 assert.deepEqual(Object.keys(voices).sort(),Object.keys(meta).sort(),'Every reaction must have matching metadata');
 for(const [key,data] of Object.entries(voices)){const b=Buffer.from(data,'base64');assert.equal(b.toString('ascii',0,4),'RIFF',key+' missing WAV data');assert.ok(b.length>1000,key+' empty clip')}
 const music=JSON.parse(source.match(/const GAME_MUSIC_DATA=(.*);\n/)[1]);assert.ok(music.menu&&music.ride,'Missing menu or riding music');
+const party=Buffer.from(JSON.parse(source.match(/const PARTY_MUSIC_DATA=(.*);\n/)[1]),'base64');assert.equal(party.toString('ascii',0,3),'ID3','Missing party MP3');assert.ok(party.length>1000000,'Party song is truncated');
+const track=JSON.parse(source.match(/const PARTY_TRACK=(.*);\n/)[1]);assert.equal(track.duration,120);assert.ok(track.sections.some(s=>s.name==='Bridge')&&track.sections.some(s=>s.name==='Final chorus'));
 console.log(`PASS: syntax, ${ids.length} unique IDs, ${Object.keys(voices).length} uploaded reactions, music, no test hooks.`);

@@ -9,7 +9,7 @@ const target=fileURLToPath(new URL('../dirtbike_wheelie_landing_fixed.html',impo
 const results=[],errors=[];
 const instrumentation=`
 currentSamples=sampleWheels();
-globalThis.__screamTest={wildlife,wolfPacks,WILDLIFE_SCALE,updateWildlife,disaster,startDisaster,stopDisaster,applyTornadoForces,simulateSubstep,rideAudio,makePartyLoop,updateRideMusic,updateRideAudio,
+globalThis.__screamTest={wildlife,wolfPacks,WILDLIFE_SCALE,updateWildlife,disaster,startDisaster,stopDisaster,applyTornadoForces,simulateSubstep,rideAudio,PARTY_TRACK,updateRideMusic,updateRideAudio,
  set(v=0,x=0,z=25){reset();showMenuStage('riding');stopDisaster();for(const k of Object.keys(keys))keys[k]=false;controller.throttle=0;controller.boost=false;speed=v;pos.set(x,.08,z);wildlifeLastBikePosition.copy(pos);for(const a of wildlife){a.position.copy(a.home);a.flight=null;a.cooldown=0;a.chaseUntil=0}for(const p of wolfPacks){p.callTimer=0;p.attackCooldown=0}},
  get state(){return{speed,gas:throttleInput(),boost:boostInput(),damage,bend:bikeBend,ragdoll:ragdoll.active,debris:debris.length,pos:pos.toArray(),vertical,lateral:lateralSpeed,grounded}},
  driveWildlife(n=45){for(let i=0;i<n;i++){simulateSubstep(1/120);updateWildlife(1/120)}},
@@ -58,10 +58,10 @@ try{
  await check('Tornado lifts and swirls a nearby bike, and stopping removes the force',async()=>{
   const result=await page.evaluate(()=>{const t=__screamTest;t.set(0,12,-15);t.startDisaster('tornado');t.step(120);const inStorm=t.state;t.stopDisaster();const before=t.state;t.applyTornadoForces(.5);return{inStorm,before,after:t.state}});assert.ok(result.inStorm.pos[1]>1&&!result.inStorm.grounded);assert.ok(Math.abs(result.inStorm.lateral)>1);assert.deepEqual(result.before,result.after);return result.inStorm;
  });
- await check('Party music is an original non-silent loop and follows music volume/pause',async()=>{
+ await check('Party music is a full original song and follows music volume/pause',async()=>{
   await page.evaluate(()=>__screamTest.set());
   await page.locator('#sound-toggle').dispatchEvent('pointerdown');await page.keyboard.press('w');await page.waitForFunction(()=>__screamTest.rideAudio.ctx?.state==='running');
-  const result=await page.evaluate(async()=>{const t=__screamTest,a=t.rideAudio;await a.musicReady;t.startDisaster('party');for(let i=0;i<35;i++){t.updateRideAudio(1/60);await new Promise(r=>setTimeout(r,16))}const party=a.partyGain.gain.value,b=a.partySource.buffer.getChannelData(0);let sum=0;for(const x of b)sum+=x*x;const duration=a.partySource.buffer.duration;a.musicVolume=0;for(let i=0;i<35;i++){t.updateRideAudio(1/60);await new Promise(r=>setTimeout(r,16))}const muted=a.partyGain.gain.value;a.musicVolume=.4;for(let i=0;i<35;i++){t.updateRideAudio(1/60);await new Promise(r=>setTimeout(r,16))}t.pause();for(let i=0;i<35;i++){t.updateRideAudio(1/60);await new Promise(r=>setTimeout(r,16))}return{party,rms:Math.sqrt(sum/b.length),duration,muted,paused:a.partyGain.gain.value};});assert.ok(result.party>.1&&result.rms>.01);assert.ok(result.duration>14&&result.duration<15);assert.ok(result.muted<.001&&result.paused<.001);return result;
+  const result=await page.evaluate(async()=>{const t=__screamTest,a=t.rideAudio;await a.musicReady;t.startDisaster('party');for(let i=0;i<35;i++){t.updateRideAudio(1/60);await new Promise(r=>setTimeout(r,16))}const party=a.partyGain.gain.value,b=a.partySource.buffer.getChannelData(0);let sum=0;for(const x of b)sum+=x*x;const duration=a.partySource.buffer.duration;a.musicVolume=0;for(let i=0;i<35;i++){t.updateRideAudio(1/60);await new Promise(r=>setTimeout(r,16))}const muted=a.partyGain.gain.value,mutedSource=a.partySource===null;a.musicVolume=.4;for(let i=0;i<35;i++){t.updateRideAudio(1/60);await new Promise(r=>setTimeout(r,16))}t.pause();for(let i=0;i<35;i++){t.updateRideAudio(1/60);await new Promise(r=>setTimeout(r,16))}return{party,rms:Math.sqrt(sum/b.length),duration,muted,paused:a.partyGain.gain.value,mutedSource,pausedSource:a.partySource===null};});assert.ok(result.party>.1&&result.rms>.01);assert.ok(Math.abs(result.duration-120)<.1);assert.ok(result.mutedSource&&result.pausedSource,JSON.stringify(result));return result;
  });
  assert.deepEqual(errors,[]);
 }catch(e){code=1;console.error(e);results.push({error:String(e),stack:e.stack})}
