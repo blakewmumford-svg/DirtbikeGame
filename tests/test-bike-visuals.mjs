@@ -47,13 +47,13 @@ try{
  });
  await page.evaluate(()=>{__visualTest.setThrottle(true);__visualTest.update(1);__visualTest.render()});
  await page.screenshot({path:fileURLToPath(new URL('../reports/bike-realism.png',import.meta.url))});
- await check('First-person camera stays fixed ahead of the helmet through movement and lean',async()=>{
+ await check('First-person cockpit camera stays fixed through movement and lean',async()=>{
   const poses=await page.evaluate(()=>{
    const t=__visualTest,rest=t.cameraPose(1,0,.08,25,0,0,0),moved=t.cameraPose(1,18,4,-30,1.2,.5,.25),external=t.cameraPose(0,18,4,-30,1.2,.5,.25);
    t.cameraPose(1,0,.08,25,0,0,0);return{rest,moved,external};
   });
   for(const pose of [poses.rest,poses.moved]){
-   for(const [i,v] of [0,2.5,-.30].entries())assert.ok(Math.abs(pose.local[i]-v)<1e-8);
+   for(const [i,v] of [0,2.62,1.8].entries())assert.ok(Math.abs(pose.local[i]-v)<1e-8);
    assert.ok(pose.direction[2]<-.95&&pose.direction[1]<0);
   }
   assert.deepEqual(poses.external.up,[0,1,0]);

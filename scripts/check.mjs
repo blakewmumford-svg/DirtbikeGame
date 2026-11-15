@@ -10,6 +10,7 @@ const module=source.split('<script type="module">')[1]?.split('</script>')[0];as
 assert.ok(!source.includes('__screamTest')&&!source.includes('globalThis.__test='),'Test instrumentation in game');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dirtbike-check-'));
 try{const file=path.join(dir,'game.mjs');fs.writeFileSync(file,module);const r=spawnSync(process.execPath,['--check',file],{stdio:'inherit'});assert.equal(r.status,0,'Game JavaScript syntax');}finally{fs.rmSync(dir,{recursive:true,force:true})}
+const bundledRenderer=Buffer.from(JSON.parse(source.match(/const THREE_MODULE_DATA=(.*);\n/)[1]),'base64');assert.ok(bundledRenderer.equals(fs.readFileSync(new URL('../tests/fixtures/three.module.js',import.meta.url))),'Bundled renderer differs from pinned Three.js 170');
 const voices=JSON.parse(source.match(/const CRASH_VOICE_DATA=(.*);\n/)[1]);
 const meta=JSON.parse(source.match(/const RECORDED_REACTIONS=(.*);\n/)[1]);
 assert.deepEqual(Object.keys(voices).sort(),Object.keys(meta).sort(),'Every reaction must have matching metadata');

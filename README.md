@@ -2,7 +2,7 @@
 
 A browser-based Three.js dirtbike stunt game, continued from the November 14, 2026 Codex chat.
 
-**Current game:** `dirtbike_wheelie_landing_fixed.html` — this is the source of truth, despite its old filename. All current reaction sounds and original DnB music are embedded. Start with `AGENTS.md` and `SESSION_HANDOFF.md`; detailed history is in `docs/CHAT_HISTORY_HANDOFF.md`.
+**Current game:** `dirtbike_wheelie_landing_fixed.html` — this is the source of truth, despite its old filename. The pinned Three.js 170 renderer, reaction sounds and music are embedded; solo startup needs no CDN download. Start with `AGENTS.md` and `SESSION_HANDOFF.md`; detailed history is in `docs/CHAT_HISTORY_HANDOFF.md`.
 
 ## Already imported into GitHub
 
@@ -147,3 +147,22 @@ Touch Boost spans the full width of the right riding pad with a larger, highligh
 Party mode plays a finished stereo recording embedded in the game HTML. The 120-second arrangement includes ten sections, a recurring chorus melody, dance drums, syncopated bass, picked arpeggios, strings, piano, layered synths, fills and stereo effects. It is an instrumental. It starts at the shared event time, including for late joins, and stops/restarts its playback source for pause, mute and event transitions. Music volume and voice ducking remain independent of the engine and reactions.
 
 The source composition is `scripts/compose-party.py`; render with `python scripts/compose-party.py` using NumPy/SciPy, libfluidsynth, the TimGM6mb instrument bank and FFmpeg. Runtime playback requires none of those tools. `npm run extract:audio` also exports the finished song and its section metadata. See `docs/PARTY_MUSIC.md` for production notes and instrument credits.
+
+
+## Camera sand and first-person cockpit
+
+Dust storms blow grains across the camera and build soft sand deposits around the lens edges. Riding faster increases buildup; the middle remains partly clear. The effect clears on pause, menus, reset, space cutscenes, event stop or event changes. It sits below the HUD/touch controls and cannot intercept input. A capped-resolution 2D overlay keeps it inexpensive on mobile.
+
+First person shows both hands and the handlebars while keeping the helmet/torso hidden. The camera stays fixed to the bike with no follow delay. Bars turn visually with steering, hands follow the grips, and the right wrist rolls with the throttle. First-person sleeves extend behind the camera into the gloves so no cut-off arm ends are visible; the normal articulated arms remain in external views.
+
+
+## Crash bone counter
+
+Ragdoll crashes show an always-visible **Bones broken** counter, including on mobile with Info closed. Harder initial crashes and subsequent impacts to different body parts add to the tally. Each modeled bone counts once per crash; soft contacts and repeated hits to the same already-broken bones do not inflate it. Repair (J or mobile Repair) and reset (R) clear the tally. It is a local gameplay score and does not change ragdoll physics or bike damage.
+
+
+## Startup without a renderer download
+
+The renderer is bundled into the single HTML file, so blocked CDNs or certificate errors do not prevent solo startup. Multiplayer still requires its relay/network services. `npm run check` verifies the embedded renderer against the pinned Three.js 170 copy, and the startup suite boots and drives the unmodified HTML with external HTTPS requests blocked. The renderer’s MIT notice is in `docs/licenses/THREE.txt`.
+
+Live preview processes restart with each cloud task. On a managed cloud desktop use `PORT=3000 npm start` and verify `http://127.0.0.1:3000/` returns 200; port 3000 avoids reserved desktop/browser ports. A local server address is not automatically a public link.
